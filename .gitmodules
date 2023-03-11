@@ -1,0 +1,3 @@
+[submodule "Pcb/esp_radio/kicad_common_lib"]
+	path = Pcb/esp_radio/kicad_common_lib
+	url = git@bitbucket.org:dibalavs/kicad_common_lib.git

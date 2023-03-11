@@ -5,220 +5,6 @@
   (paper "A4")
 
   (lib_symbols
-    (symbol "AO3415A:AO3401A" (pin_names hide) (in_bom yes) (on_board yes)
-      (property "Reference" "Q" (at 5.08 1.905 0)
-        (effects (font (size 1.27 1.27)) (justify left))
-      )
-      (property "Value" "AO3415A" (at 5.08 0 0)
-        (effects (font (size 1.27 1.27)) (justify left))
-      )
-      (property "Footprint" "Package_TO_SOT_SMD:SOT-23" (at 5.08 -1.905 0)
-        (effects (font (size 1.27 1.27) italic) (justify left) hide)
-      )
-      (property "Datasheet" "https://alltransistors.com/adv/pdfdatasheet_aosemi/ao3415.pdf" (at -20.32 -13.97 0)
-        (effects (font (size 1.27 1.27)) (justify left) hide)
-      )
-      (property "ki_keywords" "P-Channel MOSFET" (at 0 0 0)
-        (effects (font (size 1.27 1.27)) hide)
-      )
-      (property "ki_description" "-4.0A Id, -30V Vds, P-Channel MOSFET, SOT-23" (at 0 0 0)
-        (effects (font (size 1.27 1.27)) hide)
-      )
-      (property "ki_fp_filters" "SOT?23*" (at 0 0 0)
-        (effects (font (size 1.27 1.27)) hide)
-      )
-      (symbol "AO3401A_0_1"
-        (polyline
-          (pts
-            (xy 0.254 0)
-            (xy -2.54 0)
-          )
-          (stroke (width 0) (type default))
-          (fill (type none))
-        )
-        (polyline
-          (pts
-            (xy 0.254 1.905)
-            (xy 0.254 -1.905)
-          )
-          (stroke (width 0.254) (type default))
-          (fill (type none))
-        )
-        (polyline
-          (pts
-            (xy 0.762 -1.27)
-            (xy 0.762 -2.286)
-          )
-          (stroke (width 0.254) (type default))
-          (fill (type none))
-        )
-        (polyline
-          (pts
-            (xy 0.762 0.508)
-            (xy 0.762 -0.508)
-          )
-          (stroke (width 0.254) (type default))
-          (fill (type none))
-        )
-        (polyline
-          (pts
-            (xy 0.762 2.286)
-            (xy 0.762 1.27)
-          )
-          (stroke (width 0.254) (type default))
-          (fill (type none))
-        )
-        (polyline
-          (pts
-            (xy 2.54 -5.08)
-            (xy 2.54 -2.286)
-          )
-          (stroke (width 0) (type default))
-          (fill (type none))
-        )
-        (polyline
-          (pts
-            (xy 2.54 2.54)
-            (xy 2.54 1.778)
-          )
-          (stroke (width 0) (type default))
-          (fill (type none))
-        )
-        (polyline
-          (pts
-            (xy -5.08 0)
-            (xy -2.54 0)
-            (xy -2.032 0)
-          )
-          (stroke (width 0) (type default))
-          (fill (type none))
-        )
-        (polyline
-          (pts
-            (xy -2.54 0)
-            (xy -2.54 -4.572)
-            (xy 2.54 -4.572)
-          )
-          (stroke (width 0) (type default))
-          (fill (type none))
-        )
-        (polyline
-          (pts
-            (xy 2.54 -2.54)
-            (xy 2.54 0)
-            (xy 0.762 0)
-          )
-          (stroke (width 0) (type default))
-          (fill (type none))
-        )
-        (polyline
-          (pts
-            (xy -3.048 -2.794)
-            (xy -2.921 -2.921)
-            (xy -2.159 -2.921)
-            (xy -2.032 -3.048)
-          )
-          (stroke (width 0) (type default))
-          (fill (type none))
-        )
-        (polyline
-          (pts
-            (xy -2.54 -2.921)
-            (xy -2.921 -3.556)
-            (xy -2.159 -3.556)
-            (xy -2.54 -2.921)
-          )
-          (stroke (width 0) (type default))
-          (fill (type none))
-        )
-        (polyline
-          (pts
-            (xy -2.54 -2.54)
-            (xy -2.159 -1.905)
-            (xy -2.921 -1.905)
-            (xy -2.54 -2.54)
-          )
-          (stroke (width 0) (type default))
-          (fill (type none))
-        )
-        (polyline
-          (pts
-            (xy -2.032 -2.667)
-            (xy -2.159 -2.54)
-            (xy -2.921 -2.54)
-            (xy -3.048 -2.413)
-          )
-          (stroke (width 0) (type default))
-          (fill (type none))
-        )
-        (polyline
-          (pts
-            (xy 0.762 1.778)
-            (xy 3.302 1.778)
-            (xy 3.302 -1.778)
-            (xy 0.762 -1.778)
-          )
-          (stroke (width 0) (type default))
-          (fill (type none))
-        )
-        (polyline
-          (pts
-            (xy 2.286 0)
-            (xy 1.27 0.381)
-            (xy 1.27 -0.381)
-            (xy 2.286 0)
-          )
-          (stroke (width 0) (type default))
-          (fill (type outline))
-        )
-        (polyline
-          (pts
-            (xy 2.794 -0.508)
-            (xy 2.921 -0.381)
-            (xy 3.683 -0.381)
-            (xy 3.81 -0.254)
-          )
-          (stroke (width 0) (type default))
-          (fill (type none))
-        )
-        (polyline
-          (pts
-            (xy 3.302 -0.381)
-            (xy 2.921 0.254)
-            (xy 3.683 0.254)
-            (xy 3.302 -0.381)
-          )
-          (stroke (width 0) (type default))
-          (fill (type none))
-        )
-        (circle (center 1.651 0) (radius 2.794)
-          (stroke (width 0.254) (type default))
-          (fill (type none))
-        )
-        (circle (center 2.54 -1.778) (radius 0.254)
-          (stroke (width 0) (type default))
-          (fill (type outline))
-        )
-        (circle (center 2.54 1.778) (radius 0.254)
-          (stroke (width 0) (type default))
-          (fill (type outline))
-        )
-      )
-      (symbol "AO3401A_1_1"
-        (pin input line (at -7.62 0 0) (length 2.54)
-          (name "G" (effects (font (size 1.27 1.27))))
-          (number "1" (effects (font (size 1.27 1.27))))
-        )
-        (pin passive line (at 2.54 -7.62 90) (length 2.54)
-          (name "S" (effects (font (size 1.27 1.27))))
-          (number "2" (effects (font (size 1.27 1.27))))
-        )
-        (pin passive line (at 2.54 5.08 270) (length 2.54)
-          (name "D" (effects (font (size 1.27 1.27))))
-          (number "3" (effects (font (size 1.27 1.27))))
-        )
-      )
-    )
     (symbol "Connector_Generic:Conn_01x04" (pin_names (offset 1.016) hide) (in_bom yes) (on_board yes)
       (property "Reference" "J" (at 0 5.08 0)
         (effects (font (size 1.27 1.27)))
@@ -420,6 +206,220 @@
         )
       )
     )
+    (symbol "kicad_common_lib:AO3415A" (pin_names hide) (in_bom yes) (on_board yes)
+      (property "Reference" "Q" (at 5.08 1.905 0)
+        (effects (font (size 1.27 1.27)) (justify left))
+      )
+      (property "Value" "AO3415A" (at 5.08 0 0)
+        (effects (font (size 1.27 1.27)) (justify left))
+      )
+      (property "Footprint" "Package_TO_SOT_SMD:SOT-23" (at 5.08 -1.905 0)
+        (effects (font (size 1.27 1.27) italic) (justify left) hide)
+      )
+      (property "Datasheet" "https://alltransistors.com/adv/pdfdatasheet_aosemi/ao3415.pdf" (at -20.32 -13.97 0)
+        (effects (font (size 1.27 1.27)) (justify left) hide)
+      )
+      (property "ki_keywords" "P-Channel MOSFET" (at 0 0 0)
+        (effects (font (size 1.27 1.27)) hide)
+      )
+      (property "ki_description" "-4.0A Id, -30V Vds, P-Channel MOSFET, SOT-23" (at 0 0 0)
+        (effects (font (size 1.27 1.27)) hide)
+      )
+      (property "ki_fp_filters" "SOT?23*" (at 0 0 0)
+        (effects (font (size 1.27 1.27)) hide)
+      )
+      (symbol "AO3415A_0_1"
+        (polyline
+          (pts
+            (xy 0.254 0)
+            (xy -2.54 0)
+          )
+          (stroke (width 0) (type default))
+          (fill (type none))
+        )
+        (polyline
+          (pts
+            (xy 0.254 1.905)
+            (xy 0.254 -1.905)
+          )
+          (stroke (width 0.254) (type default))
+          (fill (type none))
+        )
+        (polyline
+          (pts
+            (xy 0.762 -1.27)
+            (xy 0.762 -2.286)
+          )
+          (stroke (width 0.254) (type default))
+          (fill (type none))
+        )
+        (polyline
+          (pts
+            (xy 0.762 0.508)
+            (xy 0.762 -0.508)
+          )
+          (stroke (width 0.254) (type default))
+          (fill (type none))
+        )
+        (polyline
+          (pts
+            (xy 0.762 2.286)
+            (xy 0.762 1.27)
+          )
+          (stroke (width 0.254) (type default))
+          (fill (type none))
+        )
+        (polyline
+          (pts
+            (xy 2.54 -5.08)
+            (xy 2.54 -2.286)
+          )
+          (stroke (width 0) (type default))
+          (fill (type none))
+        )
+        (polyline
+          (pts
+            (xy 2.54 2.54)
+            (xy 2.54 1.778)
+          )
+          (stroke (width 0) (type default))
+          (fill (type none))
+        )
+        (polyline
+          (pts
+            (xy -5.08 0)
+            (xy -2.54 0)
+            (xy -2.032 0)
+          )
+          (stroke (width 0) (type default))
+          (fill (type none))
+        )
+        (polyline
+          (pts
+            (xy -2.54 0)
+            (xy -2.54 -4.572)
+            (xy 2.54 -4.572)
+          )
+          (stroke (width 0) (type default))
+          (fill (type none))
+        )
+        (polyline
+          (pts
+            (xy 2.54 -2.54)
+            (xy 2.54 0)
+            (xy 0.762 0)
+          )
+          (stroke (width 0) (type default))
+          (fill (type none))
+        )
+        (polyline
+          (pts
+            (xy -3.048 -2.794)
+            (xy -2.921 -2.921)
+            (xy -2.159 -2.921)
+            (xy -2.032 -3.048)
+          )
+          (stroke (width 0) (type default))
+          (fill (type none))
+        )
+        (polyline
+          (pts
+            (xy -2.54 -2.921)
+            (xy -2.921 -3.556)
+            (xy -2.159 -3.556)
+            (xy -2.54 -2.921)
+          )
+          (stroke (width 0) (type default))
+          (fill (type none))
+        )
+        (polyline
+          (pts
+            (xy -2.54 -2.54)
+            (xy -2.159 -1.905)
+            (xy -2.921 -1.905)
+            (xy -2.54 -2.54)
+          )
+          (stroke (width 0) (type default))
+          (fill (type none))
+        )
+        (polyline
+          (pts
+            (xy -2.032 -2.667)
+            (xy -2.159 -2.54)
+            (xy -2.921 -2.54)
+            (xy -3.048 -2.413)
+          )
+          (stroke (width 0) (type default))
+          (fill (type none))
+        )
+        (polyline
+          (pts
+            (xy 0.762 1.778)
+            (xy 3.302 1.778)
+            (xy 3.302 -1.778)
+            (xy 0.762 -1.778)
+          )
+          (stroke (width 0) (type default))
+          (fill (type none))
+        )
+        (polyline
+          (pts
+            (xy 2.286 0)
+            (xy 1.27 0.381)
+            (xy 1.27 -0.381)
+            (xy 2.286 0)
+          )
+          (stroke (width 0) (type default))
+          (fill (type outline))
+        )
+        (polyline
+          (pts
+            (xy 2.794 -0.508)
+            (xy 2.921 -0.381)
+            (xy 3.683 -0.381)
+            (xy 3.81 -0.254)
+          )
+          (stroke (width 0) (type default))
+          (fill (type none))
+        )
+        (polyline
+          (pts
+            (xy 3.302 -0.381)
+            (xy 2.921 0.254)
+            (xy 3.683 0.254)
+            (xy 3.302 -0.381)
+          )
+          (stroke (width 0) (type default))
+          (fill (type none))
+        )
+        (circle (center 1.651 0) (radius 2.794)
+          (stroke (width 0.254) (type default))
+          (fill (type none))
+        )
+        (circle (center 2.54 -1.778) (radius 0.254)
+          (stroke (width 0) (type default))
+          (fill (type outline))
+        )
+        (circle (center 2.54 1.778) (radius 0.254)
+          (stroke (width 0) (type default))
+          (fill (type outline))
+        )
+      )
+      (symbol "AO3415A_1_1"
+        (pin input line (at -7.62 0 0) (length 2.54)
+          (name "G" (effects (font (size 1.27 1.27))))
+          (number "1" (effects (font (size 1.27 1.27))))
+        )
+        (pin passive line (at 2.54 -7.62 90) (length 2.54)
+          (name "S" (effects (font (size 1.27 1.27))))
+          (number "2" (effects (font (size 1.27 1.27))))
+        )
+        (pin passive line (at 2.54 5.08 270) (length 2.54)
+          (name "D" (effects (font (size 1.27 1.27))))
+          (number "3" (effects (font (size 1.27 1.27))))
+        )
+      )
+    )
     (symbol "power:+3.3V" (power) (pin_names (offset 0)) (in_bom yes) (on_board yes)
       (property "Reference" "#PWR" (at 0 -3.81 0)
         (effects (font (size 1.27 1.27)) hide)
@@ -513,7 +513,6 @@
       )
     )
   )
-
 
   (junction (at 172.72 43.18) (diameter 0) (color 0 0 0 0)
     (uuid 8ba4ebcb-f8d2-4159-8546-7776e6ec880e)
@@ -729,7 +728,7 @@
     (effects (font (size 1.27 1.27)) (justify left bottom))
     (uuid 1e792331-4aca-4798-acc8-8a38f762013f)
   )
-  (label "LCD.MOSI" (at 185.42 127 0) (fields_autoplaced)
+  (label "SPI.MOSI" (at 185.42 127 0) (fields_autoplaced)
     (effects (font (size 1.27 1.27)) (justify left bottom))
     (uuid 26f3adfc-b8f7-4c7e-b6f0-e588adf1b095)
   )
@@ -741,7 +740,7 @@
     (effects (font (size 1.27 1.27)) (justify left bottom))
     (uuid 5f033bed-fd03-42fa-ad42-b31c53c1e744)
   )
-  (label "LCD.MISO" (at 175.26 134.62 0) (fields_autoplaced)
+  (label "SPI.MISO" (at 175.26 134.62 0) (fields_autoplaced)
     (effects (font (size 1.27 1.27)) (justify left bottom))
     (uuid 621c70c0-fde5-4bed-9237-210b4d6131cb)
   )
@@ -749,7 +748,7 @@
     (effects (font (size 1.27 1.27)) (justify left bottom))
     (uuid 692d7b02-74ce-4559-80d1-774192ac7f00)
   )
-  (label "LCD.CLK" (at 185.42 129.54 0) (fields_autoplaced)
+  (label "SPI.CLK" (at 185.42 129.54 0) (fields_autoplaced)
     (effects (font (size 1.27 1.27)) (justify left bottom))
     (uuid 7b461131-2f1a-468a-bf36-f3fdb1d32ec9)
   )
@@ -790,7 +789,7 @@
   (symbol (lib_id "Device:R") (at 200.66 134.62 90) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 2410c24b-37d9-40c7-928e-975b6e7c2ece)
-    (property "Reference" "R21" (at 205.74 133.35 90)
+    (property "Reference" "R30" (at 205.74 133.35 90)
       (effects (font (size 1.27 1.27)))
     )
     (property "Value" "0" (at 200.66 134.62 90)
@@ -807,7 +806,7 @@
     (instances
       (project "esp_radio"
         (path "/c9e2e0d2-0655-4f5e-8e13-71b41b1f7cfe/9a87a4f6-9f89-4802-b675-78042b654f8a"
-          (reference "R21") (unit 1)
+          (reference "R30") (unit 1)
         )
       )
     )
@@ -816,7 +815,7 @@
   (symbol (lib_id "Connector_Generic:Conn_01x09") (at 214.63 124.46 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid 5eee035c-c021-4c49-a77e-1de2f593d0bf)
-    (property "Reference" "J8" (at 217.17 123.825 0)
+    (property "Reference" "J10" (at 217.17 123.825 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
     (property "Value" "LCD SPI" (at 217.17 126.365 0)
@@ -840,7 +839,7 @@
     (instances
       (project "esp_radio"
         (path "/c9e2e0d2-0655-4f5e-8e13-71b41b1f7cfe/9a87a4f6-9f89-4802-b675-78042b654f8a"
-          (reference "J8") (unit 1)
+          (reference "J10") (unit 1)
         )
       )
     )
@@ -849,7 +848,7 @@
   (symbol (lib_id "power:GND") (at 203.2 90.17 270) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid a1145696-9cc1-45ba-b37a-9c2df8383314)
-    (property "Reference" "#PWR049" (at 196.85 90.17 0)
+    (property "Reference" "#PWR060" (at 196.85 90.17 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Value" "GND" (at 199.39 90.805 90)
@@ -865,16 +864,16 @@
     (instances
       (project "esp_radio"
         (path "/c9e2e0d2-0655-4f5e-8e13-71b41b1f7cfe/9a87a4f6-9f89-4802-b675-78042b654f8a"
-          (reference "#PWR049") (unit 1)
+          (reference "#PWR060") (unit 1)
         )
       )
     )
   )
 
-  (symbol (lib_id "AO3415A:AO3401A") (at 170.18 58.42 0) (mirror x) (unit 1)
+  (symbol (lib_id "kicad_common_lib:AO3415A") (at 170.18 58.42 0) (mirror x) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid a8e6b7e0-dc22-4639-83eb-7573e9cede20)
-    (property "Reference" "Q1" (at 176.53 57.9755 0)
+    (property "Reference" "Q3" (at 176.53 57.9755 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
     (property "Value" "AO3415A" (at 176.53 55.4355 0)
@@ -892,7 +891,7 @@
     (instances
       (project "esp_radio"
         (path "/c9e2e0d2-0655-4f5e-8e13-71b41b1f7cfe/9a87a4f6-9f89-4802-b675-78042b654f8a"
-          (reference "Q1") (unit 1)
+          (reference "Q3") (unit 1)
         )
       )
     )
@@ -901,7 +900,7 @@
   (symbol (lib_id "Connector_Generic:Conn_01x04") (at 214.63 90.17 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid ad5ffd1f-9f18-4016-9a1b-182461fa750c)
-    (property "Reference" "J7" (at 217.17 90.805 0)
+    (property "Reference" "J9" (at 217.17 90.805 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
     (property "Value" "LCD I2C" (at 217.17 93.345 0)
@@ -920,7 +919,7 @@
     (instances
       (project "esp_radio"
         (path "/c9e2e0d2-0655-4f5e-8e13-71b41b1f7cfe/9a87a4f6-9f89-4802-b675-78042b654f8a"
-          (reference "J7") (unit 1)
+          (reference "J9") (unit 1)
         )
       )
     )
@@ -929,7 +928,7 @@
   (symbol (lib_id "Device:R") (at 160.02 48.26 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid ba0e760c-1a40-41f6-bb50-29b1ea39d06e)
-    (property "Reference" "R19" (at 162.56 47.625 0)
+    (property "Reference" "R27" (at 162.56 47.625 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
     (property "Value" "51k" (at 162.56 50.165 0)
@@ -946,7 +945,7 @@
     (instances
       (project "esp_radio"
         (path "/c9e2e0d2-0655-4f5e-8e13-71b41b1f7cfe/9a87a4f6-9f89-4802-b675-78042b654f8a"
-          (reference "R19") (unit 1)
+          (reference "R27") (unit 1)
         )
       )
     )
@@ -955,7 +954,7 @@
   (symbol (lib_id "power:+3.3V") (at 172.72 41.91 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid c377878a-330e-4e83-b581-169a7e48048c)
-    (property "Reference" "#PWR050" (at 172.72 45.72 0)
+    (property "Reference" "#PWR059" (at 172.72 45.72 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Value" "+3.3V" (at 172.72 38.1 0)
@@ -971,7 +970,7 @@
     (instances
       (project "esp_radio"
         (path "/c9e2e0d2-0655-4f5e-8e13-71b41b1f7cfe/9a87a4f6-9f89-4802-b675-78042b654f8a"
-          (reference "#PWR050") (unit 1)
+          (reference "#PWR059") (unit 1)
         )
       )
     )
@@ -980,7 +979,7 @@
   (symbol (lib_id "Device:R") (at 200.66 127 90) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid e0f919da-1198-4158-b282-aff4462038fd)
-    (property "Reference" "R20" (at 205.74 125.73 90)
+    (property "Reference" "R28" (at 205.74 125.73 90)
       (effects (font (size 1.27 1.27)))
     )
     (property "Value" "0" (at 200.66 127 90)
@@ -997,7 +996,7 @@
     (instances
       (project "esp_radio"
         (path "/c9e2e0d2-0655-4f5e-8e13-71b41b1f7cfe/9a87a4f6-9f89-4802-b675-78042b654f8a"
-          (reference "R20") (unit 1)
+          (reference "R28") (unit 1)
         )
       )
     )
@@ -1006,7 +1005,7 @@
   (symbol (lib_id "Device:R") (at 189.23 132.08 90) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid e47669ca-e4cd-451f-ad33-9957e7f947c4)
-    (property "Reference" "R22" (at 194.31 130.81 90)
+    (property "Reference" "R29" (at 194.31 130.81 90)
       (effects (font (size 1.27 1.27)))
     )
     (property "Value" "100" (at 189.23 132.08 90)
@@ -1023,7 +1022,7 @@
     (instances
       (project "esp_radio"
         (path "/c9e2e0d2-0655-4f5e-8e13-71b41b1f7cfe/9a87a4f6-9f89-4802-b675-78042b654f8a"
-          (reference "R22") (unit 1)
+          (reference "R29") (unit 1)
         )
       )
     )
@@ -1032,7 +1031,7 @@
   (symbol (lib_id "power:GND") (at 203.2 116.84 270) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid f3040ff0-1b8e-4c7d-b223-299fce5e5523)
-    (property "Reference" "#PWR048" (at 196.85 116.84 0)
+    (property "Reference" "#PWR061" (at 196.85 116.84 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Value" "GND" (at 199.39 117.475 90)
@@ -1048,7 +1047,7 @@
     (instances
       (project "esp_radio"
         (path "/c9e2e0d2-0655-4f5e-8e13-71b41b1f7cfe/9a87a4f6-9f89-4802-b675-78042b654f8a"
-          (reference "#PWR048") (unit 1)
+          (reference "#PWR061") (unit 1)
         )
       )
     )

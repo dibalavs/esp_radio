@@ -367,7 +367,7 @@
   (symbol (lib_id "Connector_Generic:Conn_01x07") (at 170.18 80.01 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid 258b4fbd-0664-4d11-aa9e-ac2cbbf58681)
-    (property "Reference" "J5" (at 172.72 79.375 0)
+    (property "Reference" "J7" (at 172.72 79.375 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
     (property "Value" "MERUS I2S" (at 172.72 81.915 0)
@@ -389,7 +389,7 @@
     (instances
       (project "esp_radio"
         (path "/c9e2e0d2-0655-4f5e-8e13-71b41b1f7cfe/0a87a903-62c1-40b5-b380-98c846d36513"
-          (reference "J5") (unit 1)
+          (reference "J7") (unit 1)
         )
       )
     )
@@ -398,7 +398,7 @@
   (symbol (lib_id "power:GND") (at 158.75 121.92 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid 3881c8e4-185c-4e09-8903-5a4490cdfa03)
-    (property "Reference" "#PWR047" (at 158.75 128.27 0)
+    (property "Reference" "#PWR058" (at 158.75 128.27 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Value" "GND" (at 158.75 127 0)
@@ -414,7 +414,7 @@
     (instances
       (project "esp_radio"
         (path "/c9e2e0d2-0655-4f5e-8e13-71b41b1f7cfe/0a87a903-62c1-40b5-b380-98c846d36513"
-          (reference "#PWR047") (unit 1)
+          (reference "#PWR058") (unit 1)
         )
       )
     )
@@ -423,7 +423,7 @@
   (symbol (lib_id "power:GND") (at 148.59 77.47 270) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid a59ba0f2-4ebe-4b9e-9332-a0b01c34f41a)
-    (property "Reference" "#PWR046" (at 142.24 77.47 0)
+    (property "Reference" "#PWR057" (at 142.24 77.47 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Value" "GND" (at 144.78 78.105 90)
@@ -439,7 +439,7 @@
     (instances
       (project "esp_radio"
         (path "/c9e2e0d2-0655-4f5e-8e13-71b41b1f7cfe/0a87a903-62c1-40b5-b380-98c846d36513"
-          (reference "#PWR046") (unit 1)
+          (reference "#PWR057") (unit 1)
         )
       )
     )
@@ -448,7 +448,7 @@
   (symbol (lib_id "Connector_Generic:Conn_01x03") (at 170.18 114.3 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid cb442d93-bdda-46e0-b7ca-5ae0e8df784a)
-    (property "Reference" "J6" (at 172.72 113.665 0)
+    (property "Reference" "J8" (at 172.72 113.665 0)
       (effects (font (size 1.27 1.27)) (justify left))
     )
     (property "Value" "MERUS I2C" (at 172.72 116.205 0)
@@ -466,7 +466,7 @@
     (instances
       (project "esp_radio"
         (path "/c9e2e0d2-0655-4f5e-8e13-71b41b1f7cfe/0a87a903-62c1-40b5-b380-98c846d36513"
-          (reference "J6") (unit 1)
+          (reference "J8") (unit 1)
         )
       )
     )

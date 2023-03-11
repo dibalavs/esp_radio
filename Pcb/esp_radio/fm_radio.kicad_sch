@@ -368,7 +368,7 @@
         )
       )
     )
-    (symbol "RDA5807FP:RDA5807FP" (in_bom yes) (on_board yes)
+    (symbol "kicad_common_lib:RDA5807FP" (in_bom yes) (on_board yes)
       (property "Reference" "U" (at 0 0 0)
         (effects (font (size 1.27 1.27)))
       )
@@ -461,11 +461,11 @@
         )
       )
     )
-    (symbol "power:+12V" (power) (pin_names (offset 0)) (in_bom yes) (on_board yes)
+    (symbol "power:+10V" (power) (pin_names (offset 0)) (in_bom yes) (on_board yes)
       (property "Reference" "#PWR" (at 0 -3.81 0)
         (effects (font (size 1.27 1.27)) hide)
       )
-      (property "Value" "+12V" (at 0 3.556 0)
+      (property "Value" "+10V" (at 0 3.556 0)
         (effects (font (size 1.27 1.27)))
       )
       (property "Footprint" "" (at 0 0 0)
@@ -477,10 +477,10 @@
       (property "ki_keywords" "global power" (at 0 0 0)
         (effects (font (size 1.27 1.27)) hide)
       )
-      (property "ki_description" "Power symbol creates a global label with name \"+12V\"" (at 0 0 0)
+      (property "ki_description" "Power symbol creates a global label with name \"+10V\"" (at 0 0 0)
         (effects (font (size 1.27 1.27)) hide)
       )
-      (symbol "+12V_0_1"
+      (symbol "+10V_0_1"
         (polyline
           (pts
             (xy -0.762 1.27)
@@ -506,9 +506,9 @@
           (fill (type none))
         )
       )
-      (symbol "+12V_1_1"
+      (symbol "+10V_1_1"
         (pin power_in line (at 0 0 90) (length 0) hide
-          (name "+12V" (effects (font (size 1.27 1.27))))
+          (name "+10V" (effects (font (size 1.27 1.27))))
           (number "1" (effects (font (size 1.27 1.27))))
         )
       )
@@ -606,7 +606,6 @@
       )
     )
   )
-
 
   (junction (at 186.69 100.33) (diameter 0) (color 0 0 0 0)
     (uuid 1e2aaabb-6d22-41fd-911b-65da2130532c)
@@ -956,6 +955,11 @@
     (uuid ff4a9dd4-6770-407c-a9bd-65fe77c8096f)
   )
 
+  (text "Addr: 0b00100000" (at 129.54 119.38 0)
+    (effects (font (size 3.27 3.27)) (justify left bottom))
+    (uuid 46a0f330-895e-497a-9671-a46c2d518fb7)
+  )
+
   (label "I2S.LRCLK" (at 189.23 97.79 0) (fields_autoplaced)
     (effects (font (size 1.27 1.27)) (justify left bottom))
     (uuid 030de6ca-3390-4efe-a60c-60bbff5a2534)
@@ -976,7 +980,7 @@
     (effects (font (size 1.27 1.27)) (justify left bottom))
     (uuid 9dac7516-8c9b-4db8-88dc-1ed8a491fc76)
   )
-  (label "I2C.SCLK" (at 91.44 95.25 0) (fields_autoplaced)
+  (label "I2C.SCL" (at 91.44 95.25 0) (fields_autoplaced)
     (effects (font (size 1.27 1.27)) (justify left bottom))
     (uuid ae384fc7-9b92-4ae6-8d4f-9b30b0502fd6)
   )
@@ -997,7 +1001,7 @@
     (effects (font (size 1.27 1.27)) (justify left))
     (uuid dd747b21-b2ab-452e-ac8a-6009d7fa57b8)
   )
-  (hierarchical_label "I2C{SCLK,SDA}" (shape bidirectional) (at 60.96 109.22 180) (fields_autoplaced)
+  (hierarchical_label "I2C{SCL,SDA}" (shape bidirectional) (at 60.96 109.22 180) (fields_autoplaced)
     (effects (font (size 1.27 1.27)) (justify right))
     (uuid e191c35a-a81f-488b-9c7f-6e1c397c2f49)
   )
@@ -1025,7 +1029,7 @@
           (reference "C24") (unit 1)
         )
         (path "/c9e2e0d2-0655-4f5e-8e13-71b41b1f7cfe/6211a78e-7999-4e5f-acad-2efdf79e1a8e"
-          (reference "C27") (unit 1)
+          (reference "C31") (unit 1)
         )
       )
     )
@@ -1054,7 +1058,7 @@
           (reference "R6") (unit 1)
         )
         (path "/c9e2e0d2-0655-4f5e-8e13-71b41b1f7cfe/6211a78e-7999-4e5f-acad-2efdf79e1a8e"
-          (reference "R13") (unit 1)
+          (reference "R17") (unit 1)
         )
       )
     )
@@ -1089,34 +1093,6 @@
     )
   )
 
-  (symbol (lib_id "power:+12V") (at 66.04 64.77 0) (unit 1)
-    (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
-    (uuid 3b77a5f6-2624-425d-9a8b-295ed67464a0)
-    (property "Reference" "#PWR030" (at 66.04 68.58 0)
-      (effects (font (size 1.27 1.27)) hide)
-    )
-    (property "Value" "+12V" (at 66.04 60.96 0)
-      (effects (font (size 1.27 1.27)))
-    )
-    (property "Footprint" "" (at 66.04 64.77 0)
-      (effects (font (size 1.27 1.27)) hide)
-    )
-    (property "Datasheet" "" (at 66.04 64.77 0)
-      (effects (font (size 1.27 1.27)) hide)
-    )
-    (pin "1" (uuid 814cdcf8-39e2-4ac9-b939-dd083fc1b9a4))
-    (instances
-      (project "esp_radio"
-        (path "/c9e2e0d2-0655-4f5e-8e13-71b41b1f7cfe/9686c251-96de-4991-9702-894d5bd1468a"
-          (reference "#PWR030") (unit 1)
-        )
-        (path "/c9e2e0d2-0655-4f5e-8e13-71b41b1f7cfe/6211a78e-7999-4e5f-acad-2efdf79e1a8e"
-          (reference "#PWR031") (unit 1)
-        )
-      )
-    )
-  )
-
   (symbol (lib_id "Device:R") (at 124.46 95.25 90) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 40c16173-0120-4c4a-a759-78af3bc32f22)
@@ -1140,7 +1116,7 @@
           (reference "R6") (unit 1)
         )
         (path "/c9e2e0d2-0655-4f5e-8e13-71b41b1f7cfe/6211a78e-7999-4e5f-acad-2efdf79e1a8e"
-          (reference "R12") (unit 1)
+          (reference "R16") (unit 1)
         )
       )
     )
@@ -1169,7 +1145,7 @@
           (reference "C24") (unit 1)
         )
         (path "/c9e2e0d2-0655-4f5e-8e13-71b41b1f7cfe/6211a78e-7999-4e5f-acad-2efdf79e1a8e"
-          (reference "C33") (unit 1)
+          (reference "C27") (unit 1)
         )
       )
     )
@@ -1226,7 +1202,7 @@
           (reference "#PWR021") (unit 1)
         )
         (path "/c9e2e0d2-0655-4f5e-8e13-71b41b1f7cfe/6211a78e-7999-4e5f-acad-2efdf79e1a8e"
-          (reference "#PWR028") (unit 1)
+          (reference "#PWR031") (unit 1)
         )
       )
     )
@@ -1284,7 +1260,7 @@
           (reference "JP1") (unit 1)
         )
         (path "/c9e2e0d2-0655-4f5e-8e13-71b41b1f7cfe/6211a78e-7999-4e5f-acad-2efdf79e1a8e"
-          (reference "JP2") (unit 1)
+          (reference "JP3") (unit 1)
         )
       )
     )
@@ -1315,7 +1291,7 @@
           (reference "#PWR021") (unit 1)
         )
         (path "/c9e2e0d2-0655-4f5e-8e13-71b41b1f7cfe/6211a78e-7999-4e5f-acad-2efdf79e1a8e"
-          (reference "#PWR033") (unit 1)
+          (reference "#PWR037") (unit 1)
         )
       )
     )
@@ -1344,7 +1320,7 @@
           (reference "R6") (unit 1)
         )
         (path "/c9e2e0d2-0655-4f5e-8e13-71b41b1f7cfe/6211a78e-7999-4e5f-acad-2efdf79e1a8e"
-          (reference "R18") (unit 1)
+          (reference "R19") (unit 1)
         )
       )
     )
@@ -1373,7 +1349,7 @@
           (reference "R6") (unit 1)
         )
         (path "/c9e2e0d2-0655-4f5e-8e13-71b41b1f7cfe/6211a78e-7999-4e5f-acad-2efdf79e1a8e"
-          (reference "R17") (unit 1)
+          (reference "R20") (unit 1)
         )
       )
     )
@@ -1431,7 +1407,7 @@
           (reference "R6") (unit 1)
         )
         (path "/c9e2e0d2-0655-4f5e-8e13-71b41b1f7cfe/6211a78e-7999-4e5f-acad-2efdf79e1a8e"
-          (reference "R16") (unit 1)
+          (reference "R18") (unit 1)
         )
       )
     )
@@ -1440,7 +1416,7 @@
   (symbol (lib_id "Connector:TestPoint") (at 227.33 105.41 270) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid 93aa43ee-fb5a-4340-8e21-53815fb6eb3b)
-    (property "Reference" "TP10" (at 228.6 102.87 90)
+    (property "Reference" "TP16" (at 228.6 102.87 90)
       (effects (font (size 1.27 1.27)) (justify left))
     )
     (property "Value" "LRCLK" (at 232.41 105.41 90)
@@ -1456,7 +1432,7 @@
     (instances
       (project "esp_radio"
         (path "/c9e2e0d2-0655-4f5e-8e13-71b41b1f7cfe/6211a78e-7999-4e5f-acad-2efdf79e1a8e"
-          (reference "TP10") (unit 1)
+          (reference "TP16") (unit 1)
         )
       )
     )
@@ -1542,7 +1518,7 @@
           (reference "#PWR022") (unit 1)
         )
         (path "/c9e2e0d2-0655-4f5e-8e13-71b41b1f7cfe/6211a78e-7999-4e5f-acad-2efdf79e1a8e"
-          (reference "#PWR027") (unit 1)
+          (reference "#PWR032") (unit 1)
         )
       )
       (project "iot_gateway"
@@ -1556,7 +1532,7 @@
   (symbol (lib_id "Connector:TestPoint") (at 227.33 110.49 270) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid a70c2206-4d48-44f5-adf6-7abdb53d7bab)
-    (property "Reference" "TP11" (at 228.6 113.03 90)
+    (property "Reference" "TP18" (at 228.6 113.03 90)
       (effects (font (size 1.27 1.27)) (justify left))
     )
     (property "Value" "CLK" (at 232.41 110.49 90)
@@ -1572,7 +1548,7 @@
     (instances
       (project "esp_radio"
         (path "/c9e2e0d2-0655-4f5e-8e13-71b41b1f7cfe/6211a78e-7999-4e5f-acad-2efdf79e1a8e"
-          (reference "TP11") (unit 1)
+          (reference "TP18") (unit 1)
         )
       )
     )
@@ -1604,10 +1580,35 @@
     )
   )
 
+  (symbol (lib_id "power:+10V") (at 66.04 64.77 0) (unit 1)
+    (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
+    (uuid ab688775-f1ec-4eda-88c3-69cc8a0545ad)
+    (property "Reference" "#PWR033" (at 66.04 68.58 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (property "Value" "+10V" (at 66.04 60.96 0)
+      (effects (font (size 1.27 1.27)))
+    )
+    (property "Footprint" "" (at 66.04 64.77 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (property "Datasheet" "" (at 66.04 64.77 0)
+      (effects (font (size 1.27 1.27)) hide)
+    )
+    (pin "1" (uuid 1fb56da0-7140-4fc7-8bdd-1157ae22dc86))
+    (instances
+      (project "esp_radio"
+        (path "/c9e2e0d2-0655-4f5e-8e13-71b41b1f7cfe/6211a78e-7999-4e5f-acad-2efdf79e1a8e"
+          (reference "#PWR033") (unit 1)
+        )
+      )
+    )
+  )
+
   (symbol (lib_id "power:GND") (at 59.69 96.52 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid b11984bd-5d56-4dfd-89d9-a267ddc92499)
-    (property "Reference" "#PWR032" (at 59.69 102.87 0)
+    (property "Reference" "#PWR036" (at 59.69 102.87 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Value" "GND" (at 59.69 101.6 0)
@@ -1623,13 +1624,13 @@
     (instances
       (project "esp_radio"
         (path "/c9e2e0d2-0655-4f5e-8e13-71b41b1f7cfe/6211a78e-7999-4e5f-acad-2efdf79e1a8e"
-          (reference "#PWR032") (unit 1)
+          (reference "#PWR036") (unit 1)
         )
       )
     )
   )
 
-  (symbol (lib_id "RDA5807FP:RDA5807FP") (at 148.59 92.71 0) (unit 1)
+  (symbol (lib_id "kicad_common_lib:RDA5807FP") (at 148.59 92.71 0) (unit 1)
     (in_bom yes) (on_board yes) (dnp no) (fields_autoplaced)
     (uuid b54d7772-f05d-4a24-975a-587a94387956)
     (property "Reference" "U5" (at 148.59 78.74 0)
@@ -1638,10 +1639,10 @@
     (property "Value" "RDA5807FP" (at 148.59 81.28 0)
       (effects (font (size 1.27 1.27)))
     )
-    (property "Footprint" "Package_SO:SOP-16_3.9x9.9mm_P1.27mm" (at 148.59 96.52 0)
+    (property "Footprint" "Package_SO:SOP-16_3.9x9.9mm_P1.27mm" (at 148.59 109.22 0)
       (effects (font (size 1.27 1.27)) hide)
     )
-    (property "Datasheet" "https://opendevices.ru/wp-content/uploads/2015/10/RDA5807FP.pdf" (at 148.59 96.52 0)
+    (property "Datasheet" "https://opendevices.ru/wp-content/uploads/2015/10/RDA5807FP.pdf" (at 149.86 111.76 0)
       (effects (font (size 1.27 1.27)) hide)
     )
     (pin "1" (uuid cdf15d0b-558f-4fa4-8de6-2b4b7e4a8da2) (alternate "I2S_LROUT"))
@@ -1694,7 +1695,7 @@
           (reference "#PWR021") (unit 1)
         )
         (path "/c9e2e0d2-0655-4f5e-8e13-71b41b1f7cfe/6211a78e-7999-4e5f-acad-2efdf79e1a8e"
-          (reference "#PWR034") (unit 1)
+          (reference "#PWR035") (unit 1)
         )
       )
     )
@@ -1732,7 +1733,7 @@
   (symbol (lib_id "Connector:TestPoint") (at 227.33 107.95 270) (unit 1)
     (in_bom yes) (on_board yes) (dnp no)
     (uuid e0485f46-2a05-4885-a698-ffe3b8f090b4)
-    (property "Reference" "TP12" (at 224.79 106.68 90)
+    (property "Reference" "TP17" (at 224.79 106.68 90)
       (effects (font (size 1.27 1.27)) (justify left))
     )
     (property "Value" "DATA" (at 232.41 107.95 90)
@@ -1748,7 +1749,7 @@
     (instances
       (project "esp_radio"
         (path "/c9e2e0d2-0655-4f5e-8e13-71b41b1f7cfe/6211a78e-7999-4e5f-acad-2efdf79e1a8e"
-          (reference "TP12") (unit 1)
+          (reference "TP17") (unit 1)
         )
       )
     )
@@ -1805,7 +1806,7 @@
           (reference "#PWR021") (unit 1)
         )
         (path "/c9e2e0d2-0655-4f5e-8e13-71b41b1f7cfe/6211a78e-7999-4e5f-acad-2efdf79e1a8e"
-          (reference "#PWR029") (unit 1)
+          (reference "#PWR034") (unit 1)
         )
       )
     )

@@ -33,9 +33,10 @@
   },
   "erc": {
     "erc_exclusions": [
-      "lib_symbol_issues|1485900|914400|06000a8a-c3c8-49f6-a7b5-7bfd5d2e217c|00000000-0000-0000-0000-000000000000|||",
-      "multiple_net_names|1651000|660400|ff18e4aa-4be4-4f64-aaa6-89db25701461|4c964710-532d-4b97-8260-64ab7ae0bd34|||",
-      "multiple_net_names|1651000|838200|d2c5b821-c434-4d2f-9245-b75153a13356|0a535257-83dc-4511-9aec-8c9211b389ec|||"
+      "multiple_net_names|1651000|1231900|b15e9229-2fcb-4ac7-a1cb-3a29180ac86a|062bfb89-e454-4f12-b922-446eaf9d85d1|||",
+      "multiple_net_names|1651000|711200|7c35ce76-4fa8-44c2-8b24-7a3e70127b59|eb63b0e1-9fc1-4bce-bb9a-f37ff46f56d6|||",
+      "multiple_net_names|1651000|927100|9c69dcc6-167f-46c7-b015-f612421f5324|b35ade59-2520-43a3-a90f-9d8fecefb0c4|||",
+      "multiple_net_names|1651000|927100|9c69dcc6-167f-46c7-b015-f612421f5324|e8c2d492-a3f3-400c-904e-040986d164bd|||"
     ],
     "meta": {
       "version": 0
@@ -248,7 +249,14 @@
   },
   "libraries": {
     "pinned_footprint_libs": [],
-    "pinned_symbol_libs": []
+    "pinned_symbol_libs": [
+      "AO3415A",
+      "AO3416",
+      "vs1053",
+      "SS8050G",
+      "kicad_common_lib",
+      "74hc157"
+    ]
   },
   "meta": {
     "filename": "esp_radio.kicad_pro",
