@@ -1,0 +1,42 @@
+set(COMPONENT_SRCS 		
+	"addon.c"
+	"addoncommon.c"
+	"addonu8g2.c"
+	"addonucg.c"
+	"app_main.c"
+	"cencode.c"
+	"ClickButtons.c"
+	"ClickEncoder.c"
+	"ClickJoystick.c"
+	"custom.c"
+	"eeprom.c"
+	"gpio.c"
+	"interface.c"
+	"irnec.c"
+	"libsha1.c"
+	"ntp.c"
+	"ota.c"
+	"servers.c"
+	"telnet.c"
+	"timezone.c"
+	"vs1053.c"
+	"vs1053b-patches.c"
+	"webclient.c"
+	"webserver.c"
+	"websocket.c"
+)
+
+set(COMPONENT_ADD_INCLUDEDIRS 
+	"./include/"
+	"../webpage/"
+)
+
+idf_component_register(SRCS ${COMPONENT_SRCS}
+                       INCLUDE_DIRS ${COMPONENT_ADD_INCLUDEDIRS}
+					   REQUIRES esp_adc mdns u8g2 ucglib spi_flash xpt2046 fifo driver esp_wifi nvs_flash audio_renderer audio_player mp3_decoder fdk-aac_decoder common app_update
+					   PRIV_REQUIRES wolfssl)
+
+idf_build_set_property(COMPILE_OPTIONS "-Wno-format" APPEND)
+idf_build_set_property(COMPILE_OPTIONS "-DWOLFSSL_USER_SETTINGS" APPEND)
+idf_build_set_property(COMPILE_OPTIONS "-DWOLFSSL_STATIC_RSA" APPEND)
+idf_build_set_property(COMPILE_OPTIONS "-Wno-error=format-overflow" APPEND)
