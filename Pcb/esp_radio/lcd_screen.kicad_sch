@@ -967,6 +967,11 @@
     (uuid f856b1c9-2216-4ced-b541-0b90611f2737)
   )
 
+  (text "Addr: ST7567S-0b01111xx0" (at 194.31 80.01 0)
+    (effects (font (size 3.27 3.27)) (justify left bottom))
+    (uuid a9249b6f-3537-4e7b-9d40-36f6ce07af6b)
+  )
+
   (label "I2C.SCL" (at 175.26 92.71 0) (fields_autoplaced)
     (effects (font (size 1.27 1.27)) (justify left bottom))
     (uuid 05acb763-42df-4527-9071-fa88705fe7fb)
@@ -1429,7 +1434,7 @@
     (property "Value" "100" (at 189.23 132.08 90)
       (effects (font (size 1.27 1.27)))
     )
-    (property "Footprint" "kicad_common_lib:R_0805" (at 189.23 133.858 90)
+    (property "Footprint" "Resistor_THT:R_Axial_DIN0309_L9.0mm_D3.2mm_P15.24mm_Horizontal" (at 189.23 133.858 90)
       (effects (font (size 1.27 1.27)) hide)
     )
     (property "Datasheet" "~" (at 189.23 132.08 0)
