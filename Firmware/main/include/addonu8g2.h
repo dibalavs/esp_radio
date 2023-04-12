@@ -1,28 +1,28 @@
 
 /******************************************************************************
- * 
+ *
  * Copyright 2018 karawin (http://www.karawin.fr)
  *
 *******************************************************************************/
 #ifndef ADDONU8G2_H_
 #define ADDONU8G2_H_
-void setfont8(int size);
-void playingU8g2();
-void namesetU8g2(char* ici);
-void statusU8g2(const char* label);
-void icy0U8g2(char* ici);
-void icy4U8g2(char* ici);
-void metaU8g2(char* ici);
-char* getNameNumU8g2();
-void scrollU8g2();
-void drawFrameU8g2(uint8_t mTscreen);
-void drawTTitleU8g2(char* ttitle);
-void drawNumberU8g2(uint8_t mTscreen,char* irStr);
-void drawStationU8g2(uint8_t mTscreen,char* snum,char* ddot);
-void drawVolumeU8g2(uint8_t mTscreen);
-void drawTimeU8g2(uint8_t mTscreen,unsigned timein);
-void lcd_initU8g2(uint8_t* lcd_type);
-void setVolumeU8g2(uint16_t vol);
-void drawLinesU8g2();
+void addonu8g2_setfont(int size);
+void addonu8g2_playing();
+void addonu8g2_nameset(char* ici);
+void addonu8g2_status(const char* label);
+void addonu8g2_icy0(char* ici);
+void addonu8g2_icy4(char* ici);
+void addonu8g2_meta(char* ici);
+char* addonu8g2_get_name_num();
+void addonu8g2_scroll();
+void addonu8g2_draw_frame(uint8_t mTscreen);
+void addonu8g2_draw_ttitle(char* ttitle);
+void addonu8g2_draw_number(uint8_t mTscreen,char* irStr);
+void addonu8g2_draw_station(uint8_t mTscreen,char* snum,char* ddot);
+void addonu8g2_draw_volume(uint8_t mTscreen);
+void addonu8g2_draw_time(uint8_t mTscreen,unsigned timein);
+void addonu8g2_lcd_init(uint8_t* lcd_type);
+void addonu8g2_set_volume(uint16_t vol);
+void addonu8g2_draw_lines();
 
 #endif /* ADDONU8G2_H_ */

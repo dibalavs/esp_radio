@@ -48,7 +48,7 @@ extern const uint8_t u8g2_font_10x20_t_latcyr[] U8G2_FONT_SECTION("u8g2_font_10x
 
 ////////////////////////////////////////
 typedef enum sizefont  {small, text,middle,large} sizefont;
-void setfont8(sizefont size)
+void addonu8g2_setfont(sizefont size)
 {
 //	printf("setfont8 size: %d, yy: %d\n",size,yy);
 	switch(size)
@@ -151,12 +151,12 @@ void setfont8(sizefont size)
 
 
 ////////////////////////////////////////
-char* getNameNumU8g2()
+char* addonu8g2_get_name_num()
 {
 	return nameNum;
 }
 
-void setVolumeU8g2(uint16_t vol){ volume = vol;}
+void addonu8g2_set_volume(uint16_t vol){ volume = vol;}
 
 static uint8_t getFontLineSpacing()
 {
@@ -193,10 +193,10 @@ void markDrawResetU8g2(int i)
 
 ////////////////////////////////////////
 // scroll each line
-void scrollU8g2()
+void addonu8g2_scroll()
 {
 unsigned len ;
-	setfont8(text);
+	addonu8g2_setfont(text);
 	for (int i = 0;i < LINES;i++)
 	{
 	   if (tline[i]>0)
@@ -241,13 +241,13 @@ static void screenBottomU8g2()
 			sprintf(strsec,"%02d-%02d-%04d  %02d:%02d:%02d",dt->tm_mday,dt->tm_mon+1,dt->tm_year+1900, dt->tm_hour, dt->tm_min,dt->tm_sec);
 		else
 			sprintf(strsec,"%02d-%02d-%04d  %02d:%02d:%02d",dt->tm_mon+1,dt->tm_mday,dt->tm_year+1900, dt->tm_hour, dt->tm_min,dt->tm_sec);
-		setfont8(small);
+		addonu8g2_setfont(small);
 		u8g2_DrawUTF8(&u8g2,x/2-(u8g2_GetUTF8Width(&u8g2,strsec)/2),yy-y-3,strsec);
 	}
 }
 
 // draw the screen from buffer
-void drawLinesU8g2()
+void addonu8g2_draw_lines()
 {
 //u8g2_SendBuffer(&u8g2);
 }
@@ -275,13 +275,13 @@ void eraseSlashes(char * str) {
 
 ////////////////////////////////////////
 // draw all lines
-void drawFrameU8g2(uint8_t mTscreen)
+void addonu8g2_draw_frame(uint8_t mTscreen)
 {
-	if (dt == NULL) {dt = getDt();}
+	if (dt == NULL) {dt = addon_get_dt();}
 	u8g2_ClearBuffer(&u8g2);
 	u8g2_FirstPage(&u8g2);
 	do {
-		setfont8(text);
+		addonu8g2_setfont(text);
 		u8g2_SetDrawColor(&u8g2, 1);
 		y = getFontLineSpacing();
 		u8g2_SetFontRefHeightText(&u8g2);
@@ -328,10 +328,10 @@ void drawFrameU8g2(uint8_t mTscreen)
 
 
 //////////////////////////
-void drawTTitleU8g2(char* ttitle)
+void addonu8g2_draw_ttitle(char* ttitle)
 {
   char strIp[23];
-	setfont8(middle);
+	addonu8g2_setfont(middle);
     uint16_t xxx = (x/2)-(u8g2_GetUTF8Width(&u8g2,ttitle)/2);
     u8g2_SetDrawColor(&u8g2, 1);
     u8g2_DrawBox(&u8g2,0,0,x,getFontLineSpacing()+1);
@@ -340,7 +340,7 @@ void drawTTitleU8g2(char* ttitle)
     u8g2_SetDrawColor(&u8g2, 1);
 
     // draw ip
-	setfont8(small);
+	addonu8g2_setfont(small);
 	sprintf(strIp,"IP: %s", getIp());
 //	u8g2_DrawUTF8(&u8g2,(x/2)-(u8g2_GetUTF8Width(&u8g2,strIp)/2),yy-getFontLineSpacing(),strIp);
 	u8g2_DrawUTF8(&u8g2,(x/2)-(u8g2_GetUTF8Width(&u8g2,strIp)/2),yy-(2*getFontLineSpacing()),strIp);
@@ -349,40 +349,40 @@ void drawTTitleU8g2(char* ttitle)
 	u8g2_DrawUTF8(&u8g2,4,yy-(getFontLineSpacing()),strIp);
 
 	// Battery
-	if (getBatPercent() != -1)
+	if (addon_get_bat_percent() != -1)
 	{
-		sprintf(strIp,"Batt: %d%%",getBatPercent());
+		sprintf(strIp,"Batt: %d%%",addon_get_bat_percent());
 		uint16_t len = u8g2_GetUTF8Width(&u8g2,strIp);
 		u8g2_DrawUTF8(&u8g2,x-len-8,yy-(getFontLineSpacing()),strIp);
 	}
 
 }
 //////////////////////////
-void drawNumberU8g2(uint8_t mTscreen,char* irStr)
+void addonu8g2_draw_number(uint8_t mTscreen,char* irStr)
 {
   char ststr[] = {"Number"};
   u8g2_ClearBuffer(&u8g2);
   u8g2_FirstPage(&u8g2);
   do {
-	drawTTitleU8g2(ststr);
-	setfont8(large);
+	addonu8g2_draw_ttitle(ststr);
+	addonu8g2_setfont(large);
 	uint16_t xxx = (x/2)-(u8g2_GetUTF8Width(&u8g2,irStr)/2);
 	u8g2_DrawUTF8(&u8g2,xxx,yy/3, irStr);
 	vTaskDelay(1);
   } while ( u8g2_NextPage(&u8g2) );
 }
 //////////////////////////
-void drawStationU8g2(uint8_t mTscreen,char* snum,char* ddot)
+void addonu8g2_draw_station(uint8_t mTscreen,char* snum,char* ddot)
 {
   int16_t len;
   char ststr[] = {"Station"};
   u8g2_ClearBuffer(&u8g2);
   u8g2_FirstPage(&u8g2);
   do {
-	drawTTitleU8g2(ststr);
+	addonu8g2_draw_ttitle(ststr);
 	if (ddot != NULL)
 	{
-		setfont8(middle);
+		addonu8g2_setfont(middle);
 		u8g2_DrawUTF8(&u8g2,(x/2)-(u8g2_GetUTF8Width(&u8g2,snum)/2),yy/3-2, snum);
 		len = (x/2)-(u8g2_GetUTF8Width(&u8g2,ddot)/2);
 		if (len <0) len = 0;
@@ -394,7 +394,7 @@ void drawStationU8g2(uint8_t mTscreen,char* snum,char* ddot)
 
 
 //void drawVolumeU8g2(uint8_t mTscreen,char* aVolume)
-void drawVolumeU8g2(uint8_t mTscreen)
+void addonu8g2_draw_volume(uint8_t mTscreen)
 {
   char vlstr[] = {"Volume"};
   char aVolume[4];
@@ -404,15 +404,15 @@ void drawVolumeU8g2(uint8_t mTscreen)
   u8g2_ClearBuffer(&u8g2);
   u8g2_FirstPage(&u8g2);
   do {
-	drawTTitleU8g2(vlstr) ;
-	setfont8(large);
+	addonu8g2_draw_ttitle(vlstr) ;
+	addonu8g2_setfont(large);
 	uint16_t xxx = (x/2)-(u8g2_GetUTF8Width(&u8g2,aVolume)/2);
 	u8g2_DrawUTF8(&u8g2,xxx,(yy/3)+6,aVolume);
 	vTaskDelay(1);
   } while ( u8g2_NextPage(&u8g2) );
 }
 
-void drawTimeU8g2(uint8_t mTscreen,unsigned timein)
+void addonu8g2_draw_time(uint8_t mTscreen,unsigned timein)
 {
   char strdate[23];
   char strtime[20];
@@ -425,8 +425,8 @@ void drawTimeU8g2(uint8_t mTscreen,unsigned timein)
     else
 		sprintf(strdate,"%02d-%02d-%04d", dt->tm_mon+1, dt->tm_mday, dt->tm_year+1900);
     sprintf(strtime,"%02d:%02d:%02d", dt->tm_hour, dt->tm_min,dt->tm_sec);
-    drawTTitleU8g2(strdate);
-    setfont8(large);
+    addonu8g2_draw_ttitle(strdate);
+    addonu8g2_setfont(large);
     u8g2_DrawUTF8(&u8g2,(x/2)-(u8g2_GetUTF8Width(&u8g2,strtime)/2),(yy/3)+4,strtime);
 	vTaskDelay(1);
   } while ( u8g2_NextPage(&u8g2) );
@@ -453,7 +453,7 @@ void separatorU8g2(char* from)
 }
 
 //cli.meta
-void metaU8g2(char* ici)
+void addonu8g2_meta(char* ici)
 {
      cleartitleU8g2(3);
      strcpy(title,ici+7);
@@ -461,7 +461,7 @@ void metaU8g2(char* ici)
 }
 
 //cli.icy4
-void icy4U8g2(char* ici)
+void addonu8g2_icy4(char* ici)
 {
 	char newstation[BUFLEN];
 	 //move the STATION2 to STATION1S
@@ -475,7 +475,7 @@ void icy4U8g2(char* ici)
      lline[GENRE] = genre;
 }
 //cli.icy0
-void icy0U8g2(char* ici)
+void addonu8g2_icy0(char* ici)
 {
       clearAllU8g2();
       if (strlen(ici+7) == 0) strcpy (station,nameset);
@@ -484,14 +484,14 @@ void icy0U8g2(char* ici)
 }
 
 //cli.stopped or label
-void statusU8g2( const char* label)
+void addonu8g2_status( const char* label)
 {
      cleartitleU8g2(3);
      strcpy(title,label);
      lline[TITLE1] = title;
 }
 //cli.nameset
-void namesetU8g2(char* ici)
+void addonu8g2_nameset(char* ici)
 {
 	strcpy(nameset,ici+8);
     ici = strstr(nameset," ");
@@ -500,7 +500,7 @@ void namesetU8g2(char* ici)
        clearAllU8g2();
        strncpy(nameNum,nameset,ici-nameset+1);
        nameNum[ici - nameset+1] = 0;
-	   setFuturNum(atoi(nameNum));
+	   addon_set_futur_num(atoi(nameNum));
     }
 	char nameseti[BUFLEN];
 	strcpy(nameseti,nameset+strlen(nameNum));
@@ -509,7 +509,7 @@ void namesetU8g2(char* ici)
 }
 
 // cli.playing
-void playingU8g2()
+void addonu8g2_playing()
 {
 	if (strcmp(title,"STOPPED") == 0)
     {
@@ -520,7 +520,7 @@ void playingU8g2()
 
 
 
-void lcd_initU8g2(uint8_t *lcd_type)
+void addonu8g2_lcd_init(uint8_t *lcd_type)
 {
 	const u8g2_cb_t *rotat;
 	if (*lcd_type == LCD_NONE) return;
@@ -726,7 +726,7 @@ void lcd_initU8g2(uint8_t *lcd_type)
   u8g2_FirstPage(&u8g2);
   do {
 		u8g2_SetFontPosTop(&u8g2);
-		setfont8(text);
+		addonu8g2_setfont(text);
 		y = getFontLineSpacing();
 		if (yy>= logo_height)
 			 u8g2_DrawXBM( &u8g2,x/2-logo_width/2, yy/2-logo_height/2, logo_width, logo_height, logo_bits);

@@ -1,5 +1,5 @@
 /******************************************************************************
- * 
+ *
  * Copyright 2017 karawin (http://www.karawin.fr)
  *
 *******************************************************************************/
@@ -22,7 +22,7 @@
 #define NT_LOGTEL	0xEF
 #define T_WOLFSSL	0x60
 #define NT_WOLFSSL	0x9F
-#define S_WOLFSSL	0x5 //Shift right 
+#define S_WOLFSSL	0x5 //Shift right
 //define for bit array options32
 #define T_DDMM		1
 #define NT_DDMM		0xFE
@@ -51,14 +51,14 @@ struct device_settings {
 	uint8_t ipAddr1[4];
 	uint8_t mask1[4];
 	uint8_t gate1[4];
-	uint8_t dhcpEn2;		
-	uint8_t ipAddr2[4];		
-	uint8_t mask2[4];		
-	uint8_t gate2[4];			
-	char ssid1[SSIDLEN]; 
-	char ssid2[SSIDLEN]; 
-	char pass1[PASSLEN];	
-	char pass2[PASSLEN];	
+	uint8_t dhcpEn2;
+	uint8_t ipAddr2[4];
+	uint8_t mask2[4];
+	uint8_t gate2[4];
+	char ssid1[SSIDLEN];
+	char ssid2[SSIDLEN];
+	char pass1[PASSLEN];
+	char pass2[PASSLEN];
 	uint8_t current_ap; // 0 = AP mode, else STA mode: 1 = ssid1, 2 = ssid2
 	uint8_t vol;
 	int8_t treble;
@@ -66,19 +66,19 @@ struct device_settings {
 	int8_t freqtreble;
 	uint8_t freqbass;
 	uint8_t spacial;
-	uint16_t currentstation;  // 
+	uint16_t currentstation;  //
 	uint8_t autostart; // 0: stopped, 1: playing
 	uint8_t i2sspeed; // 0 = 48kHz, 1 = 96kHz, 2 = 128kHz
 	uint32_t uartspeed; // serial baud
-	uint8_t options;  // bit0:0 theme ligth blue, 1 Dark brown, bit1: 0 patch load  1 no patch, bit2: O blink led  1 led on On play, bit3:led polarity 0 normal 1 reverse, bit 4: log syst on telnet, 
+	uint8_t options;  // bit0:0 theme ligth blue, 1 Dark brown, bit1: 0 patch load  1 no patch, bit2: O blink led  1 led on On play, bit3:led polarity 0 normal 1 reverse, bit 4: log syst on telnet,
 	// bit 3&4: log wolfssl  OFF(0)  ERROR&INFO(1) ENTER&LEAVE(2)  OTHER_LOG(3)
 	char ua[USERAGLEN]; // user agent
 	int8_t tzoffsetm; //timezone offset (minutes)
 	int8_t tzoffseth; //timezone offset	(hour)
-	uint32_t sleepValue; 	
-	uint32_t wakeValue;	
+	uint32_t sleepValue;
+	uint32_t wakeValue;
 // esp32
-	output_mode_t audio_output_mode; // 
+	output_mode_t audio_output_mode; //
 	uint8_t trace_level;
 	uint8_t lcd_type; // the lcd in use
 	uint8_t led_gpio; // the gpio of the led
@@ -102,21 +102,21 @@ struct shoutcast_info {
 
 extern struct device_settings* g_device;
 
-void partitions_init(void);
-void copyDeviceSettings();
-void restoreDeviceSettings();
-bool eeSetData(int address, void* buffer, int size);
-bool eeSetData1(int address, void* buffer, int size);
-void eeErasesettings(void);
-void eeEraseAll();
-void saveStation(struct shoutcast_info *station, uint16_t position);
-void saveMultiStation(struct shoutcast_info *station, uint16_t position, uint8_t number);
-void eeEraseStations(void);
-struct shoutcast_info* getStation(uint8_t position);
-void saveDeviceSettings(struct device_settings *settings);
-void saveDeviceSettingsVolume(struct device_settings *settings);
-struct device_settings* getDeviceSettings();
-struct device_settings* getDeviceSettingsSilent();
+void eeprom_partitions_init(void);
+void eeprom_copy_device_settings();
+void eeprom_restore_device_settings();
+bool eeprom_set_data(int address, void* buffer, int size);
+bool eeprom_set_data1(int address, void* buffer, int size);
+void eeprom_erase_settings(void);
+void eeprom_erase_all();
+void eeprom_save_station(struct shoutcast_info *station, uint16_t position);
+void eeprom_save_multi_station(struct shoutcast_info *station, uint16_t position, uint8_t number);
+void eeprom_erase_stations(void);
+struct shoutcast_info* eeprom_get_station(uint8_t position);
+void eeprom_save_device_settings(struct device_settings *settings);
+void eeprom_save_device_settings_volume(struct device_settings *settings);
+struct device_settings* eeprom_get_device_settings();
+struct device_settings* eeprom_get_device_settings_silent();
 
 extern void* kmalloc(size_t memorySize);
 extern void* kcalloc(size_t elementCount, size_t elementSize);

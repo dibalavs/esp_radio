@@ -119,16 +119,16 @@ Button_t* expButton0 = NULL;
 Button_t* expButton1 = NULL;
 Button_t* expButton2 = NULL;
 
-struct tm* getDt() { return dt;}
+struct tm* addon_get_dt() { return dt;}
 
 // Deep Sleep Power Save Input. https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/sleep_modes.html
 gpio_num_t deepSleep_io; /** Enter Deep Sleep if pin is set to level defined in P_LEVELPINSLEEP. */
 bool deepSleepLevel; /** Level to enter Deep Sleep / Wakeup if level is the opposite. */
 
-void setBlv(int val) {blv = val;}
-int getBlv() {return blv;}
+void addon_set_blv(int val) {blv = val;}
+int addon_get_blv() {return blv;}
 
-int getBatPercent()
+int addon_get_bat_percent()
 {
 	if (isAdcBatt)
 	{
@@ -139,7 +139,7 @@ int getBatPercent()
 	return -1;
 }
 
-void* getEncoder(int num)
+void* addon_get_encoder(int num)
 {
 	if (num == 0) return (void*)encoder0;
 	if (num == 1) return (void*)encoder1;
@@ -179,14 +179,14 @@ static void DrawBox(ucg_int_t x, ucg_int_t y, ucg_int_t w, ucg_int_t h)
 	u8g2_DrawBox(&u8g2, x,y,w,h);
 }
 
-uint16_t GetWidth()
+uint16_t addon_get_width()
 {
   if (isColor)
 	  return ucg_GetWidth(&ucg);
 
   return u8g2.width;
 }
-uint16_t GetHeight()
+uint16_t addon_get_height()
 {
   if (isColor)
 	  return ucg_GetHeight(&ucg);
@@ -194,7 +194,7 @@ uint16_t GetHeight()
   return u8g2.height;
 }
 
-void wakeLcd()
+void addon_wake_lcd()
 {
 	if ((getLcdStop() != 0) && (!state))  timerLcdOut = getLcdStop(); // rearm the tempo
 	else timerLcdOut = getLcdOut(); // rearm the tempo
@@ -215,7 +215,7 @@ void sleepLcd()
 
 }
 
-void lcd_init(uint8_t Type)
+void addon_lcd_init(uint8_t Type)
 {
 	lcd_type = Type;
 
@@ -223,10 +223,10 @@ void lcd_init(uint8_t Type)
 
 	if (lcd_type & LCD_COLOR) // Color one
 	{
-		lcd_initUcg(&lcd_type);
+		addonucg_lcd_init(&lcd_type);
 	} else //B/W lcd
 	{
-		lcd_initU8g2(&lcd_type);
+		addonu8g2_lcd_init(&lcd_type);
 	}
 	vTaskDelay(1);
 	// init the gpio for backlight
@@ -239,13 +239,13 @@ void in_welcome(const char* ip,const char*state,int y,char* Version)
 	if (lcd_type == LCD_NONE) return;
 	DrawString(2,2*y,Version);
 	DrawColor(0,0,0,0);
-	DrawBox(2, 4*y, GetWidth()-2, y);
+	DrawBox(2, 4*y, addon_get_width()-2, y);
 	DrawColor(1,255,255,255);
 	DrawString(2,4*y,state);
 	DrawString( DrawString(2,5*y,"IP:")+18,5*y,ip);
 }
 
-void lcd_welcome(const char* ip,const char*state)
+void addon_lcd_welcome(const char* ip,const char*state)
 {
 char Version[20];
 	sprintf(Version,"Version %s R%s\n",RELEASE,REVISION);
@@ -253,19 +253,19 @@ char Version[20];
 	if ((strlen(ip)==0)&&(strlen(state)==0)) ClearBuffer();
 	if (isColor)
 	{
-		setfont(2);
+		addonucg_setfont(2);
 		int y = - ucg_GetFontDescent(&ucg)+ ucg_GetFontAscent(&ucg) +3; //interline
-		DrawString(GetWidth()/4,2,"KaRadio32");
-		setfont(1);
+		DrawString(addon_get_width()/4,2,"KaRadio32");
+		addonucg_setfont(1);
 		in_welcome(ip,state,y,Version);
 	} else
 	{
 		u8g2_FirstPage(&u8g2);
 		do {
-			setfont8(2);
+			addonu8g2_setfont(2);
 			int y = (u8g2_GetAscent(&u8g2) - u8g2_GetDescent(&u8g2));
-			DrawString(GetWidth()/4,2,"KaRadio32");
-			setfont8(1);
+			DrawString(addon_get_width()/4,2,"KaRadio32");
+			addonu8g2_setfont(1);
 			in_welcome(ip,state,y,Version);
 		} while ( u8g2_NextPage(&u8g2) );
 	}
@@ -276,7 +276,7 @@ char Version[20];
 //
 void (*serviceAddon)() = NULL;
 
-IRAM_ATTR  void ServiceAddon(void)
+IRAM_ATTR  void addon_service(void)
 {
 	timer1s++;
 	timerScroll++;
@@ -302,11 +302,11 @@ IRAM_ATTR  void ServiceAddon(void)
 
 ////////////////////////////////////////
 // futurNum
-void setFuturNum(int16_t new)
+void addon_set_futur_num(int16_t new)
 {
 	futurNum = new;
 }
-int16_t getFuturNum()
+int16_t addon_get_futur_num()
 {
 	return futurNum;
 }
@@ -315,7 +315,7 @@ int16_t getFuturNum()
 // scroll each line
 void scroll()
 {
-	isColor?scrollUcg():scrollU8g2();
+	isColor?addonucg_scroll():addonu8g2_scroll();
 }
 
 
@@ -351,14 +351,14 @@ void drawFrame()
 {
 	dt=localtime(&timestamp);
 	if (lcd_type == LCD_NONE) return;
-	isColor?drawFrameUcg(mTscreen):drawFrameU8g2(mTscreen);
+	isColor?addonucg_draw_frame(mTscreen):addonu8g2_draw_frame(mTscreen);
 }
 
 
 //////////////////////////
 void drawTTitle(char* ttitle)
 {
-	isColor?drawTTitleUcg(ttitle):drawTTitleU8g2(ttitle);
+	isColor?addonucg_draw_ttitle(ttitle):addonu8g2_draw_ttitle(ttitle);
 }
 
 ////////////////////
@@ -366,7 +366,7 @@ void drawTTitle(char* ttitle)
 void drawNumber()
 {
 	if (strlen(irStr) >0)
-		isColor?drawNumberUcg(mTscreen,irStr):drawNumberU8g2(mTscreen,irStr);
+		isColor?addonucg_draw_number(mTscreen,irStr):addonu8g2_draw_number(mTscreen,irStr);
 }
 
 
@@ -382,7 +382,7 @@ void drawStation()
  //ClearBuffer();
 
   do {
-	si = getStation(futurNum);
+	si = eeprom_get_station(futurNum);
 	sprintf(sNum,"%d",futurNum);
 	ddot = si->name;
 	ptl = ddot;
@@ -407,7 +407,7 @@ void drawStation()
   //drawTTitle(ststr);
 //printf ("drawStation: %s\n",sNum  );
   if (lcd_type != LCD_NONE)
-	isColor?drawStationUcg(mTscreen,sNum,ddot):drawStationU8g2(mTscreen,sNum,ddot);
+	isColor?addonucg_draw_station(mTscreen,sNum,ddot):addonu8g2_draw_station(mTscreen,sNum,ddot);
   free (si);
 }
 
@@ -417,14 +417,14 @@ void drawVolume()
 {
 //  printf("drawVolume. mTscreen: %d, Volume: %d\n",mTscreen,volume);
   if (lcd_type == LCD_NONE) return;
-  isColor?drawVolumeUcg(mTscreen):drawVolumeU8g2(mTscreen);
+  isColor?addonucg_draw_volume(mTscreen):addonu8g2_draw_volume(mTscreen);
 }
 
 void drawTime()
 {
 	dt=localtime(&timestamp);
 	if (lcd_type == LCD_NONE) return;
-	isColor?drawTimeUcg(mTscreen,timein):drawTimeU8g2(mTscreen,timein);
+	isColor?addonucg_draw_time(mTscreen,timein):addonu8g2_draw_time(mTscreen,timein);
 }
 
 
@@ -789,7 +789,7 @@ void adcLoop() {
 		else return;
 		if (blv >100) blv = 100;
 		if (blv < 2) blv = 2;
-		wakeLcd();
+		addon_wake_lcd();
 		backlight_percentage_set(blv);
 		option_set_lcd_blv(blv);
 	}
@@ -910,7 +910,7 @@ bool irCustom(uint32_t evtir, bool repeat)
 event_ir_t evt;
 	while (xQueueReceive(event_ir, &evt, 0))
 	{
-		wakeLcd();
+		addon_wake_lcd();
 		uint32_t evtir = ((evt.addr)<<8)|(evt.cmd&0xFF);
 		ESP_LOGI(TAG,"IR event: Channel: %x, ADDR: %x, CMD: %x = %X, REPEAT: %d",evt.channel,evt.addr,evt.cmd, evtir,evt.repeat_flag );
 
@@ -1084,7 +1084,7 @@ IRAM_ATTR void multiService()  // every 1ms
 // LCD display task
 //--------------------
 
-void task_lcd(void *pvParams)
+void addon_task_lcd(void *pvParams)
 {
 	event_lcd_t evt ; // lcd event
 	event_lcd_t evt1 ; // lcd event
@@ -1126,38 +1126,38 @@ void task_lcd(void *pvParams)
 			switch(evt.lcmd)
 			{
 				case lmeta:
-					isColor?metaUcg(evt.lline):metaU8g2(evt.lline);
+					isColor?addonucg_meta(evt.lline):addonu8g2_meta(evt.lline);
 					Screen(smain);
-					wakeLcd();
+					addon_wake_lcd();
 					break;
 				case licy4:
-					isColor?icy4Ucg(evt.lline):icy4U8g2(evt.lline);
+					isColor?addonucg_icy4(evt.lline):addonu8g2_icy4(evt.lline);
 					break;
 				case licy0:
-					isColor?icy0Ucg(evt.lline):icy0U8g2(evt.lline);
+					isColor?addonucg_icy0(evt.lline):addonu8g2_icy0(evt.lline);
 					break;
 				case lstop:
-					isColor?statusUcg(stopped):statusU8g2(stopped);
+					isColor?addonucg_status(stopped):addonu8g2_status(stopped);
 					Screen(smain);
-					wakeLcd();
+					addon_wake_lcd();
 					break;
 				case lnameset:
-					isColor?namesetUcg(evt.lline):namesetU8g2(evt.lline);
-					isColor?statusUcg("STARTING"):statusU8g2("STARTING");
+					isColor?addonucg_nameset(evt.lline):addonu8g2_nameset(evt.lline);
+					isColor?addonucg_status("STARTING"):addonu8g2_status("STARTING");
 					Screen(smain);
-					wakeLcd();
+					addon_wake_lcd();
 					break;
 				case lplay:
-					isColor?playingUcg():playingU8g2();
+					isColor?addonucg_playing():addonu8g2_playing();
 					break;
 				case lvol:
 					// ignore it if the next is a lvol
 					if(xQueuePeek(event_lcd, &evt1, 0))
 						if (evt1.lcmd == lvol) break;
-					isColor?setVolumeUcg(volume):setVolumeU8g2(volume);
+					isColor?addonucg_set_volume(volume):addonu8g2_set_volume(volume);
 					if (dvolume)
 					{	Screen(svolume);
-						wakeLcd();
+						addon_wake_lcd();
 					}
 					dvolume = true;
 					break;
@@ -1170,7 +1170,7 @@ void task_lcd(void *pvParams)
 					ESP_LOGD(TAG,"estation val: %d",(uint32_t)evt.lline);
 					changeStation((uint32_t)evt.lline);
 					Screen(sstation);
-					wakeLcd();
+					addon_wake_lcd();
 					evt.lline = NULL;	// just a number
 					break;
 				case eclrs:
@@ -1178,14 +1178,14 @@ void task_lcd(void *pvParams)
 					break;
 				case escreen:
 					Screen((uint32_t)evt.lline);
-					wakeLcd();
+					addon_wake_lcd();
 					evt.lline = NULL;	// just a number Don't free
 					break;
 				case etoggle:
 					defaultStateScreen = (stateScreen==smain)?stime:smain;
 					(stateScreen==smain)?Screen(stime):Screen(smain);
 					g_device->options32 = (defaultStateScreen== smain)?g_device->options32&NT_TOGGLETIME:g_device->options32|T_TOGGLETIME;
-					wakeLcd();
+					addon_wake_lcd();
 //					saveDeviceSettings(g_device);
 					break;
 				default:;
@@ -1204,7 +1204,7 @@ void task_lcd(void *pvParams)
 //-------------------
 extern void rmt_nec_rx_task();
 
-void task_addon(void *pvParams)
+void addon_task(void *pvParams)
 {
 	TaskHandle_t pxCreatedTask;
 	customKeyInit();
@@ -1228,12 +1228,12 @@ void task_addon(void *pvParams)
 		event_lcd = xQueueCreate(10, sizeof(event_lcd_t));
 		ESP_LOGD(TAG,"event_lcd: %x",(int)event_lcd);
 
-		xTaskCreatePinnedToCore (task_lcd, "task_lcd", 2300, NULL, PRIO_LCD, &pxTaskLcd,CPU_LCD);
+		xTaskCreatePinnedToCore (addon_task_lcd, "task_lcd", 2300, NULL, PRIO_LCD, &pxTaskLcd,CPU_LCD);
 		ESP_LOGI(TAG, "%s task: %x","task_lcd",(unsigned int)pxTaskLcd);
 	}
 
 	// Configure Deep Sleep start and wakeup options
-	deepSleepConf(); // also called in app_main.c
+	addon_deep_sleep_conf(); // also called in app_main.c
 
 	while (1)
 	{
@@ -1268,9 +1268,9 @@ void task_addon(void *pvParams)
 					// clear the number
 					irStr[0] = 0;
 				}
-				if ((strlen(isColor?getNameNumUcg():getNameNumU8g2()) != 0 )
+				if ((strlen(isColor?addonucg_get_name_num_ucg():addonu8g2_get_name_num()) != 0 )
 					&& playable
-					&& ( futurNum!= atoi(  isColor?getNameNumUcg():getNameNumU8g2()  )))
+					&& ( futurNum!= atoi(  isColor?addonucg_get_name_num_ucg():addonu8g2_get_name_num()  )))
 				{
 					playStationInt(futurNum);
 					vTaskDelay(2);
@@ -1289,8 +1289,8 @@ void task_addon(void *pvParams)
 				evtScreen(stime);
 		}
 		// Enter ESP32 Deep Sleep and powerdown peripherals when P_SLEEP GPIO is P_LEVEL_SLEEP
-		if (checkDeepSleepInput())
-			deepSleepStart();
+		if (addon_check_deep_sleep_input())
+			addon_deep_sleep_start();
 
 		vTaskDelay(10);
 	}
@@ -1298,12 +1298,12 @@ void task_addon(void *pvParams)
 }
 
 // force a new dt ntp fetch
-void addonDt() { itAskTime = true; }
+void addon_dt() { itAskTime = true; }
 
 
 ////////////////////////////////////////
 // parse the karadio received line and do the job
-void addonParse(const char *fmt, ...)
+void addon_parse(const char *fmt, ...)
 {
 	event_lcd_t evt;
 	char *line = NULL;
@@ -1389,7 +1389,7 @@ void addonParse(const char *fmt, ...)
 }
 
 /** Configure Deep Sleep: source and wakeup options. */
-bool deepSleepConf(void)
+bool addon_deep_sleep_conf(void)
 {
 	/** 1. get the pin number and trigger level from NVS configuration. */
 	gpio_get_pinSleep(&deepSleep_io, &deepSleepLevel);
@@ -1413,7 +1413,7 @@ bool deepSleepConf(void)
 
 /** Check Deep Sleep GPIO input. */
 /** If deepSleep_io pin is set to deepSleepLevel, then trigger Deep Sleep Power Saving mode */
-bool checkDeepSleepInput(void) {
+bool addon_check_deep_sleep_input(void) {
 	if (GPIO_NONE != deepSleep_io) {
 		if (deepSleepLevel == gpio_get_level(deepSleep_io))
 			return true;
@@ -1427,7 +1427,7 @@ bool checkDeepSleepInput(void) {
 /** Enter ESP32 Deep Sleep with the configured wakeup options, and powerdown peripherals, */
 /** when P_SLEEP GPIO is set to P_LEVEL_SLEEP. */
 /** https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/sleep_modes.html */
-void deepSleepStart(void)
+void addon_deep_sleep_start(void)
 {
 	/** 1. Enter peripherals sleep */
 	sleepLcd();	// LCD

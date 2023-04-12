@@ -154,7 +154,7 @@ char test[50];
 // GP Voltage 																																*/
 ////////////////////////////////////////
 typedef enum sizefont  {small, text,middle,large} sizefont;
-void setfont(sizefont size)
+void addonucg_setfont(sizefont size)
 {
 	int inX = x;
 	int inY = 0;
@@ -335,12 +335,12 @@ void setfont(sizefont size)
 
 
 ////////////////////////////////////////
-char* getNameNumUcg()
+char* addonucg_get_name_num_ucg()
 {
 	return nameNum;
 }
 
-void setVolumeUcg(uint16_t vol){ volume = vol;}
+void addonucg_set_volume(uint16_t vol){ volume = vol;}
 
 ////////////////////////////////////////
 // Clear all buffers and indexes
@@ -546,10 +546,10 @@ void markDrawResetUcg(int i)
 }
 ////////////////////////////////////////
 // scroll each line
-void scrollUcg()
+void addonucg_scroll()
 {
 int16_t len;
-setfont(text);
+addonucg_setfont(text);
 	for (int i = 0;i < LINES;i++)
 	{
 		if (lline[i] != NULL)
@@ -610,7 +610,7 @@ void draw(int i)
     if (i >=3) z = (y/2)+1 ; else z = 0;
     switch (i) {
         case STATIONNAME:
-		setfont(text);
+		addonucg_setfont(text);
         ucg_SetColori(&ucg,255,255,255);
         ucg_DrawBox(&ucg,0,0,x,y/*-ucg_GetFontDescent(&ucg)*/);
         ucg_SetColori(&ucg,0,0,0);
@@ -645,7 +645,7 @@ void draw(int i)
         case TIME:
  		if ((yy > 80)||(lline[TITLE21] == NULL)||(strlen(lline[TITLE21]) ==0))
 		{
-		  setfont(small);
+		  addonucg_setfont(small);
 		  char strsec[30];
 		  if (getDdmm())
 			sprintf(strsec,"%02d-%02d  %02d:%02d:%02d",dt->tm_mday,dt->tm_mon+1,dt->tm_hour, dt->tm_min,dt->tm_sec);
@@ -683,9 +683,9 @@ void draw(int i)
 
 ////////////////////////////////////////
 // draw the full screen
-void drawLinesUcg()
+void addonucg_draw_lines()
 {
-	setfont(text);
+	addonucg_setfont(text);
     for (int i=0;i<LINES;i++)
     {
 //		taskYIELD();
@@ -697,16 +697,16 @@ void drawLinesUcg()
 
 ////////////////////////////////////////
 // draw all
-void drawFrameUcg(uint8_t mTscreen)
+void addonucg_draw_frame(uint8_t mTscreen)
 {
 //printf("drawFrameUcg, mTscreen: %d\n",mTscreen);
 int i;
-	if (dt == NULL) {dt = getDt();}
+	if (dt == NULL) {dt = addon_get_dt();}
     switch (mTscreen){
     case MTNEW:
 		ucg_ClearScreen(&ucg);
 		TTitleStr[0] = 0;
-		setfont(text);
+		addonucg_setfont(text);
 		ucg_SetColor(&ucg,0,255,255,0);
 		ucg_SetColor(&ucg,1,0,255,255);
 		ucg_DrawGradientLine(&ucg,0,(4*y) - (y/2) -4,x,0);
@@ -716,7 +716,7 @@ int i;
 		// no break
 	case MTREFRESH:
 		markDrawResetUcg(TIME);
-		drawLinesUcg();
+		addonucg_draw_lines();
 		break;
 	 default:;
 	}
@@ -726,12 +726,12 @@ int i;
 
 
 //////////////////////////
-void drawTTitleUcg(char* ttitle)
+void addonucg_draw_ttitle(char* ttitle)
 {
 
 	if (strcmp(ttitle,TTitleStr) != 0)
 	{
-		setfont(middle);
+		addonucg_setfont(middle);
 		uint16_t xxx = (x/2)-(ucg_GetStrWidth(&ucg,ttitle)/2);
 		ucg_SetColor(&ucg,0,CTBACK);
 		ucg_DrawBox(&ucg,0,0,x,HHeader);
@@ -741,20 +741,20 @@ void drawTTitleUcg(char* ttitle)
 	}
 }
 //////////////////////////
-void drawNumberUcg(uint8_t mTscreen,char* irStr)
+void addonucg_draw_number(uint8_t mTscreen,char* irStr)
 {
   uint16_t xxx ;
   char ststr[] = {"Number"};
     switch (mTscreen){
       case 1:
 		TTitleStr[0] = 0;
-        drawTTitleUcg(ststr);
+        addonucg_draw_ttitle(ststr);
       // no break
       case 2:
         xxx = (x/2)-(ucg_GetStrWidth(&ucg,irStr)/2);
         ucg_SetColor(&ucg,0,CBLACK);
         ucg_DrawBox(&ucg,0,HHeader,x,yy);
-        setfont(large);
+        addonucg_setfont(large);
         ucg_SetColor(&ucg,0,CBODY);
         ucg_DrawString(&ucg,xxx,yy/3,0, irStr);
         break;
@@ -764,7 +764,7 @@ void drawNumberUcg(uint8_t mTscreen,char* irStr)
 //  screenBottomUcg();
 }
 //////////////////////////
-void drawStationUcg(uint8_t mTscreen,char* snum,char* ddot)
+void addonucg_draw_station(uint8_t mTscreen,char* snum,char* ddot)
 {
 
   char ststr[] = {"Station"};
@@ -775,7 +775,7 @@ void drawStationUcg(uint8_t mTscreen,char* snum,char* ddot)
     switch (mTscreen){
       case 1:
 		TTitleStr[0] = 0;
-        drawTTitleUcg(ststr);
+        addonucg_draw_ttitle(ststr);
       // no break
       case 2:
         ucg_SetColor(&ucg,0,CBLACK);
@@ -786,7 +786,7 @@ void drawStationUcg(uint8_t mTscreen,char* snum,char* ddot)
         if (ddot != NULL)
         {
 		  removeUtf8(ddot);
-		  setfont(middle);
+		  addonucg_setfont(middle);
           ucg_DrawString(&ucg,(x/2)-(ucg_GetStrWidth(&ucg,snum)/2),yy/3,0,snum);
           len = (x/2)-(ucg_GetStrWidth(&ucg,ddot)/2);
           if (len <0) len = 0;
@@ -802,7 +802,7 @@ void drawStationUcg(uint8_t mTscreen,char* snum,char* ddot)
 
 
 //void drawVolumeUcg(uint8_t mTscreen,char* aVolume)
-void drawVolumeUcg(uint8_t mTscreen)
+void addonucg_draw_volume(uint8_t mTscreen)
 {
   char vlstr[] = {"Volume"};
 //  volume = atoi(aVolume);
@@ -812,9 +812,9 @@ void drawVolumeUcg(uint8_t mTscreen)
       case 1:
 		ucg_ClearScreen(&ucg);
 		TTitleStr[0] = 0;
-        drawTTitleUcg(vlstr) ;
+        addonucg_draw_ttitle(vlstr) ;
       case 2:
-        setfont(large);
+        addonucg_setfont(large);
         uint16_t xxx;
         xxx = (x/2)-(ucg_GetStrWidth(&ucg,aVolume)/2);
         ucg_SetColor(&ucg,0,CBLACK);
@@ -836,7 +836,7 @@ static  void drawInfo(unsigned timein)
   LANG scharset;
   scharset = charset;
   charset = Latin;
-  setfont(text);
+  addonucg_setfont(text);
 
   ucg_SetFontMode(&ucg,UCG_FONT_MODE_SOLID);
 
@@ -855,7 +855,7 @@ static  void drawInfo(unsigned timein)
   ucg_DrawString(&ucg,4,yy-y,0,strinf);
 
 // Battery
-  int batPercent = getBatPercent();
+  int batPercent = addon_get_bat_percent();
   if (batPercent != -1)
   {
 	sprintf(strinf,"Batt: %3d%%",batPercent);
@@ -871,7 +871,7 @@ static  void drawInfo(unsigned timein)
   }
 }
 
-void drawTimeUcg(uint8_t mTscreen,unsigned timein)
+void addonucg_draw_time(uint8_t mTscreen,unsigned timein)
 {
   char strdate[23];
   char strtime[20];
@@ -881,7 +881,7 @@ void drawTimeUcg(uint8_t mTscreen,unsigned timein)
       case 1:
 		scharset = charset;
 		charset = Latin;
-		setfont(text);
+		addonucg_setfont(text);
 		sprintf(strdate,"IP: %s", getIp());
 		ucg_ClearScreen(&ucg);
         ucg_SetColor(&ucg,0,CRED);
@@ -894,10 +894,10 @@ void drawTimeUcg(uint8_t mTscreen,unsigned timein)
 			sprintf(strdate,"%02d-%02d-%04d", dt->tm_mday, dt->tm_mon+1,  dt->tm_year+1900);
 	    else
 			sprintf(strdate,"%02d-%02d-%04d", dt->tm_mon+1, dt->tm_mday, dt->tm_year+1900);
-		drawTTitleUcg(strdate);
+		addonucg_draw_ttitle(strdate);
 		if (strcmp(TTimeStr,strtime)!= 0)
 		{
-			setfont(large);
+			addonucg_setfont(large);
 			ucg_SetColor(&ucg,0,CBODY);
 			ucg_SetFontMode(&ucg,UCG_FONT_MODE_SOLID);
 			ucg_DrawString(&ucg,(x/2)-(ucg_GetStrWidth(&ucg,strtime)/2),yy/3,0,strtime);
@@ -919,7 +919,7 @@ void separatorUcg(char* from)
     char* interp;
 //    len = strlen(from);
     //ucg_SetFont(&ucg,ucg_font_6x13_tf);
-	setfont(text);
+	addonucg_setfont(text);
     while (from[strlen(from)-1] == ' ') from[strlen(from)-1] = 0; // avoid blank at end
     while ((from[0] == ' ') ){ strcpy( from,from+1); }
     interp=strstr(from," - ");
@@ -970,7 +970,7 @@ void separatorUcg(char* from)
 }
 
 //cli.meta
-void metaUcg(char* ici)
+void addonucg_meta(char* ici)
 {
      cleartitleUcg(TITLE1);
      cleartitleUcg(TITLE11);
@@ -982,7 +982,7 @@ void metaUcg(char* ici)
 }
 
 //cli.icy4
-void icy4Ucg(char* ici)
+void addonucg_icy4(char* ici)
 {
 	char newstation[BUFLEN];
 	 //move the STATION2 to STATION1S
@@ -998,7 +998,7 @@ void icy4Ucg(char* ici)
 	 markDrawResetUcg(GENRE);
 }
 //cli.icy0
-void icy0Ucg(char* ici)
+void addonucg_icy0(char* ici)
 {
       clearAllUcg();
       if (strlen(ici+7) == 0) strcpy (station,nameset);
@@ -1008,7 +1008,7 @@ void icy0Ucg(char* ici)
 }
 
 //cli.stopped or label
-void statusUcg(const char* label)
+void addonucg_status(const char* label)
 {
     cleartitleUcg(TITLE1);
     cleartitleUcg(TITLE11);
@@ -1018,7 +1018,7 @@ void statusUcg(const char* label)
 	lline[TITLE1] = title;
 }
 //cli.nameset
-void namesetUcg(char* ici)
+void addonucg_nameset(char* ici)
 {
 	strcpy(nameset,ici+8);
     ici = strstr(nameset," ");
@@ -1027,7 +1027,7 @@ void namesetUcg(char* ici)
        clearAllUcg();
        strncpy(nameNum,nameset,ici-nameset+1);
        nameNum[ici - nameset+1] = 0;
-	   setFuturNum(atoi(nameNum));
+	   addon_set_futur_num(atoi(nameNum));
     }
 	char nameseti[BUFLEN];
 	strcpy(nameseti,nameset+strlen(nameNum));
@@ -1040,7 +1040,7 @@ void namesetUcg(char* ici)
 }
 
 // cli.playing
-void playingUcg()
+void addonucg_playing()
 {
 	if (strcmp(title,"STOPPED") == 0)
     {
@@ -1054,9 +1054,9 @@ void playingUcg()
 
 
 
-void lcd_initUcg(uint8_t *lcd_type)
+void addonucg_lcd_init(uint8_t *lcd_type)
 {
-	dt = getDt();
+	dt = addon_get_dt();
 	uint8_t rotat = getRotat();
 	ESP_LOGI(TAG,"lcd init  type: %d, Rotat: %d",*lcd_type, rotat);
 	if (*lcd_type == LCD_NONE) return;
@@ -1133,7 +1133,7 @@ void lcd_initUcg(uint8_t *lcd_type)
 		ucg_SetFontPosTop(&ucg);
 		x  = ucg_GetWidth(&ucg);
 
-		setfont(text);
+		addonucg_setfont(text);
 		yy = ucg_GetHeight(&ucg);
 
 		if (yy <= 80)

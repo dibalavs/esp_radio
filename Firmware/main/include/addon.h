@@ -1,5 +1,5 @@
 /******************************************************************************
- * 
+ *
  * Copyright 2017 karawin (http://www.karawin.fr)
  *
 *******************************************************************************/
@@ -95,28 +95,28 @@ typedef struct {
 extern QueueHandle_t event_ir;
 extern u8g2_t u8g2;
 extern ucg_t ucg;
-void task_addon(void *pvParams);
-void task_lcd(void *pvParams);
-void lcd_init(uint8_t Type);
+void addon_task(void *pvParams);
+void addon_task_lcd(void *pvParams);
+void addon_lcd_init(uint8_t Type);
 //void (*serviceAddon)(void);
-void ServiceAddon(void);
-void addonParse(const char *fmt, ...);
-void lcd_welcome(const char* ip,const char*state);
-void setFuturNum(int16_t new);
-int16_t getFuturNum();
-void addonDt();
-void wakeLcd();
-uint16_t GetWidth();
-uint16_t GetHeight();
-void setBlv(int val);
-int getBlv();
-int getBatPercent();
+void addon_service(void);
+void addon_parse(const char *fmt, ...);
+void addon_lcd_welcome(const char* ip,const char*state);
+void addon_set_futur_num(int16_t new);
+int16_t addon_get_futur_num();
+void addon_dt();
+void addon_wake_lcd();
+uint16_t addon_get_width();
+uint16_t addon_get_height();
+void addon_set_blv(int val);
+int addon_get_blv();
+int addon_get_bat_percent();
 
-void* getEncoder(int num);
-struct tm* getDt();
+void* addon_get_encoder(int num);
+struct tm* addon_get_dt();
 
-bool deepSleepConf(void);
-bool checkDeepSleepInput(void);
-void deepSleepStart(void);
+bool addon_deep_sleep_conf(void);
+bool addon_check_deep_sleep_input(void);
+void addon_deep_sleep_start(void);
 
 #endif

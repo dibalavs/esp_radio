@@ -529,8 +529,10 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base,
 			clientSaveOneHeader("Wifi Connected.",18,METANAME);
 			vTaskDelay(1000);
 			autoPlay();
-			} // retry
-		else wifiInitDone = true;		break;
+		} // retry
+		else
+			wifiInitDone = true;
+		break;
 
     case IP_EVENT_STA_GOT_IP:
 		FlashOn = 5;FlashOff = 395;
@@ -644,7 +646,7 @@ static void start_wifi()
 			else
 				g_device->current_ap = APMODE;
 		}
-		saveDeviceSettings(g_device);
+		eeprom_save_device_settings(g_device);
 	}
 
 	while (1)
@@ -731,7 +733,7 @@ static void start_wifi()
 				else
 					ESP_LOGI(TAG,"Empty AP. Try next one");
 
-				saveDeviceSettings(g_device);
+				eeprom_save_device_settings(g_device);
 				continue;
 			}
 		}
@@ -749,7 +751,7 @@ static void start_wifi()
 				if (inp==0xFF) //
 					g_device->current_ap = STA1;//if a char read, stop the autowifi
 			}
-			saveDeviceSettings(g_device);
+			eeprom_save_device_settings(g_device);
 			ESP_LOGI(TAG,"device->current_ap: %d",g_device->current_ap);
 		}
 		else break;	//
@@ -834,7 +836,7 @@ void start_network(){
 				g_device->dhcpEn1 = 1;
 			else
 				g_device->dhcpEn2 = 1;
-			saveDeviceSettings(g_device);
+			eeprom_save_device_settings(g_device);
 			esp_restart();
 		}
 
@@ -871,14 +873,14 @@ void start_network(){
 				break;
 			}
 		}
-		saveDeviceSettings(g_device);
+		eeprom_save_device_settings(g_device);
 		esp_netif_set_hostname(sta, "karadio32");
 	}
 	ip4_addr_copy(ipAddr, info.ip);
 	strcpy(localIp, ip4addr_ntoa(&ipAddr));
 	ESP_LOGW(TAG, "IP: %s\n\n", localIp);
 
-	lcd_welcome(localIp,"IP found");
+	addon_lcd_welcome(localIp,"IP found");
 	vTaskDelay(10);
 
 }
@@ -918,7 +920,7 @@ IRAM_ATTR void timerTask(void* p) {
 						if (divide)
 							ctimeMs++;	// for led
 						divide = !divide;
-						ServiceAddon();
+						addon_service();
 					break;
 					case TIMER_SLEEP:
 						clientDisconnect("Timer"); // stop the player
@@ -1067,21 +1069,21 @@ void app_main()
 	// Check if we are in large Sram config
 	if (xPortGetFreeHeapSize() > 0x80000) bigRam = true;
 	//init hardware
-	partitions_init();
+	eeprom_partitions_init();
 	ESP_LOGI(TAG, "Partition init done...");
 
 	if (g_device->cleared != 0xAABB)
 	{
 		ESP_LOGE(TAG,"Device config not ok. Try to restore");
 		free(g_device);
-		restoreDeviceSettings(); // try to restore the config from the saved one
-		g_device = getDeviceSettings();
+		eeprom_restore_device_settings(); // try to restore the config from the saved one
+		g_device = eeprom_get_device_settings();
 		if (g_device->cleared != 0xAABB)
 		{
 			ESP_LOGE(TAG,"Device config not cleared. Clear it.");
 			free(g_device);
-			eeEraseAll();
-			g_device = getDeviceSettings();
+			eeprom_erase_all();
+			g_device = eeprom_get_device_settings();
 			g_device->cleared = 0xAABB; //marker init done
 			g_device->uartspeed = 115200; // default
 //			g_device->audio_output_mode = I2S; // default
@@ -1089,17 +1091,17 @@ void app_main()
 			g_device->trace_level = ESP_LOG_ERROR; //default
 			g_device->vol = 100; //default
 			g_device->led_gpio = GPIO_NONE;
-			saveDeviceSettings(g_device);
+			eeprom_save_device_settings(g_device);
 		} else
 			ESP_LOGE(TAG,"Device config restored");
 	}
 
-	copyDeviceSettings(); // copy in the safe partion
+	eeprom_copy_device_settings(); // copy in the safe partion
 
 	// Configure Deep Sleep start and wakeup options
-	deepSleepConf(); // also called in addon.c
+	addon_deep_sleep_conf(); // also called in addon.c
 	// Enter ESP32 Deep Sleep (but not powerdown uninitialized peripherals) when P_SLEEP GPIO is P_LEVEL_SLEEP
-	if (checkDeepSleepInput())
+	if (addon_check_deep_sleep_input())
 		esp_deep_sleep_start();
 
 	// led mode
@@ -1146,16 +1148,16 @@ void app_main()
 	if (g_device->uartspeed != uspeed)
 	{
 		g_device->uartspeed = uspeed;
-		saveDeviceSettings(g_device);
+		eeprom_save_device_settings(g_device);
 	}
 
 
 	// Version infos
 	ESP_LOGI(TAG, "\n");
-	ESP_LOGI(TAG, "Project name: %s",esp_ota_get_app_description()->project_name);
-	ESP_LOGI(TAG, "Version: %s",esp_ota_get_app_description()->version);
+	ESP_LOGI(TAG, "Project name: %s",esp_app_get_description()->project_name);
+	ESP_LOGI(TAG, "Version: %s",esp_app_get_description()->version);
 	ESP_LOGI(TAG, "Release %s, Revision %s",RELEASE,REVISION);
-//	ESP_LOGI(TAG, "Date: %s,  Time: %s",esp_ota_get_app_description()->date,esp_ota_get_app_description()->time);
+//	ESP_LOGI(TAG, "Date: %s,  Time: %s",esp_app_get_description()->date,esp_app_get_description()->time);
 	ESP_LOGI(TAG, "SDK %s",esp_get_idf_version());
 	ESP_LOGI(TAG, " Date %s, Time: %s\n", __DATE__,__TIME__ );
 	ESP_LOGI(TAG, "Heap size: %d",xPortGetFreeHeapSize());
@@ -1166,11 +1168,11 @@ void app_main()
 	ESP_LOGI(TAG,"LCD Type %d",g_device->lcd_type);
 	//lcd rotation
 	setRotat(rt) ;
-	lcd_init(g_device->lcd_type);
+	addon_lcd_init(g_device->lcd_type);
 	ESP_LOGI(TAG, "Hardware init done...");
 
-	lcd_welcome("","");
-	lcd_welcome("","STARTING");
+	addon_lcd_welcome("","");
+	addon_lcd_welcome("","STARTING");
 
 	// volume
 	setIvol( g_device->vol);
@@ -1231,7 +1233,7 @@ void app_main()
 	renderer_init(create_renderer_config());
 
 	// LCD Display infos
-    lcd_welcome(localIp,"STARTED");
+    addon_lcd_welcome(localIp,"STARTED");
 	vTaskDelay(10);
     ESP_LOGI(TAG, "RAM left %d", esp_get_free_heap_size());
 
@@ -1243,7 +1245,7 @@ void app_main()
     xTaskCreatePinnedToCore(serversTask, "serversTask", 3100, NULL, PRIO_SERVER, &pxCreatedTask,CPU_SERVER);
 	ESP_LOGI(TAG, "%s task: %x","serversTask",(unsigned int)pxCreatedTask);
 	vTaskDelay(1);
-	xTaskCreatePinnedToCore (task_addon, "task_addon", 2200, NULL, PRIO_ADDON, &pxCreatedTask,CPU_ADDON);
+	xTaskCreatePinnedToCore (addon_task, "task_addon", 2200, NULL, PRIO_ADDON, &pxCreatedTask,CPU_ADDON);
 	ESP_LOGI(TAG, "%s task: %x","task_addon",(unsigned int)pxCreatedTask);
 
 	vTaskDelay(60);// wait tasks init

@@ -165,7 +165,7 @@ static uint8_t ddmm;
 static uint8_t rotat;
 
 //log print
-void lkprintf(const char *format, va_list ap)
+int lkprintf(const char *format, va_list ap)
 {
   extern bool logTel;
 //print to uart0
@@ -173,6 +173,7 @@ void lkprintf(const char *format, va_list ap)
 
 // send to all telnet clients
   if (logTel) vTelnetWrite(i,format,ap);
+  return i;
 }
 
 
@@ -344,9 +345,9 @@ void wifiConnect(char* cmd)
 	strncpy( g_device->pass1, t, (t_end-t)) ;
 	g_device->current_ap = 1;
 	g_device->dhcpEn1 = 1;
-	saveDeviceSettings(g_device);
+	eeprom_save_device_settings(g_device);
 	// test Save g_device to device1
-	copyDeviceSettings();
+	eeprom_copy_device_settings();
 	//
 	kprintf("#WIFI.CON#\n");
 	kprintf("##AP1: %s with dhcp on next reset#\n",g_device->ssid1);
@@ -389,7 +390,7 @@ void wifiAuto(char* cmd)
 	else
 		g_device->options32 |= T_WIFIAUTO;
 	autoWifi = value;
-	saveDeviceSettings(g_device);
+	eeprom_save_device_settings(g_device);
 
 	wifiAuto((char*)"");
 }
@@ -571,7 +572,7 @@ void clientList(char *s)
 		for ( ;i <j;i++)
 		{
 			vTaskDelay(1);
-			si = getStation(i);
+			si = eeprom_get_station(i);
 
 			if ((si == NULL) || (si->port ==0))
 			{
@@ -682,7 +683,7 @@ char url[200];
 kprintf(" id: %d, name: %s, url: %s, port: %d, path: %s\n",id,si->name,si->domain,si->port,si->file);
 	if (id < 0xff) {
 		if (si->domain[0]==0) {si->port = 0;si->file[0] = 0;}
-		saveStation(si, id);
+		eeprom_save_station(si, id);
 		kprintf("##CLI.EDIT#: OK (%d)\n",id);
 	}
 	else
@@ -693,7 +694,7 @@ void clientInfo()
 {
 	struct shoutcast_info* si;
 	kprintf("##CLI.INFO#\n");
-	si = getStation(currentStation);
+	si = eeprom_get_station(currentStation);
 	if (si != NULL)
 	{
 		ntp_print_time();
@@ -708,7 +709,7 @@ void clientInfo()
 char* webInfo()
 {
 	struct shoutcast_info* si;
-	si = getStation(currentStation);
+	si = eeprom_get_station(currentStation);
 	char* resp = kmalloc(1024);
 	if (si != NULL)
 	{
@@ -724,7 +725,7 @@ char* webInfo()
 char* webList(int id)
 {
 	struct shoutcast_info* si;
-	si = getStation(id);
+	si = eeprom_get_station(id);
 	char* resp = kmalloc(1024);
 	if (si != NULL)
 	{
@@ -756,7 +757,7 @@ void sysI2S(char* s)
 	VS1053_I2SRate(speed);
 
 	g_device->i2sspeed = speed;
-	saveDeviceSettings(g_device);
+	eeprom_save_device_settings(g_device);
 	sysI2S((char*)"");
 }
 
@@ -786,7 +787,7 @@ void sysUart(char* s)
 		uint32_t speed = atoi(t+2);
 		speed = checkUart(speed);
 		g_device->uartspeed= speed;
-		saveDeviceSettings(g_device);
+		eeprom_save_device_settings(g_device);
 		kprintf("Speed: %d\n",speed);
 	}
 	kprintf("\n%sUART= %d# on next reset\n",msgsys,g_device->uartspeed);
@@ -910,7 +911,7 @@ void syspatch(char* s)
 	else
 		g_device->options &= NT_PATCH; // 0 = load patch
 
-	saveDeviceSettings(g_device);
+	eeprom_save_device_settings(g_device);
 	kprintf(stritPATCH,(g_device->options & T_PATCH)!= 0?"unloaded":"Loaded");
 }
 
@@ -932,7 +933,7 @@ void sysledgpio(char* s)
     }
 	setLedGpio(value);
 	gpio_output_conf(value);
-	saveDeviceSettings(g_device);
+	eeprom_save_device_settings(g_device);
 	gpio_set_ledgpio(value); // write in nvs if any
 	sysledgpio((char*) "");
 //	led_gpio = GPIO_NONE; // for getLedGpio
@@ -952,7 +953,7 @@ void syslcd(char* s)
 	if(t == NULL)
 	{
 		kprintf("##LCD is %d#\n",g_device->lcd_type);
-		kprintf("##LCD Width %d, Height %d#\n",GetWidth(),GetHeight());
+		kprintf("##LCD Width %d, Height %d#\n",addon_get_width(),addon_get_height());
 		return;
 	}
 	char *t_end  = strstr(t, parquoteslash);
@@ -963,7 +964,7 @@ void syslcd(char* s)
     }
 	uint8_t value = atoi(t+2);
 	g_device->lcd_type = value;
-	saveDeviceSettings(g_device);
+	eeprom_save_device_settings(g_device);
 	option_set_lcd_info(value,rotat );
 	kprintf("##LCD is %d on next reset#\n",value);
 }
@@ -994,7 +995,7 @@ void sysddmm(char* s)
 	else
 		g_device->options32 |= T_DDMM;
 	ddmm = (value)?1:0;
-	saveDeviceSettings(g_device);
+	eeprom_save_device_settings(g_device);
 	option_set_ddmm(ddmm);
 	sysddmm((char*) "");
 }
@@ -1005,7 +1006,7 @@ void syshenc(int nenc,char* s)
     char *t = strstr(s, parslashquote);
 	Encoder_t *encoder;
 	bool encvalue;
-	encoder = (Encoder_t *)getEncoder(nenc);
+	encoder = (Encoder_t *)addon_get_encoder(nenc);
 	if (encoder == NULL) {kprintf("Encoder not defined#\n"); return;}
 	uint8_t options32 = g_device->options32;
 	if (nenc == 0) encvalue = options32&T_ENC0;
@@ -1043,7 +1044,7 @@ void syshenc(int nenc,char* s)
 	if (nenc == 0) encvalue = g_device->options32&T_ENC0;
 	else encvalue = g_device->options32&T_ENC1;
 	syshenc(nenc,(char*)"");
-	saveDeviceSettings(g_device);
+	eeprom_save_device_settings(g_device);
 }
 
 // display or change the rotation lcd mode
@@ -1073,7 +1074,7 @@ void sysrotat(char* s)
 		g_device->options32 |= T_ROTAT;
 	rotat = value;
 	option_set_lcd_info(g_device->lcd_type,rotat );
-	saveDeviceSettings(g_device);
+	eeprom_save_device_settings(g_device);
 	sysrotat((char*) "");
 }
 
@@ -1101,7 +1102,7 @@ void syslcdout(char* s)
 //	saveDeviceSettings(g_device);
 	option_set_lcd_out(lcd_out);
 	syslcdout((char*) "");
-	wakeLcd();
+	addon_wake_lcd();
 }
 // Timer in seconds to switch off the lcd on stop state
 void syslcdstop(char* s)
@@ -1124,12 +1125,12 @@ void syslcdstop(char* s)
 	lcd_stop = value;
 	option_set_lcd_stop(lcd_stop);
 	syslcdstop((char*) "");
-	wakeLcd();
+	addon_wake_lcd();
 }
 // Backlight value
 void syslcdblv(char* s)
 {
-	int lcd_blv = getBlv();
+	int lcd_blv = addon_get_blv();
 
     char *t = strstr(s, parslashquote);
 	if(t == NULL)
@@ -1150,9 +1151,9 @@ void syslcdblv(char* s)
 	lcd_blv = value;
 	option_set_lcd_blv(lcd_blv);
 	backlight_percentage_set(lcd_blv);
-	setBlv(lcd_blv);  // in addon
+	addon_set_blv(lcd_blv);  // in addon
 	syslcdblv((char*) "");
-	wakeLcd();
+	addon_wake_lcd();
 }
 
 uint32_t getLcdOut()
@@ -1193,7 +1194,7 @@ void sysled(char* s)
 	{ g_device->options &= NT_LED;  // clear
 		ledStatus =true;} // options:0 = ledStatus true = Blink mode
 
-	saveDeviceSettings(g_device);
+	eeprom_save_device_settings(g_device);
 	sysled((char*) "");
 }
 
@@ -1229,7 +1230,7 @@ void sysledpol(char* s)
 		ledPolarity =false;
 	} // options:0 = ledPolarity
 
-	saveDeviceSettings(g_device);
+	eeprom_save_device_settings(g_device);
 	sysledpol((char*) "");
 }
 
@@ -1254,9 +1255,9 @@ void tzoffset(char* s)
 	sscanf(t+2,"%d:%d",&tzoffseth,&tzoffsetm);
 	g_device->tzoffseth = tzoffseth; // int to byte
 	g_device->tzoffsetm = tzoffsetm;
-	saveDeviceSettings(g_device);
+	eeprom_save_device_settings(g_device);
 	tzoffset((char*) "");
-	addonDt(); // for addon, force the dt fetch
+	addon_dt(); // for addon, force the dt fetch
 }
 
 // print the heapsize
@@ -1304,7 +1305,7 @@ void hostname(char* s)
 		strncpy(g_device->hostname,t,(t_end-t)*sizeof(char));
 		g_device->hostname[(t_end-t)*sizeof(char)] = 0;
 	}
-	saveDeviceSettings(g_device);
+	eeprom_save_device_settings(g_device);
 	setHostname(g_device->hostname);
 	hostname((char*) "");
 }
@@ -1347,7 +1348,7 @@ void setLogLevel(esp_log_level_t level)
 	s_log_default_level=level;
 	if (g_device->trace_level != level) {
 		g_device->trace_level = level;
-		saveDeviceSettings(g_device);
+		eeprom_save_device_settings(g_device);
 	}
 
 	displayLogLevel();
@@ -1381,7 +1382,7 @@ void setLogTelnet(char* s)
 	} // options:0 = ledStatus true = Blink mode
 
 	setLogTelnet((char*)"");
-	saveDeviceSettings(g_device);
+	eeprom_save_device_settings(g_device);
 }
 
 
@@ -1441,7 +1442,7 @@ void dbgSSL(char* s)
 	g_device->options |= (value<<S_WOLFSSL)& T_WOLFSSL;
 
 	dbgSSL((char*)"");
-	saveDeviceSettings(g_device);
+	eeprom_save_device_settings(g_device);
 }
 
 
@@ -1510,7 +1511,7 @@ void checkCommand(int size, char* s)
 			 if(startsWith (  "i2s",tmp+4)) 	sysI2S(tmp);
 //		else if(strcmp(tmp+4, "adc") == 0) 		readAdc();
 		else if(startsWith (  "uart",tmp+4)) 	sysUart(tmp);
-		else if(strcmp(tmp+4, "erase") == 0) 	eeEraseAll();
+		else if(strcmp(tmp+4, "erase") == 0) 	eeprom_erase_all();
 		else if(strcmp(tmp+4, "heap") == 0) 	heapSize();
 		else if(strcmp(tmp+4, "boot") == 0) 	esp_restart();
 		else if(strcmp(tmp+4, "conf") == 0) 	sys_conf();

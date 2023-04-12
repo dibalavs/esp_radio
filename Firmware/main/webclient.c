@@ -115,7 +115,7 @@ void ramSinit()
 		{
 			if (getSPIRAMSIZE() == HTTPSRAM*1024) return; // no need
 			setSPIRAMSIZE(HTTPSRAM*1024);
-		}	
+		}
 	}
 	else //ramInit();
 	//compute the size of the audio buffer for http
@@ -131,11 +131,11 @@ void ramSinit()
 			{
 				if (getSPIRAMSIZE() == SMALLRAM*1024) return; // no need
 				setSPIRAMSIZE(SMALLRAM*1024);		// more free heap
-			}		
+			}
 			else
 			{
 				if (getSPIRAMSIZE() == DEFAULTRAM*1024) return; // no need
-				setSPIRAMSIZE(DEFAULTRAM*1024);		// more free heap	
+				setSPIRAMSIZE(DEFAULTRAM*1024);		// more free heap
 			}
 		}
 	}
@@ -150,7 +150,7 @@ void ramSinit()
 		if (!spiRamFifoInit())
 		{
 			ESP_LOGE(TAG, "SPIRAM fail for %dK",getSPIRAMSIZE()/1024);
-			ESP_LOGE(TAG,"%sHEAPd0: %d #\n","##SYS.",xPortGetFreeHeapSize( ));	
+			ESP_LOGE(TAG,"%sHEAPd0: %d #\n","##SYS.",xPortGetFreeHeapSize( ));
 			ESP_LOGE(TAG, "REBOOT");
 			esp_restart();
 		}
@@ -230,11 +230,11 @@ string_rec  = kcalloc(strlen(string)+1, sizeof(uint8_t));
   while (strstr(string,"&#") != NULL){
     len = strcspn(string, "&#");
     if(len == 0){l=1;}
-    else{    
+    else{
         for(uint16_t s=sss;s<len;s++){
            string_rec[ss++] = string[s];
            sss++;
-        } 
+        }
     }
     string[len++] = ' ';
     string[len++] = ' ';
@@ -243,13 +243,13 @@ string_rec  = kcalloc(strlen(string)+1, sizeof(uint8_t));
     for(uint8_t a=0;a<4;a++){
        p_s[a] = string[len++];
     }
-    
-    T_t.T_t = atol((const char *)p_s);    
+
+    T_t.T_t = atol((const char *)p_s);
     T_t.t_HIG = T_t.t_HIG << 2;
     T_t.t_HIG = (T_t.t_HIG & 0x3F) ^ (  T_t.t_LOW & 0xC0 );
     T_t.t_LOW = (T_t.t_LOW & 0x3F) ^ 0x80;
     T_t.t_HIG = (T_t.t_HIG & 0x1F) ^ 0xC0;
-    
+
     string_rec[ss++] = T_t.t_HIG;
     string_rec[ss++] = T_t.t_LOW;
     sss = sss + 7;
@@ -304,14 +304,14 @@ bool clientParsePlaylist(char* s)
   {
 	clientSetPath((char*)"/;");
 	return true;
-  }	
-  
+  }
+
   str = strstr(s,"<location>");  //for xspf
   if (str != NULL) s= str+10;
   str = strstr(s,"<REF href = ");  //for asx
   if (str != NULL) s=str+11;
-  
-	
+
+
   str = strstr(s,"http://");
   if (str ==NULL) str = strstr(s,"HTTP://");
   if (str != NULL)   {s= str+7; j = 7; strcpy (url,"http://"); }
@@ -324,8 +324,8 @@ bool clientParsePlaylist(char* s)
 		j = 7;
 		strcpy (url,"http://");
 	} // no http found
-  } 
-  
+  }
+
   if (str != NULL)
   {
 	str = s;
@@ -394,7 +394,7 @@ static char* stringify(char* str,int len)
 					new[j++] = '\\';
 					new[j++] =(str)[i] ;
 				}
-				else 
+				else
 				if (str[i] == 0x09) {  // TAB
 					new[j++] = '\\';
 					new[j++] ='t' ;
@@ -490,12 +490,12 @@ static void clientSaveMetadata(char* s,int len)
 		}
 	}
 	t = strstr(t,"StreamTitle='");
-	if (t!= NULL) 
+	if (t!= NULL)
 	{
 		t += 13;found = true;
 		len -=13;
-	} 
-	else { 
+	}
+	else {
 		t = s;
 	}
 	ilen = strlen(t) ;
@@ -591,7 +591,7 @@ void wsStationNext()
 		setCurrentStation(getCurrentStation()+1);
 		if (getCurrentStation() >= 255)
 			setCurrentStation(0);
-		si = getStation(getCurrentStation());
+		si = eeprom_get_station(getCurrentStation());
 	}
 	while (si == NULL || ((si != NULL)&&(strcmp(si->domain,"")==0)) || ((si != NULL)&&(strcmp( si->file,"")== 0)));
 
@@ -607,7 +607,7 @@ void wsStationPrev()
 		if (getCurrentStation() >0)
 		{
 			setCurrentStation(getCurrentStation()-1);
-			si = getStation(getCurrentStation());
+			si = eeprom_get_station(getCurrentStation());
 		}
 		else return;
 	}
@@ -664,8 +664,8 @@ static char* pseudoUtf8(char* str, int* len) //,int len)
 			if ((str[i] > 192) && (str[i+1] < 0x80)){ // 128 = 0x80
 				new[j++] = 195; // 192 = 0xC0   195 = 0xC3
 				new[j++] =(str)[i]-64 ; // 64 = 0x40
-			} 
-			else new[j++] =(str)[i] ;				
+			}
+			else new[j++] =(str)[i] ;
 		}
 		incfree(str,"str");
 		new = realloc(new,j+1); // adjust
@@ -691,7 +691,7 @@ static void wsHeaders()
 	not2 = header.members.single.notice2;
 	if (not2 ==NULL) not2=header.members.single.audioinfo;
 	if ((header.members.single.notice2 != NULL)&&(strlen(header.members.single.notice2)==0)) not2=header.members.single.audioinfo;
-	
+
 	int json_length ;
 	json_length =104+ //93
 		strlen(currentSt)+
@@ -815,7 +815,7 @@ bool clientParseHeader(char* s)
 			wsHeaders(); // update all server
 			vTaskDelay(10);
 			clientDisconnect("unknown contentType");
-			cstatus = C_HEADER;		
+			cstatus = C_HEADER;
 		}
 		ESP_LOGD(TAG, "contentType: %d", contentType);
 		player_config->media_stream->content_type = contentType;
@@ -883,7 +883,7 @@ void clientSetURL(char* url)
 	if (url[0] == 0xff) return; // wrong url
 	if (strlen(url) > URLMAX)
 		strncat(clientURL,url,URLMAX-9);
-	else 
+	else
 		strcat(clientURL, url);
 	kprintf("##CLI.URLSET#: %s\n",clientURL);
 }
@@ -893,7 +893,7 @@ void clientSetPath(char* path)
 	if (path[0] == 0xff) return; // wrong path
 	if (strlen(path) > PATHMAX)
 		strncpy(clientPath,path,PATHMAX-1);
-	else 
+	else
 		strcpy(clientPath, path);
 	kprintf("##CLI.PATHSET#: %s\n",clientPath);
 }
@@ -968,16 +968,16 @@ void clientDisconnect(const char* from)
 		vTaskDelay(1);
 	}
 	if ((from[0]!='C') || (from[1]!='_'))
-		if (!ledStatus){ 
-			if (getLedGpio() != GPIO_NONE) gpio_set_level(getLedGpio(), ledPolarity ? 1 : 0);	
-		}		
+		if (!ledStatus){
+			if (getLedGpio() != GPIO_NONE) gpio_set_level(getLedGpio(), ledPolarity ? 1 : 0);
+		}
 //	esp_wifi_set_ps(WIFI_PS_MAX_MODEM);
 	vTaskDelay(1);
 	// save the volume if needed on stop state
 	if (g_device->vol != getIvol())
-	{ 			
+	{
 		g_device->vol = getIvol();
-		saveDeviceSettingsVolume(g_device);
+		eeprom_save_device_settings_volume(g_device);
 	}
 }
 
@@ -1015,7 +1015,7 @@ void clientReceiveCallback(int sockfd, char *pdata, int len)
 			wsHeaders();
 			vTaskDelay(1);
 			cstatus = C_HEADER;
-			clientDisconnect("C_LIST"); 
+			clientDisconnect("C_LIST");
 			return;
 		}
 	}
@@ -1037,7 +1037,7 @@ void clientReceiveCallback(int sockfd, char *pdata, int len)
 		metad = -1;
 		t1 = strstr(pdata, "302 ");
 		if (t1 ==NULL) t1 = strstr(pdata, "301 ");
-		if (t1 != NULL) 
+		if (t1 != NULL)
 		{ // moved to a new address
 			if( strcmp(t1,"Found")||strcmp(t1,"Temporarily")||strcmp(t1,"Moved"))
 			{
@@ -1095,10 +1095,10 @@ void clientReceiveCallback(int sockfd, char *pdata, int len)
 								}
 								else
 								{
-									ilen = recv(sockfd, pdata+len, RECEIVE+8-len, 0); 
-									if (ilen >0) len += ilen; 
+									ilen = recv(sockfd, pdata+len, RECEIVE+8-len, 0);
+									if (ilen >0) len += ilen;
 								}
-								if (ilen <0) {clientDisconnect("chunk2");break;}							
+								if (ilen <0) {clientDisconnect("chunk2");break;}
 							}
 							chunked = (uint32_t) strtol(t1, NULL, 16) +2;
 							if (strchr((t1),0x0A) != NULL)
@@ -1117,11 +1117,11 @@ void clientReceiveCallback(int sockfd, char *pdata, int len)
 					t1 = NULL;
 					if (i++ > 20) {clientDisconnect("header1");break;}
 					vTaskDelay(1); //avoid watchdog is infernal loop
-					
+
 					if (https)
 						bread = wolfSSL_read(ssl, pdata+len, RECEIVE-len);
 					else
-						bread = recvfrom(sockfd, pdata+len, RECEIVE-len, 0, NULL, NULL);					
+						bread = recvfrom(sockfd, pdata+len, RECEIVE-len, 0, NULL, NULL);
 					if (bread <0) {clientDisconnect("header11");break;}
 					if (bread >0) len += bread;
 				}
@@ -1168,7 +1168,7 @@ void clientReceiveCallback(int sockfd, char *pdata, int len)
 							while (lc < cchunk+9)
 							{
 								vTaskDelay(1);
-							
+
 								if (https)
 									bread = wolfSSL_read(ssl, pdata+len, 9);
 								else
@@ -1364,13 +1364,13 @@ ESP_LOGD(TAG,"mt2 len:%d, clen:%d, metad:%d, l:%d, inpdata:%x,  rest:%d",len,cle
 		}
 // ---------------
 
-		if ((!playing )  && (((++dloop) % 40)==0)) 
+		if ((!playing )  && (((++dloop) % 40)==0))
 		{
 			kprintf(CLIPLAY,0x0d,0x0a);
 			playing=1;
-			if (!ledStatus){ 
-			if (getLedGpio() != GPIO_NONE) gpio_set_level(getLedGpio(), ledPolarity ? 0 : 1);	
-			}				
+			if (!ledStatus){
+			if (getLedGpio() != GPIO_NONE) gpio_set_level(getLedGpio(), ledPolarity ? 0 : 1);
+			}
 			setVolumei(getVolume());
 		}
 	} // switch
@@ -1394,7 +1394,7 @@ uint8_t wolfSSL_getLogState()
 	uint8_t level[4]= {0,1,3,4};
 	return (level[(g_device->options&T_WOLFSSL)>>S_WOLFSSL]);
 }
-	
+
 void clientTask(void *pvParams) {
 	portBASE_TYPE uxHighWaterMark;
 	struct timeval timeout;
@@ -1408,7 +1408,7 @@ void clientTask(void *pvParams) {
 	int ret;
 
 	vTaskDelay(200);
-	spiRamFifoInit();	
+	spiRamFifoInit();
 
 	if (strlen(g_device->ua) == 0) strcpy(g_device->ua,"Karadio32/2.0");
 	strcpy(userAgent, g_device->ua);
@@ -1422,7 +1422,7 @@ void clientTask(void *pvParams) {
 	if ((wctx = wolfSSL_CTX_new(wolfSSLv23_client_method())) == NULL) {
 		ESP_LOGE(TAG,"Failed to create WOLFSSL_CTX");
 	}
-    wolfSSL_SetLoggingCb(wolfSSL_log_function);	
+    wolfSSL_SetLoggingCb(wolfSSL_log_function);
 	/* Load client certificates into WOLFSSL_CTX */
 	if ((ret = wolfSSL_CTX_load_verify_buffer(wctx, client_cert_der_1024,
 		sizeof_client_cert_der_1024, WOLFSSL_FILETYPE_ASN1)) != SSL_SUCCESS) {
@@ -1431,15 +1431,15 @@ void clientTask(void *pvParams) {
 	/* not peer check */
 	wolfSSL_CTX_set_verify(wctx, WOLFSSL_VERIFY_NONE, 0);
 //----------------------------------------------------------------------
-					
+
 //	portBASE_TYPE uxHighWaterMark;
 //	uxHighWaterMark = uxTaskGetStackHighWaterMark( NULL );
 //	printf("watermark webclient:%d  heap:%d\n",uxHighWaterMark,xPortGetFreeHeapSize( ));
 
 	while(1) {
 		xSemaphoreGive(sConnected);
-		if(xSemaphoreTake(sConnect, portMAX_DELAY)) 
-		{		
+		if(xSemaphoreTake(sConnect, portMAX_DELAY))
+		{
 			if (get_audio_output_mode() == VS1053)  VS1053_HighPower();
 			xSemaphoreTake(sDisconnect, 0);
 			sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -1473,16 +1473,16 @@ void clientTask(void *pvParams) {
 						ESP_LOGE(TAG,"Failed to create WOLFSSL ssl object");
 						goto NotConnected;
 					}
-					wolfSSL_set_using_nonblock(ssl, 1);    
+					wolfSSL_set_using_nonblock(ssl, 1);
 					/* Attach wolfSSL to the socket */
 					wolfSSL_set_fd(ssl, sockfd);
-				
+
 					/* Connect to wolfSSL on the server side */
 					if (wolfSSL_connect(ssl) != SSL_SUCCESS) {
 						int err=wolfSSL_get_error(ssl, 0);
 						ESP_LOGE(TAG,"WolfSSL_connect error: %d",err);
 						goto NotConnected;
-					}				
+					}
 				}
 
 //				printf("WebClient Socket connected\n");
@@ -1503,7 +1503,7 @@ void clientTask(void *pvParams) {
 				{
 					if (strcmp(cleanURL(),"stream.pcradio.biz") ==0)
 						strcpy(userAgent,"pcradio");
-						
+
 					sprintf((char*)bufrec, "GET %s HTTP/1.1\r\nHost: %s\r\nicy-metadata: 1\r\nUser-Agent: %s\r\n\r\n", clientPath,cleanURL(),userAgent);
 				}
 //printf("st:%d, url: %s\nClient Sent:\n%s\n",cstatus,cleanURL(),bufrec);
@@ -1529,7 +1529,7 @@ void clientTask(void *pvParams) {
 				if (setsockopt(sockfd, IPPROTO_IP, IP_TOS, &priority, sizeof(priority))< 0)
 					ESP_LOGE(TAG,"Socket: %d  setsockopt: %d  errno:%d ",sockfd, IP_TOS,errno);
 //////
-				cnterror = 0;			
+				cnterror = 0;
 				wsMonitor();
 				ramSinit();
 				do
@@ -1539,10 +1539,10 @@ void clientTask(void *pvParams) {
 //						int incr = 0;
 //						bytes_read = 0;
 //						while (( bytes_read <= 0 )&& (incr++ <2))
-						{	
-							bytes_read = wolfSSL_read(ssl, bufrec, RECEIVE);							
+						{
+							bytes_read = wolfSSL_read(ssl, bufrec, RECEIVE);
 							if ( bytes_read < 0 )
-							{   					    
+							{
 								int err;
 								char buffer[80];
 								err = wolfSSL_get_error(ssl, 0);
@@ -1550,12 +1550,12 @@ void clientTask(void *pvParams) {
 								ESP_LOGW(TAG,"wolfSSL_read: %d, read: %s",err, buffer);
 								if (wolfSSL_want_read(ssl) == 1) bytes_read = 0;
 								vTaskDelay(10);
-							}	
-						}						
-					}	
+							}
+						}
+					}
 					else
 					{
-						bytes_read = recvfrom(sockfd, bufrec,RECEIVE, 0, NULL, NULL);						
+						bytes_read = recvfrom(sockfd, bufrec,RECEIVE, 0, NULL, NULL);
 						if ( bytes_read < 0 )
 						{
 							ESP_LOGE(TAG,"Socket: %d, read: %d, errno:%d ",sockfd, bytes_read,errno);
@@ -1645,11 +1645,11 @@ void clientTask(void *pvParams) {
 				if (get_audio_output_mode() == VS1053) VS1053_LowPower();
 				strcpy(userAgent,g_device->ua);
 			}
-			
+
 			clearAll:
 			spiRamFifoReset();
 			if (https){
-				if (ssl) wolfSSL_free(ssl);    // Free the wolfSSL object 
+				if (ssl) wolfSSL_free(ssl);    // Free the wolfSSL object
 				ESP_LOGI(TAG,"SSL Cleanup 1 Socket: %d",sockfd);
 			}
 			shutdown(sockfd,SHUT_RDWR); // stop the socket

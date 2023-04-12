@@ -9,6 +9,10 @@
 #define INCLUDE_AUDIO_RENDERER_H_
 
 #include "freertos/FreeRTOS.h"
+
+// TODO: Remove it with porting to new i2s api.
+#define CONFIG_ADC_SUPPRESS_DEPRECATE_WARN 1
+#define CONFIG_I2S_SUPPRESS_DEPRECATE_WARN 1
 #include "driver/i2s.h"
 #include "common_component.h"
 #include "app_main.h"

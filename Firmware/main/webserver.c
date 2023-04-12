@@ -285,7 +285,7 @@ static void rssi(int socket) {
 // flip flop the theme indicator
 static void theme() {
 	if ((g_device->options&T_THEME)!=0) g_device->options&=NT_THEME; else g_device->options |= T_THEME;
-	saveDeviceSettings(g_device);
+	eeprom_save_device_settings(g_device);
 	ESP_LOGV(TAG,"theme:%d",g_device->options&T_THEME);
 }
 
@@ -330,7 +330,7 @@ void websockethandle(int socket, wsopcode_t opcode, uint8_t * payload, size_t le
 void playStationInt(int sid) {
 	struct shoutcast_info* si;
 	char answer[24];
-	si = getStation(sid);
+	si = eeprom_get_station(sid);
 
 	if(si != NULL &&si->domain && si->file) {
 			vTaskDelay(1);
@@ -360,7 +360,7 @@ void playStationInt(int sid) {
 	{
 		g_device->currentstation = sid;
 		setCurrentStation( sid);
-		saveDeviceSettings(g_device);
+		eeprom_save_device_settings(g_device);
 	}
 }
 
@@ -447,14 +447,14 @@ static void handlePOST(char* name, char* data, int data_size, int conn) {
 		}
 	} else if(strcmp(name, "/soundvol") == 0) {
 		if(data_size > 0) {
-/*			
+/*
 			char * vol = data+4;
 			data[data_size-1] = 0;
 			ESP_LOGD(TAG,"/soundvol vol: %s num:%d",vol, atoi(vol));
 			setVolume(vol);
 			respOk(conn,NULL);
 			return;
-*/			
+*/
 			char param[4];
 			int vol;
 			if(getSParameterFromResponse(param,4,"vol=", data, data_size)) {
@@ -466,9 +466,9 @@ static void handlePOST(char* name, char* data, int data_size, int conn) {
 				wsVol(param);
 				respOk(conn,NULL);
 				return;
-			}			
-			
-			
+			}
+
+
 		}
 	} else if(strcmp(name, "/sound") == 0) {
 		if(data_size > 0) {
@@ -534,12 +534,12 @@ static void handlePOST(char* name, char* data, int data_size, int conn) {
 				}
 			}
 			if (changed)
-				saveDeviceSettings(g_device);
+				eeprom_save_device_settings(g_device);
 		}
-	} else if(strcmp(name, "/getStation") == 0) {
+	} else if(strcmp(name, "/eeprom_getStation") == 0) {
 		if(data_size > 0) {
 			char id[6];
-			
+
 			if (getSParameterFromResponse(id,6,"idgp=", data, data_size) )
 			{
 				if ((atoi(id) >=0) && (atoi(id) < 255))
@@ -548,7 +548,7 @@ static void handlePOST(char* name, char* data, int data_size, int conn) {
 					char *buf;
 					for(int i = 0; i<sizeof(ibuf); i++) ibuf[i] = 0;
 					struct shoutcast_info* si;
-					si = getStation(atoi(id));
+					si = eeprom_get_station(atoi(id));
 					if (strlen(si->domain) > sizeof(si->domain)) si->domain[sizeof(si->domain)-1] = 0; //truncate if any (rom crash)
 					if (strlen(si->file) > sizeof(si->file)) si->file[sizeof(si->file)-1] = 0; //truncate if any (rom crash)
 					if (strlen(si->name) > sizeof(si->name)) si->name[sizeof(si->name)-1] = 0; //truncate if any (rom crash)
@@ -557,7 +557,7 @@ static void handlePOST(char* name, char* data, int data_size, int conn) {
 					buf = inmalloc(json_length + 75);
 					if (buf == NULL)
 					{
-						ESP_LOGE(TAG," %s kmalloc fails","getStation");
+						ESP_LOGE(TAG," %s kmalloc fails","eeprom_getStation");
 						respKo(conn);
 						//return;
 					}
@@ -565,7 +565,7 @@ static void handlePOST(char* name, char* data, int data_size, int conn) {
 						for(int i = 0; i<sizeof(buf); i++) buf[i] = 0;
 						sprintf(buf, strsGSTAT,
 						json_length, si->name, si->domain, si->file,si->port,si->ovol);
-						ESP_LOGW(TAG,"getStation Buf len:%d : %s",strlen(buf),buf);
+						ESP_LOGW(TAG,"eeprom_getStation Buf len:%d : %s",strlen(buf),buf);
 						write(conn, buf, strlen(buf));
 						infree(buf);
 					}
@@ -642,7 +642,7 @@ static void handlePOST(char* name, char* data, int data_size, int conn) {
 				ESP_LOGV(TAG,"si:%x, nsi:%x, addr:%x",(int)si,(int)nsi,(int)data);
 			}
 			ESP_LOGV(TAG,"save station: %d, unb:%d, addr:%x",uid,unb,(int)si);
-			saveMultiStation(si, uid,unb);
+			eeprom_save_multi_station(si, uid,unb);
 			ESP_LOGV(TAG,"save station return: %d, unb:%d, addr:%x",uid,unb,(int)si);
 			infree (si);
 			if (pState != getState())
@@ -662,14 +662,14 @@ static void handlePOST(char* name, char* data, int data_size, int conn) {
 			{
 				g_device->autostart = 0;
 				ESP_LOGV(TAG,"autostart: %s, num:%d",id,g_device->autostart);
-				saveDeviceSettings(g_device);
+				eeprom_save_device_settings(g_device);
 			}
 			else
 			if ((strcmp(id,"false"))&&(g_device->autostart==0))
 			{
 				g_device->autostart = 1;
 				ESP_LOGV(TAG,"autostart: %s, num:%d",id,g_device->autostart);
-				saveDeviceSettings(g_device);
+				eeprom_save_device_settings(g_device);
 			}
 		}
 	} else if(strcmp(name, "/rauto") == 0) {
@@ -699,7 +699,7 @@ static void handlePOST(char* name, char* data, int data_size, int conn) {
 		update_firmware((char*)"KaRadio32_4");  // start the OTA
 #else
 		update_firmware((char*)"KaRadio32");  // start the OTA
-#endif	
+#endif
 	} else if(strcmp(name, "/icy") == 0)
 	{
 		ESP_LOGV(TAG,"icy vol");
@@ -778,7 +778,7 @@ static void handlePOST(char* name, char* data, int data_size, int conn) {
 			{
 				g_device->audio_output_mode = cout;
 				changed = true;
-				saveDeviceSettings(g_device);
+				eeprom_save_device_settings(g_device);
 			}
 			int json_length ;
 			json_length =15;
@@ -874,7 +874,7 @@ static void handlePOST(char* name, char* data, int data_size, int conn) {
 				}
 				if (pasw2 != NULL){
 					if (strcmp(pasw2,apMode)!=0) strcpy(g_device->pass2,pasw2);
-				}						
+				}
 
 				infree(ssid); infree(pasw);infree(ssid2); infree(pasw2);
 				infree(aip);infree(amsk);infree(agw);
@@ -930,7 +930,7 @@ static void handlePOST(char* name, char* data, int data_size, int conn) {
 					sscanf(tzo,"%d:%d",&offtzoh,&offtzo);
 					g_device->tzoffseth = offtzoh;
 					g_device->tzoffsetm = offtzo;
-					addonDt();
+					addon_dt();
 					changed = true;
 				}
 			}
@@ -938,13 +938,13 @@ static void handlePOST(char* name, char* data, int data_size, int conn) {
 
 			if (changed)
 			{
-				saveDeviceSettings(g_device);
+				eeprom_save_device_settings(g_device);
 			}
 			uint8_t macaddr[10]; // = inmalloc(10*sizeof(uint8_t));
 			char macstr[20]; // = inmalloc(20*sizeof(char));
 			char adhcp[4],adhcp2[4];
 			esp_wifi_get_mac(WIFI_IF_STA,macaddr);
-			
+
 			int json_length ;
 			json_length =95+ 39+ 19+
 			strlen(g_device->ssid1) +
@@ -972,7 +972,7 @@ static void handlePOST(char* name, char* data, int data_size, int conn) {
 			else {
 				sprintf(buf, strsWIFI,
 				json_length,
-				g_device->ssid1,"",g_device->ssid2,"",tmpip,tmpmsk,tmpgw,tmpip2,tmpmsk2,tmpgw2,g_device->ua,adhcp,adhcp2,macstr,g_device->hostname,tmptzo); 
+				g_device->ssid1,"",g_device->ssid2,"",tmpip,tmpmsk,tmpgw,tmpip2,tmpmsk2,tmpgw2,g_device->ua,adhcp,adhcp2,macstr,g_device->hostname,tmptzo);
 				ESP_LOGV(TAG,"wifi Buf len:%d\n%s",strlen(buf),buf);
 				write(conn, buf, strlen(buf));
 				infree(buf);
@@ -986,10 +986,10 @@ static void handlePOST(char* name, char* data, int data_size, int conn) {
 					if (strlen(g_device->ssid1)!= 0) g_device->current_ap = STA1;
 					else
 					if (strlen(g_device->ssid2)!= 0) g_device->current_ap = STA2;
-					saveDeviceSettings(g_device);
+					eeprom_save_device_settings(g_device);
 				}
 				ESP_LOGD(TAG,"currentAP: %d",g_device->current_ap);
-				copyDeviceSettings();	// save the current one
+				eeprom_copy_device_settings();	// save the current one
 				vTaskDelay(20);
 				esp_restart();
 			}
@@ -997,7 +997,7 @@ static void handlePOST(char* name, char* data, int data_size, int conn) {
 		}
 	} else if(strcmp(name, "/clear") == 0)
 	{
-		eeEraseStations();	//clear all stations
+		eeprom_erase_stations();	//clear all stations
 	}
 	respOk(conn,NULL);
 }

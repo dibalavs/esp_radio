@@ -40,7 +40,7 @@ static int start_decoder_task(player_t *player)
     ESP_LOGD(TAG, "RAM left %d", esp_get_free_heap_size());
 	if (get_audio_output_mode() == VS1053)
 	{
-		task_func = vsTask;
+		task_func = VS1053_task;
         task_name = (char*)"vsTask";
         stack_depth = 3000;
 		priority = PRIO_VS1053;
@@ -60,12 +60,12 @@ static int start_decoder_task(player_t *player)
 				ESP_LOGE(TAG, "aac not supported on WROOM cpu");
 				spiRamFifoReset();
 				clientDisconnect("no AAC");
-				return -1;				
+				return -1;
 			}
-		
+
             task_func = fdkaac_decoder_task;
             task_name = (char*)"fdkaac_decoder_task";
-            stack_depth = 6900; //6144; 
+            stack_depth = 6900; //6144;
             break;
 
         default:
@@ -75,16 +75,16 @@ static int start_decoder_task(player_t *player)
     }
 
 	if (((task_func != NULL)) && (xTaskCreatePinnedToCore(task_func, task_name, stack_depth, player,
-			priority, NULL, CPU_MAD) != pdPASS)) 
+			priority, NULL, CPU_MAD) != pdPASS))
 	{
-									
+
 		ESP_LOGE(TAG, "ERROR creating decoder task! Out of memory?");
 		spiRamFifoReset();
 		return -1;
 	} else {
 		player->decoder_status = RUNNING;
 	}
-	
+
 	ESP_LOGD(TAG, "decoder task created: %s", task_name);
 
     return 0;
@@ -104,7 +104,7 @@ int audio_stream_consumer(const char *recv_buf, ssize_t bytes_read)
 	if (bytes_read >0)
 		spiRamFifoWrite(recv_buf, bytes_read);
 
-	if (player_instance->decoder_status != RUNNING ) 
+	if (player_instance->decoder_status != RUNNING )
 	{
 //		t = 0;
 		int bytes_in_buf = spiRamFifoFill();
@@ -118,7 +118,7 @@ int audio_stream_consumer(const char *recv_buf, ssize_t bytes_read)
 			if (start_decoder_task(player_instance) != 0) {
 				ESP_LOGE(TAG, "Decoder task failed");
 				audio_player_stop();
-				clientDisconnect("decoder failed"); 
+				clientDisconnect("decoder failed");
 				return -1;
 			}
 		}
@@ -127,11 +127,11 @@ int audio_stream_consumer(const char *recv_buf, ssize_t bytes_read)
 	if (t == 0) {
 		int bytes_in_buf = spiRamFifoFill();
 		uint8_t fill_level = (bytes_in_buf * 100) / spiRamFifoLen();
-		
+
 		ESP_LOGI(TAG, "Buffer fill %u%%, %d // %d bytes", fill_level, bytes_in_buf,spiRamFifoLen());
 	}
 	t = (t+1) & 255;
-	
+
     return 0;
 }
 
@@ -153,12 +153,12 @@ void audio_player_start()
 		if (get_audio_output_mode() != VS1053) renderer_start();
 		player_instance->media_stream->eof = false;
 		player_instance->command = CMD_START;
-		player_instance->decoder_command = CMD_NONE;	
+		player_instance->decoder_command = CMD_NONE;
 		player_status = RUNNING;
 }
 
 void audio_player_stop()
-{ 
+{
 //		spiRamFifoReset();
 		player_instance->decoder_command = CMD_STOP;
 		player_instance->command = CMD_STOP;

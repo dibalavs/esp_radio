@@ -1,30 +1,29 @@
 /******************************************************************************
- * 
+ *
  * Copyright 2018 karawin (http://www.karawin.fr)
  *
 *******************************************************************************/
 #ifndef ADDONUCG_H_
 #define ADDONUCG_H_
 
-void setfont(int size);
-void playingUcg();
-void namesetUcg(char* ici);
-void statusUcg(const char* label);
-void icy0Ucg(char* ici);
-void icy4Ucg(char* ici);
-void metaUcg(char* ici);
-char* getNameNumUcg();
-void scrollUcg();
-void drawFrameUcg(uint8_t mTscreen);
-void drawTTitleUcg(char* ttitle);
-void drawNumberUcg(uint8_t mTscreen,char* irStr);
-void drawStationUcg(uint8_t mTscreen,char* snum,char* ddot);
+void addonucg_setfont(int size);
+void addonucg_playing();
+void addonucg_nameset(char* ici);
+void addonucg_status(const char* label);
+void addonucg_icy0(char* ici);
+void addonucg_icy4(char* ici);
+void addonucg_meta(char* ici);
+char* addonucg_get_name_num_ucg();
+void addonucg_scroll();
+void addonucg_draw_frame(uint8_t mTscreen);
+void addonucg_draw_ttitle(char* ttitle);
+void addonucg_draw_number(uint8_t mTscreen,char* irStr);
+void addonucg_draw_station(uint8_t mTscreen,char* snum,char* ddot);
 //void drawVolumeUcg(uint8_t mTscreen,char* aVolume);
-void drawVolumeUcg(uint8_t mTscreen);
-void drawTimeUcg(uint8_t mTscreen,unsigned timein);
-void lcd_initUcg(uint8_t* lcd_type);
-void setVolumeUcg(uint16_t vol);
-void drawLinesUcg();
-
+void addonucg_draw_volume(uint8_t mTscreen);
+void addonucg_draw_time(uint8_t mTscreen,unsigned timein);
+void addonucg_lcd_init(uint8_t* lcd_type);
+void addonucg_set_volume(uint16_t vol);
+void addonucg_draw_lines();
 
 #endif /* ADDONUCG_H_ */

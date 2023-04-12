@@ -1,5 +1,5 @@
 /******************************************************************************
- * 
+ *
  * Copyright 2018 karawin (http://www.karawin.fr)
  *
 *******************************************************************************/
@@ -20,7 +20,7 @@
 #define REVISION "0"
 
 uint32_t checkUart(uint32_t speed);
-extern unsigned short adcdiv;	
+extern unsigned short adcdiv;
 void switchCommand(void );
 void checkCommand(int size, char* s);
 esp_log_level_t getLogLevel();
@@ -51,12 +51,11 @@ void setHostname(char* s);
 
 #define kprintf(fmt, ...) do {    \
 		telnetWrite(printf(fmt, ##__VA_ARGS__),fmt, ##__VA_ARGS__); \
-		addonParse(fmt, ##__VA_ARGS__);\
+		addon_parse(fmt, ##__VA_ARGS__);\
 	} while (0)
 
 
 
-void lkprintf(const char *format, va_list ap);
-	
+int lkprintf(const char *format, va_list ap);
+
 #endif
-		

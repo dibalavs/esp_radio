@@ -34,6 +34,50 @@ extern void  LoadUserCodes(void);
 
 #define TAG "vs1053"
 
+#define min(a, b) (((a) < (b)) ? (a) : (b))
+#define SET 0
+#define RESET 1
+
+#define RXNE    0x01
+#define TXE     0x02
+#define BSY     0x80
+
+#define VS_WRITE_COMMAND 	0x02
+#define VS_READ_COMMAND 	0x03
+#define SPI_MODE        	0x00
+#define SPI_STATUSVS      	0x01
+#define SPI_BASS        	0x02
+#define SPI_CLOCKF      	0x03
+#define SPI_DECODE_TIME 	0x04
+#define SPI_AUDATA      	0x05
+#define SPI_WRAM        	0x06
+#define SPI_WRAMADDR    	0x07
+#define SPI_HDAT0       	0x08
+#define SPI_HDAT1       	0x09
+#define SPI_AIADDR      	0x0a
+#define SPI_VOL         	0x0b
+#define SPI_AICTRL0     	0x0c
+#define SPI_AICTRL1     	0x0d
+#define SPI_AICTRL2     	0x0e
+#define SPI_AICTRL3     	0x0f
+#define SM_DIFF         	0x01
+#define SM_JUMP         	0x02
+#define SM_LAYER12			0x02
+#define SM_RESET        	0x04
+#define SM_CANCEL           0x08
+#define SM_OUTOFWAV     	0x08
+#define SM_PDOWN        	0x10
+#define SM_TESTS        	0x20
+#define SM_STREAM       	0x40
+#define SM_PLUSV        	0x80
+#define SM_DACT         	0x100
+#define SM_SDIORD       	0x200
+#define SM_SDISHARE     	0x400
+#define SM_SDINEW       	0x800
+#define SM_ADPCM        	0x1000
+#define SM_ADPCM_HP     	0x2000
+#define SM_LINE1            0x4000
+#define para_endFillByte    0x1E06
 
 int vsVersion = -1; // the version of the chip
 //	SS_VER is 0 for VS1001, 1 for VS1011, 2 for VS1002, 3 for VS1003, 4 for VS1053 and VS8053, 5 for VS1033, 7 for VS1103, and 6 for VS1063.
@@ -46,6 +90,12 @@ static spi_device_handle_t hvsspi;  // the device handle of the vs1053 spi high 
 
 SemaphoreHandle_t vsSPI = NULL;
 SemaphoreHandle_t hsSPI = NULL;
+
+static void VS1053_ControlReset(uint8_t State);
+static uint16_t VS1053_ReadRegister(uint8_t addressbyte);
+static void VS1053_ResetChip();
+static uint16_t VS1053_MaskAndShiftRight(uint16_t Source, uint16_t Mask, uint16_t Shift);
+static void VS1053_regtest();
 
 uint8_t spi_take_semaphore(SemaphoreHandle_t isSPI) {
 	if(isSPI) if(xSemaphoreTake(isSPI, portMAX_DELAY)) return 1;
@@ -124,7 +174,7 @@ bool VS1053_HW_init()
 }
 
 
-void ControlReset(uint8_t State){
+static void VS1053_ControlReset(uint8_t State){
 	gpio_set_level(rst, State);
 }
 
@@ -204,7 +254,7 @@ void VS1053_WriteRegister16(uint8_t addressbyte, uint16_t value)
 
 }
 
-uint16_t VS1053_ReadRegister(uint8_t addressbyte){
+static uint16_t VS1053_ReadRegister(uint8_t addressbyte){
 	uint16_t result;
     spi_transaction_t t;
 	esp_err_t ret;
@@ -226,27 +276,27 @@ uint16_t VS1053_ReadRegister(uint8_t addressbyte){
 }
 
 
-void WriteVS10xxRegister(unsigned short addr,unsigned short val)
+void VS1053_WriteVS10xxRegister(unsigned short addr,unsigned short val)
 {
 	VS1053_WriteRegister((uint8_t)addr&0xff, (uint8_t)((val&0xFF00)>>8), (uint8_t)(val&0xFF));
 }
 
 
-void VS1053_ResetChip(){
-	ControlReset(SET);
+static void VS1053_ResetChip(){
+	VS1053_ControlReset(SET);
 	vTaskDelay(10);
-	ControlReset(RESET);
+	VS1053_ControlReset(RESET);
 	vTaskDelay(10);
 	if (CheckDREQ() == 1) return;
 	vTaskDelay(100);
 }
 
 
-uint16_t MaskAndShiftRight(uint16_t Source, uint16_t Mask, uint16_t Shift){
+static uint16_t VS1053_MaskAndShiftRight(uint16_t Source, uint16_t Mask, uint16_t Shift){
 	return ( (Source & Mask) >> Shift );
 }
 
-void VS1053_regtest()
+static void VS1053_regtest()
 {
 	int MP3Status = VS1053_ReadRegister(SPI_STATUSVS);
 	int MP3Mode = VS1053_ReadRegister(SPI_MODE);
@@ -324,9 +374,9 @@ void VS1053_InitVS()
 
 
 void VS1053_Start(){
-	ControlReset(SET);
+	VS1053_ControlReset(SET);
 	vTaskDelay(10);
-	ControlReset(RESET);
+	VS1053_ControlReset(RESET);
 	vTaskDelay(50);
 	if (CheckDREQ() == 0) vTaskDelay(50);	// wait a bit more
 	//Check DREQ
@@ -364,7 +414,7 @@ void VS1053_Start(){
 			{	//fed up
 				ESP_LOGI(TAG,"midi mode on\n");
 				g_device->options |= T_PATCH; // force no patch
-				saveDeviceSettings(g_device);
+				eeprom_save_device_settings(g_device);
 				esp_restart();
 			}
 		}
@@ -455,7 +505,7 @@ void VS1053_SetTreble(int8_t xOneAndHalfdB){
 	uint16_t bassReg = VS1053_ReadRegister(SPI_BASS);
 
 	if (( xOneAndHalfdB <= 7) && ( xOneAndHalfdB >=-8))
-		VS1053_WriteRegister( SPI_BASS, MaskAndShiftRight(bassReg,0x0F00,8) | (xOneAndHalfdB << 4), bassReg & 0x00FF );
+		VS1053_WriteRegister( SPI_BASS, VS1053_MaskAndShiftRight(bassReg,0x0F00,8) | (xOneAndHalfdB << 4), bassReg & 0x00FF );
 }
 
 /**
@@ -468,7 +518,7 @@ void VS1053_SetTreble(int8_t xOneAndHalfdB){
 void VS1053_SetTrebleFreq(uint8_t xkHz){
 	uint16_t bassReg = VS1053_ReadRegister(SPI_BASS);
 	if ( xkHz <= 15 )
-		VS1053_WriteRegister( SPI_BASS, MaskAndShiftRight(bassReg,0xF000,8) | xkHz, bassReg & 0x00FF );
+		VS1053_WriteRegister( SPI_BASS, VS1053_MaskAndShiftRight(bassReg,0xF000,8) | xkHz, bassReg & 0x00FF );
 }
 int8_t	VS1053_GetTrebleFreq(){
 	return ( (VS1053_ReadRegister(SPI_BASS) & 0x0F00) >> 8);
@@ -506,7 +556,7 @@ void VS1053_SetBass(uint8_t xdB){
 void VS1053_SetBassFreq(uint8_t xTenHz){
 	uint16_t bassReg = VS1053_ReadRegister(SPI_BASS);
 	if (xTenHz >=2 && xTenHz <= 15)
-		VS1053_WriteRegister(SPI_BASS, MaskAndShiftRight(bassReg,0xFF00,8), (bassReg & 0x00F0) | xTenHz );
+		VS1053_WriteRegister(SPI_BASS, VS1053_MaskAndShiftRight(bassReg,0xFF00,8), (bassReg & 0x00F0) | xTenHz );
 }
 
 uint8_t	VS1053_GetBassFreq(){
@@ -525,7 +575,7 @@ void VS1053_SetSpatial(uint8_t num){
 	if (num <= 3)
 	{
 		num = (((num <<2)&8) | (num&1))<<4;
-		VS1053_WriteRegister(SPI_MODE, MaskAndShiftRight(spatial,0xFF00,8), (spatial & 0x006F) | num );
+		VS1053_WriteRegister(SPI_MODE, VS1053_MaskAndShiftRight(spatial,0xFF00,8), (spatial & 0x006F) | num );
 	}
 }
 
@@ -589,7 +639,7 @@ void VS1053_flush_cancel() {
 	// set spimode with SM_CANCEL
 	uint16_t spimode = VS1053_ReadRegister(SPI_MODE)| SM_CANCEL;
   // set CANCEL
-	VS1053_WriteRegister(SPI_MODE,MaskAndShiftRight(spimode,0xFF00,8), (spimode & 0x00FF) );
+	VS1053_WriteRegister(SPI_MODE,VS1053_MaskAndShiftRight(spimode,0xFF00,8), (spimode & 0x00FF) );
 	// wait CANCEL
 	VS1053_WriteRegister16(SPI_WRAMADDR, para_endFillByte);
 	endFillByte = (int8_t) (VS1053_ReadRegister(SPI_WRAM) & 0xFF);
@@ -611,7 +661,7 @@ void VS1053_flush_cancel() {
 
 }
 
-void vsTask(void *pvParams) {
+void VS1053_task(void *pvParams) {
 #define VSTASKBUF	1024
 	portBASE_TYPE uxHighWaterMark;
 	uint8_t  b[VSTASKBUF];
