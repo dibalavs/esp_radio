@@ -92,7 +92,6 @@ typedef struct {
 #define SCTRL	false
 #define ECTRL	2
 
-
 extern QueueHandle_t event_ir;
 extern u8g2_t u8g2;
 extern ucg_t ucg;

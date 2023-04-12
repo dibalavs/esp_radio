@@ -15,6 +15,7 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include "esp_err.h"
 #include "esp_log.h"
 #include "driver/i2c.h"
 #include "gpio.h"
@@ -27,13 +28,6 @@
         return (ret);                                                                   \
         }
 
-
-    /*!< gpio number for I2C master data  */
-#define I2C_MASTER_NUM I2C_NUM_0   /*!< I2C port number for master dev */
-#define I2C_MASTER_TX_BUF_DISABLE   0   /*!< I2C master do not need buffer */
-#define I2C_MASTER_RX_BUF_DISABLE   0   /*!< I2C master do not need buffer */
-#define I2C_MASTER_FREQ_HZ    80000     /*!< I2C master clock frequency */
-
 #define MA12040_ADDR  0x20   /*!< slave address for MA12040 amplifier */
 
 #define WRITE_BIT  I2C_MASTER_WRITE /*!< I2C master write */
@@ -42,32 +36,6 @@
 #define ACK_CHECK_DIS  0x0     /*!< I2C master will not check ack from slave */
 #define ACK_VAL    0x0         /*!< I2C ack value */
 #define NACK_VAL   0x1         /*!< I2C nack value */
-
-
-void i2c_master_init()
-{   
-// KaRadio32, I2C may be already configured.
-	gpio_num_t scl;
-	gpio_num_t sda;
-	gpio_num_t rsti2c;
-	
-	gpio_get_i2c(&scl,&sda,&rsti2c);
-
-	int i2c_master_port = I2C_MASTER_NUM;
-    i2c_config_t conf;
-    conf.mode = I2C_MODE_MASTER;
-    conf.sda_io_num = sda;
-    conf.sda_pullup_en = GPIO_PULLUP_ENABLE;
-    conf.scl_io_num = scl;
-    conf.scl_pullup_en = GPIO_PULLUP_ENABLE;
-    conf.master.clk_speed = I2C_MASTER_FREQ_HZ;
-    esp_err_t res = i2c_param_config(i2c_master_port, &conf);
-    printf("Driver param setup : %d\n",res);
-	res = i2c_driver_install(i2c_master_port, conf.mode, I2C_MASTER_RX_BUF_DISABLE, I2C_MASTER_TX_BUF_DISABLE, 0);
-	if (res != 0) printf("Driver already installed. No problem \n");
-	else printf("Driver installed   : %d\n",res);
-    //i2c_set_period(i2c_master_port,100,99);
-}
 
 esp_err_t ma_write(uint8_t address, uint8_t *wbuf, uint8_t n)
 {
@@ -82,7 +50,7 @@ esp_err_t ma_write(uint8_t address, uint8_t *wbuf, uint8_t n)
     i2c_master_write_byte(cmd, wbuf[i], ack);
   }
   i2c_master_stop(cmd);
-  int ret = i2c_master_cmd_begin(I2C_MASTER_NUM, cmd, 1000 / portTICK_PERIOD_MS);
+  int ret = i2c_master_cmd_begin(I2C_NO, cmd, 1000 / portTICK_PERIOD_MS);
   i2c_cmd_link_delete(cmd);
   if (ret == ESP_FAIL) { return ret; }
   return ESP_OK;
@@ -96,7 +64,7 @@ esp_err_t ma_write_byte(uint8_t address, uint8_t value)
   i2c_master_write_byte(cmd, address, ACK_VAL);
   i2c_master_write_byte(cmd, value, ACK_VAL);
   i2c_master_stop(cmd);
-  ret = i2c_master_cmd_begin(I2C_MASTER_NUM, cmd, 1000 / portTICK_PERIOD_MS);
+  ret = i2c_master_cmd_begin(I2C_NO, cmd, 1000 / portTICK_PERIOD_MS);
   i2c_cmd_link_delete(cmd);
   if (ret == ESP_FAIL) {
      printf("ESP_I2C_WRITE ERROR : %d\n",ret);
@@ -120,7 +88,7 @@ esp_err_t ma_read(uint8_t address, uint8_t *rbuf, uint8_t n)
  // { i2c_master_read_byte(cmd, rbuf++, ACK_VAL); }
   i2c_master_read_byte(cmd, rbuf + n-1 , NACK_VAL);
   i2c_master_stop(cmd);
-  ret = i2c_master_cmd_begin(I2C_MASTER_NUM, cmd, 100 / portTICK_PERIOD_MS);
+  ret = i2c_master_cmd_begin(I2C_NO, cmd, 100 / portTICK_PERIOD_MS);
   i2c_cmd_link_delete(cmd);
   if (ret == ESP_FAIL) {
       printf("i2c Error read - readback\n");
@@ -142,7 +110,7 @@ uint8_t ma_read_byte(uint8_t address)
   i2c_master_write_byte(cmd, (MA12040_ADDR<<1) | READ_BIT, ACK_CHECK_EN);
   i2c_master_read_byte(cmd, &value, NACK_VAL);
   i2c_master_stop(cmd);
-  ret = i2c_master_cmd_begin(I2C_MASTER_NUM, cmd, 1000 / portTICK_PERIOD_MS);
+  ret = i2c_master_cmd_begin(I2C_NO, cmd, 1000 / portTICK_PERIOD_MS);
   i2c_cmd_link_delete(cmd);
   if (ret == ESP_FAIL) {
       printf("i2c Error read - readback\n");
@@ -155,11 +123,9 @@ uint8_t ma_read_byte(uint8_t address)
 /*
  * Output audio data to I2S and setup MerusAudio digital power amplifier
  */
-uint8_t init_ma120(uint8_t vol)
+esp_err_t init_ma120(uint8_t vol)
 {
     printf("Setup MA120x0\n");
-
-    i2c_master_init();
 
     const uint8_t MA_hw_version__a = 127;
     uint8_t res = ma_read_byte(MA_hw_version__a);
@@ -175,8 +141,8 @@ uint8_t init_ma120(uint8_t vol)
     printf("Audio in mode : 0x%02x\n",res);
 
     ma_write_byte(45,0x34);                                // Clean any errors on device
-    if (!ma_write_byte(45,0x30)) return 0xff;
+    if (!ma_write_byte(45,0x30)) return ESP_FAIL;
 
     printf("Init done\n");
-	return 0;
+	return ESP_OK;
 }

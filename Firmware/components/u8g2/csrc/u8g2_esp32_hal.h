@@ -8,17 +8,17 @@
 #ifndef U8G2_ESP32_HAL_H_
 #define U8G2_ESP32_HAL_H_
 #include "u8g2.h"
-#define KaRadio32 
+#define KaRadio32
 #include "vs1053.h"
 #include "driver/gpio.h"
 #include "driver/spi_master.h"
 #include "driver/i2c.h"
 //my adaptation. Comment for a generic product
-#define KaRadio32 
+#define KaRadio32
 
 #define U8G2_ESP32_HAL_UNDEFINED (-1)
 
-#define I2C_MASTER_NUM I2C_NUM_0           //  I2C port number for master dev
+#define I2C_NO I2C_NUM_0           //  I2C port number for master dev
 #define I2C_MASTER_TX_BUF_DISABLE   0      //  I2C master do not need buffer
 #define I2C_MASTER_RX_BUF_DISABLE   0      //  I2C master do not need buffer
 #define I2C_MASTER_FREQ_HZ          90000  //  I2C master clock frequency
@@ -26,7 +26,7 @@
 #define ACK_CHECK_DIS  0x0                 //  I2C master will not check ack from slave
 
 typedef struct {
-#ifdef KaRadio32	
+#ifdef KaRadio32
 	uint8_t spi_no;
 #endif
 	gpio_num_t clk;
@@ -38,7 +38,7 @@ typedef struct {
 	gpio_num_t dc;
 } u8g2_esp32_hal_t ;
 
-#ifdef KaRadio32	
+#ifdef KaRadio32
 #define U8G2_ESP32_HAL_DEFAULT {U8G2_ESP32_HAL_UNDEFINED,U8G2_ESP32_HAL_UNDEFINED, U8G2_ESP32_HAL_UNDEFINED, U8G2_ESP32_HAL_UNDEFINED, U8G2_ESP32_HAL_UNDEFINED, U8G2_ESP32_HAL_UNDEFINED, U8G2_ESP32_HAL_UNDEFINED, U8G2_ESP32_HAL_UNDEFINED }
 #else
 #define U8G2_ESP32_HAL_DEFAULT {U8G2_ESP32_HAL_UNDEFINED, U8G2_ESP32_HAL_UNDEFINED, U8G2_ESP32_HAL_UNDEFINED, U8G2_ESP32_HAL_UNDEFINED, U8G2_ESP32_HAL_UNDEFINED, U8G2_ESP32_HAL_UNDEFINED, U8G2_ESP32_HAL_UNDEFINED }

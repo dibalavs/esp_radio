@@ -77,7 +77,7 @@ static enum mad_flow input(struct mad_stream *stream, buffer_t *buf, player_t *p
             //rate is too low, and shouldn't normally be needed!
             ESP_LOGV(TAG, "Buffer underflow, need %d bytes.", buf_free_capacity(buf));
 //           ESP_LOGD(TAG, "Buffer underflow, need %d bytes.", buf_free_capacity_after_purge(buf));
- 
+
 			buf_underrun_cnt++;
             //We both silence the output as well as wait a while by pushing silent samples into the i2s system.
             //This waits for about 200mS
@@ -136,12 +136,7 @@ void mp3_decoder_task(void *pvParameters)
 
     ESP_LOGD(TAG, "Decoder start.");
 
-	if (!init_i2s()) 
-	{
-		goto abort0;
-	}
-	
-	
+
 	//ESP_LOGD(TAG, "init I2S mode %d, port %d, %d bit, %d Hz", renderer_instance->output_mode, renderer_instance->i2s_num, renderer_instance->bit_depth, renderer_instance->sample_rate);
     // buffer might contain noise
     i2s_zero_dma_buffer(renderer_instance->i2s_num);
@@ -182,11 +177,11 @@ void mp3_decoder_task(void *pvParameters)
         //ESP_LOGV(TAG, "RAM left %d", esp_get_free_heap_size());
     }
 	goto cleanup;
-	
+
 	// exit on internal error
     abort:
 	player->command = CMD_STOP;
-	
+
 	// exit on normal exit
 	cleanup:
     // avoid noise
@@ -203,15 +198,15 @@ void mp3_decoder_task(void *pvParameters)
     spiRamFifoReset();
 	renderer_zero_dma_buffer();
 	i2s_stop(renderer_instance->i2s_num);
-	i2s_driver_uninstall(renderer_instance->i2s_num);	
+	i2s_driver_uninstall(renderer_instance->i2s_num);
     player->decoder_status = STOPPED;
     player->decoder_command = CMD_NONE;
     ESP_LOGD(TAG, "Decoder stopped.\n");
 //    ESP_LOGD(TAG, "MAD decoder stack: %d\n", uxTaskGetStackHighWaterMark(NULL));
     vTaskDelete(NULL);
 	return;
-	
-	
+
+
 abort1:
 abort0:
 	esp_restart();

@@ -45,22 +45,10 @@ uint8_t u8g2_esp32_spi_byte_cb(u8x8_t *u8x8, uint8_t msg, uint8_t arg_int,  void
 			break;
 
 		case U8X8_MSG_BYTE_INIT: {
-			if (u8g2_esp32_hal.clk == U8G2_ESP32_HAL_UNDEFINED ||
-					u8g2_esp32_hal.mosi == U8G2_ESP32_HAL_UNDEFINED ||
-					u8g2_esp32_hal.cs == U8G2_ESP32_HAL_UNDEFINED) {
+			if (u8g2_esp32_hal.cs == U8G2_ESP32_HAL_UNDEFINED) {
 				break;
 			}
-#ifndef KaRadio32
-		  spi_bus_config_t bus_config;
-		  memset(&bus_config, 0, sizeof(spi_bus_config_t));
-		  bus_config.sclk_io_num   = u8g2_esp32_hal.clk; // CLK
-		  bus_config.mosi_io_num   = u8g2_esp32_hal.mosi; // MOSI
-		  bus_config.miso_io_num   = -1; // MISO
-		  bus_config.quadwp_io_num = -1; // Not used
-		  bus_config.quadhd_io_num = -1; // Not used
-		  //ESP_LOGI(TAG, "... Initializing bus.");
-		  ESP_ERROR_CHECK(spi_bus_initialize(KSPI, &bus_config, 1));
-#endif
+
 		  spi_device_interface_config_t dev_config;
 		  dev_config.address_bits     = 0;
 		  dev_config.command_bits     = 0;
@@ -72,7 +60,7 @@ uint8_t u8g2_esp32_spi_byte_cb(u8x8_t *u8x8, uint8_t msg, uint8_t arg_int,  void
 		  if (u8x8->display_info->sck_clock_hz <= 1000000UL)
 			   dev_config.clock_speed_hz   = 400000UL;
 		  else if (u8x8->display_info->sck_clock_hz <= 2000000UL)
-			   dev_config.clock_speed_hz   = u8x8->display_info->sck_clock_hz; 
+			   dev_config.clock_speed_hz   = u8x8->display_info->sck_clock_hz;
 		  else dev_config.clock_speed_hz   = 10000000UL;
 //		  dev_config.clock_speed_hz   = u8x8->display_info->sck_clock_hz;
 		  dev_config.spics_io_num     = u8g2_esp32_hal.cs;
@@ -112,7 +100,7 @@ uint8_t u8g2_esp32_spi_byte_cb(u8x8_t *u8x8, uint8_t msg, uint8_t arg_int,  void
 uint8_t u8g2_esp32_i2c_byte_cb(u8x8_t *u8x8, uint8_t msg, uint8_t arg_int, void *arg_ptr) {
 //	ESP_LOGD(TAG, "i2c_cb: Received a msg: %d, arg_int: %d, arg_ptr: %p", msg, arg_int, arg_ptr);
 	esp_err_t err = ESP_OK;
-	
+
 	switch(msg) {
 		case U8X8_MSG_BYTE_SET_DC: {
 			if (u8g2_esp32_hal.dc != U8G2_ESP32_HAL_UNDEFINED) {
@@ -139,10 +127,10 @@ uint8_t u8g2_esp32_i2c_byte_cb(u8x8_t *u8x8, uint8_t msg, uint8_t arg_int, void 
 		    conf.master.clk_speed = I2C_MASTER_FREQ_HZ;
 			conf.clk_flags = 0;
 			ESP_LOGI(TAG, "i2c_param_config %d", conf.mode);
-		    ESP_ERROR_CHECK(i2c_param_config(I2C_MASTER_NUM, &conf));
-			ESP_LOGI(TAG, "i2c_driver_install %d", I2C_MASTER_NUM);
-//		    ESP_ERROR_CHECK(i2c_driver_install(I2C_MASTER_NUM, conf.mode, I2C_MASTER_RX_BUF_DISABLE, I2C_MASTER_TX_BUF_DISABLE, 0));
-			err = i2c_driver_install(I2C_MASTER_NUM, conf.mode, I2C_MASTER_RX_BUF_DISABLE, I2C_MASTER_TX_BUF_DISABLE, 0);
+		    ESP_ERROR_CHECK(i2c_param_config(I2C_NO, &conf));
+			ESP_LOGI(TAG, "i2c_driver_install %d", I2C_NO);
+//		    ESP_ERROR_CHECK(i2c_driver_install(I2C_NO, conf.mode, I2C_MASTER_RX_BUF_DISABLE, I2C_MASTER_TX_BUF_DISABLE, 0));
+			err = i2c_driver_install(I2C_NO, conf.mode, I2C_MASTER_RX_BUF_DISABLE, I2C_MASTER_TX_BUF_DISABLE, 0);
 			if (err != ESP_OK ) ESP_LOGE(TAG, "i2c_driver_install error %x", err);
 			break;
 		}
@@ -171,7 +159,7 @@ uint8_t u8g2_esp32_i2c_byte_cb(u8x8_t *u8x8, uint8_t msg, uint8_t arg_int, void 
 		case U8X8_MSG_BYTE_END_TRANSFER: {
 			//ESP_LOGD(TAG, "End I2C transfer.");
 			ESP_ERROR_CHECK(i2c_master_stop(handle_i2c));
-			i2c_master_cmd_begin(I2C_MASTER_NUM, handle_i2c, I2C_TIMEOUT_MS / portTICK_PERIOD_MS);
+			i2c_master_cmd_begin(I2C_NO, handle_i2c, I2C_TIMEOUT_MS / portTICK_PERIOD_MS);
 			i2c_cmd_link_delete(handle_i2c);
 			break;
 		}

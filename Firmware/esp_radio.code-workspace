@@ -1,0 +1,21 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"files.associations": {
+			"task.h": "c",
+			"semphr.h": "c",
+			"esp_timer.h": "c"
+		},
+                "C_Cpp.intelliSenseEngine": "Disabled",
+                "clangd.arguments": ["-log=error", 
+                         "-pretty", 
+                         "--background-index",
+                         "-j", "5",
+                         "--query-driver=**/xtensa-esp32-elf-g*.exe",
+                         "--compile-commands-dir=${workspaceFolder}\\build"]
+	}
+}

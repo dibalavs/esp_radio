@@ -56,37 +56,36 @@ bool haveTouch() {return haveTouchOn;}
 void  getTaskLcd(TaskHandle_t* hdt){handleTaskLcd = *hdt;}
 
 void xpt_init()
-{	
+{
   gpio_get_touch(&csPin);
-  gpio_get_spi_bus((uint8_t*)&spiNo,NULL,NULL,NULL);
   if ((csPin != GPIO_NONE) )
-  {	
+  {
 	haveTouchOn = true;
 	gpio_config_t gpioConfig;
 	gpioConfig.mode         = GPIO_MODE_OUTPUT;
 	gpioConfig.pull_up_en   = GPIO_PULLUP_ENABLE;
 	gpioConfig.intr_type    = GPIO_INTR_DISABLE;
 	gpioConfig.pin_bit_mask = ((uint64_t)(((uint64_t)1)<<csPin));
-	ESP_ERROR_CHECK(gpio_config(&gpioConfig));		
+	ESP_ERROR_CHECK(gpio_config(&gpioConfig));
 	gpio_set_level(csPin, 1);
 	ESP_LOGI(TAG, "Touch cs: %d init done",csPin);
-	
+
 	if (t_handle==NULL)
 	{
-		spi_device_interface_config_t dev_config={			
+		spi_device_interface_config_t dev_config={
 		.clock_speed_hz   = 2000000,
 		.command_bits	  = 0,
 		.spics_io_num     =  -1,
 		.cs_ena_posttrans = 1,
-		.mode = 0,   
+		.mode = 0,
 		.flags            = SPI_DEVICE_NO_DUMMY,
 		.queue_size       = 1,
 		};
-		ESP_ERROR_CHECK(spi_bus_add_device(spiNo, &dev_config, &t_handle)); 
-		ESP_LOGI(TAG, "... Added touch spi bus  cs: %d,  Speed= %d.",csPin,dev_config.clock_speed_hz);		
+		ESP_ERROR_CHECK(spi_bus_add_device(spiNo, &dev_config, &t_handle));
+		ESP_LOGI(TAG, "... Added touch spi bus  cs: %d,  Speed= %d.",csPin,dev_config.clock_speed_hz);
 	}
 	//init tp_calx & tp_caly
-	getCalibration();	
+	getCalibration();
   }
 }
 
@@ -204,10 +203,10 @@ bool IRAM_ATTR xpt_read_touch(int *x, int* y, uint8_t raw)
 	int xright  = tp_calx & 0x3FFF;
 	int ytop    = (tp_caly >> 16) & 0x3FFF;
 	int ybottom = tp_caly & 0x3FFF;
-	
+
 	ESP_LOGV(TAG, "xleft:%d,xright:%d,ytop:%d,ybottom:%d,tp_calx:%d,tp_caly:%d,X:%d,Y:%d",xleft,xright,ytop,ybottom,tp_calx,tp_caly,X,Y);
 //	ESP_LOGW(TAG, "X:%d,Y:%d",X,Y);
-	
+
 	if (((xright - xleft) != 0) && ((ybottom - ytop) != 0)) {
 		X = ((X - xleft) * height) / (xright - xleft);
 		Y = ((Y - ytop) * width) / (ybottom - ytop);
@@ -261,7 +260,7 @@ bool xpt_read_calibrate(int* x, int* y)
 	if (result <= 50) return false;
 	ESP_LOGI(TAG, "X:%d,Y:%d",*x,*y);
 
-	vTaskDelay(10);	
+	vTaskDelay(10);
 	return true;
 }
 
@@ -283,22 +282,22 @@ void xpt_calibrate()
 	}
 	inCalibrate = true;
 	kprintf("INSTRUCTIONS:\n");
-	userMsg(0);		
+	userMsg(0);
 	while (!(xpt_read_calibrate(&xl, &yt)))vTaskDelay(1);
 	kprintf("Ok\n");
 	vTaskDelay(10);
 	while (xpt_touched());
-	userMsg(1);			
+	userMsg(1);
 	while (!(xpt_read_calibrate(&xr, &yb)))vTaskDelay(1);
 	kprintf("Ok\n");
 	while (xpt_touched());
-	
+
 	ESP_LOGD(TAG, "xl:%x, yt:%x, xr:%x, yb:%x",xl,yt,xr,yb);
 	kprintf("Done\n");
 
 	tp_calx = xl<<16 | xr;
 	tp_caly = yt<<16 | yb;
 
-	saveCalibration(tp_calx, tp_caly);	
+	saveCalibration(tp_calx, tp_caly);
 	inCalibrate = false;
 }

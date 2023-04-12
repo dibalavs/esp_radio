@@ -74,7 +74,6 @@ uint16_t	VS1053_GetBitrate();
 uint16_t	VS1053_GetSampleRate();
 uint16_t	VS1053_GetDecodeTime();
 void	VS1053_flush_cancel();
-void VS1053_spi_init();
 // admix plugin control
 void VS1053_SetVolumeLine(int16_t vol);
 void VS1053_Admix(bool val);

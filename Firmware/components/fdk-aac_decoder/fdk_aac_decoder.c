@@ -41,10 +41,6 @@ void fdkaac_decoder_task(void *pvParameters)
 	renderer_config_t *renderer_instance;
 	renderer_instance = renderer_get();
     AAC_DECODER_ERROR err;
-	if (!init_i2s()) 
-	{
-		goto abort1;
-	}
 
 	//ESP_LOGD(TAG, "init I2S mode %d, port %d, %d bit, %d Hz", renderer_instance->output_mode, renderer_instance->i2s_num, renderer_instance->bit_depth, renderer_instance->sample_rate);
     // buffer might contain noise
@@ -59,10 +55,10 @@ void fdkaac_decoder_task(void *pvParameters)
 	buffer_t *in_buf  = NULL;
 	int bf = bigSram()?12:6;
     in_buf = buf_create_dma(INPUT_BUFFER_SIZE* bf );
-	if (in_buf==NULL) { 
-		ESP_LOGE(TAG,"buf_create in_buf failed"); 
-		buf_destroy( pcm_buf); 
-		goto abort1; 
+	if (in_buf==NULL) {
+		ESP_LOGE(TAG,"buf_create in_buf failed");
+		buf_destroy( pcm_buf);
+		goto abort1;
 	}
 
     fill_read_buffer(in_buf);
@@ -77,27 +73,27 @@ void fdkaac_decoder_task(void *pvParameters)
     } else {
         /* create decoder instance */
 		handle = aacDecoder_Open(TT_MP4_ADTS, /* num layers */1);
-		if (handle == 0) 
+		if (handle == 0)
 		{
-			ESP_LOGE(TAG,"aac invalid handle"); 
-			goto abort1; 
+			ESP_LOGE(TAG,"aac invalid handle");
+			goto abort1;
 		}
     }
-	
+
     /* configure instance */
     aacDecoder_SetParam(handle, AAC_PCM_OUTPUT_INTERLEAVED, 1);
     aacDecoder_SetParam(handle, AAC_PCM_MIN_OUTPUT_CHANNELS, -1);
     aacDecoder_SetParam(handle, AAC_PCM_MAX_OUTPUT_CHANNELS, -1);
     aacDecoder_SetParam(handle, AAC_PCM_LIMITER_ENABLE, 0);
 	aacDecoder_SetParam(handle, AAC_QMF_LOWPOWER, -1);
-	
+
 
     const uint32_t flags = 0;
     uint32_t pcm_size = 0;
     bool first_frame = true;
 //    ESP_LOGI(TAG, "(line %u) free heap: %u", __LINE__, esp_get_free_heap_size());
 
-    while (!player->media_stream->eof) 
+    while (!player->media_stream->eof)
 	{
         /* re-fill buffer if necessary */
 		size_t bytes_avail = buf_data_unread(in_buf);
@@ -109,10 +105,10 @@ void fdkaac_decoder_task(void *pvParameters)
 //			vTaskDelay(1);
 			if(player->decoder_command == CMD_STOP) {
                 break;
-			}       
+			}
 		}
 
-//		watchgog reset 
+//		watchgog reset
 #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
 		TIMERG0.wdtwprotect.wdt_wkey = TIMG_WDT_WKEY_VALUE;
 		TIMERG0.wdtfeed.wdt_feed = 1;
@@ -132,18 +128,18 @@ void fdkaac_decoder_task(void *pvParameters)
         in_buf->read_pos += bytes_taken;
         in_buf->bytes_consumed += bytes_taken;
 
-		
+
 		if (bytes_taken == 0) {  // blank output
 //		if (!first_frame) {  // blank output  speed test
 			memset(pcm_buf->base,0,OUTPUT_BUFFER_SIZE);
 			pcm_buf->len = OUTPUT_BUFFER_SIZE;
 			err = AAC_DEC_OK;
         }
-		else 
-		{	
+		else
+		{
 			err = aacDecoder_DecodeFrame(handle, (short int *) pcm_buf->base,
 					pcm_buf->len, flags);
-			
+
 //		if (err != AAC_DEC_OK) continue;
         // need more bytes, lets refill
 			if(err == AAC_DEC_TRANSPORT_SYNC_ERROR || err == AAC_DEC_NOT_ENOUGH_BITS) {
@@ -173,8 +169,8 @@ void fdkaac_decoder_task(void *pvParameters)
 				pcm_format.sample_rate = mStreamInfo->sampleRate;
 			}
 		}
-				
-        render_samples((char *) pcm_buf->base, pcm_size, &pcm_format);		
+
+        render_samples((char *) pcm_buf->base, pcm_size, &pcm_format);
 
     }
 //	goto cleanup;
@@ -190,11 +186,11 @@ void fdkaac_decoder_task(void *pvParameters)
     buf_destroy(pcm_buf);
 	renderer_zero_dma_buffer();
 	i2s_stop(renderer_instance->i2s_num);
-    i2s_driver_uninstall(renderer_instance->i2s_num);	
+    i2s_driver_uninstall(renderer_instance->i2s_num);
     player->decoder_status = STOPPED;
     player->decoder_command = CMD_NONE;
-	
-//	ESP_LOGD(TAG, "aac_decoder stack: %d\n", uxTaskGetStackHighWaterMark(NULL));	
+
+//	ESP_LOGD(TAG, "aac_decoder stack: %d\n", uxTaskGetStackHighWaterMark(NULL));
 //	ESP_LOGI(TAG, "%u free heap %u", __LINE__, esp_get_free_heap_size());
 
 	//esp_task_wdt_delete(NULL);
@@ -202,5 +198,5 @@ void fdkaac_decoder_task(void *pvParameters)
 	return;
 	abort1:
 	esp_restart();
-	
+
 }

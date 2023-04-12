@@ -7,21 +7,21 @@
  *		jp Cocatrix
  * Copyright (c) 2017, jp Cocatrix
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright notice, this
  *   list of conditions and the following disclaimer.
- * 
+ *
  * * Redistributions in binary form must reproduce the above copyright notice,
  *   this list of conditions and the following disclaimer in the documentation
  *   and/or other materials provided with the distribution.
- * 
+ *
  * * Neither the name of the copyright holder nor the names of its
  *   contributors may be used to endorse or promote products derived from
  *   this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -42,13 +42,13 @@
 
 
 #define TIMER_DIVIDER 16 	//5000000Hz 5MHz
-#define TIMER_DIVIDER1MS TIMER_BASE_CLK/10000 //10000Hz 
+#define TIMER_DIVIDER1MS TIMER_BASE_CLK/10000 //10000Hz
 #define TIMER_DIVIDER1mS 8 //10000000Hz 10MHz
 
 #define TIMERVALUE(x) (x*5000000ULL )
-#define TIMERVALUE1MS(x) (x*10) 
+#define TIMERVALUE1MS(x) (x*10)
 #define TIMERVALUE1mS(x) (x*10000 )
-#define TIMERGROUP TIMER_GROUP_0 
+#define TIMERGROUP TIMER_GROUP_0
 #define TIMERGROUP1MS TIMER_GROUP_1
 #define TIMERGROUP1mS TIMER_GROUP_1
 #define msTimer	TIMER_0
@@ -58,8 +58,8 @@
 
 
 // event for timers and encoder
-#define TIMER_SLEEP   0   
-#define TIMER_WAKE    1 
+#define TIMER_SLEEP   0
+#define TIMER_WAKE    1
 #define TIMER_1MS	2
 #define TIMER_1mS	3
 
