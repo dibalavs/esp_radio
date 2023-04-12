@@ -35,7 +35,7 @@ set(COMPONENT_ADD_INCLUDEDIRS
 
 idf_component_register(SRCS ${COMPONENT_SRCS}
                        INCLUDE_DIRS ${COMPONENT_ADD_INCLUDEDIRS}
-					   REQUIRES esp_adc mdns u8g2 ucglib spi_flash xpt2046 fifo driver esp_wifi nvs_flash audio_renderer audio_player mp3_decoder fdk-aac_decoder MerusAudio common app_update
+					   REQUIRES esp_adc mdns u8g2 ucglib spi_flash fifo driver esp_wifi nvs_flash audio_renderer audio_player mp3_decoder fdk-aac_decoder MerusAudio common app_update
 					   PRIV_REQUIRES wolfssl)
 
 idf_build_set_property(COMPILE_OPTIONS "-Wno-format" APPEND)

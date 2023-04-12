@@ -14,7 +14,6 @@
 #include "driver/spi_master.h"
 #include "driver/i2c.h"
 #include "ucg_esp32_hal.h"
-#include "xpt2046.h"
 
 #ifdef KaRadio32
 #include "gpio.h"
@@ -37,17 +36,17 @@ ucg_esp32_hal_t ucg_esp32_hal = UCG_ESP32_HAL_DEFAULT;
 			ucg_esp32_hal.mosi  = PIN_NUM_MOSI;
 			ucg_esp32_hal.cs    = PIN_LCD_CS;
 			ucg_esp32_hal.dc    = PIN_LCD_A0;
-			ucg_esp32_hal.reset = PIN_LCD_RST;	
-ucg_esp32_hal_init(ucg_esp32_hal);	
-		
+			ucg_esp32_hal.reset = PIN_LCD_RST;
+ucg_esp32_hal_init(ucg_esp32_hal);
+
 //init the lcd
 ucg_int_t ucg_Init(ucg_t *ucg, ucg_dev_fnptr device_cb, ucg_dev_fnptr ext_cb, ucg_com_fnptr com_cb);
 example
-//setup ucglib, see ucg.h for a list of ucg_dev and ucg_ext objects 
+//setup ucglib, see ucg.h for a list of ucg_dev and ucg_ext objects
 ucg_Init(&ucg, ucg_dev_ssd1351_18x128x128_ilsoft, ucg_ext_ssd1351_18, ucg_com_hal);
 
-//define prefered font rendering method (no text will be visibile, if this is missing 
-ucg_SetFontMode(&ucg, UCG_FONT_MODE_TRANSPARENT); 
+//define prefered font rendering method (no text will be visibile, if this is missing
+ucg_SetFontMode(&ucg, UCG_FONT_MODE_TRANSPARENT);
 
 */
 
@@ -63,22 +62,22 @@ void ucg_esp32_hal_init(ucg_esp32_hal_t ucg_esp32_hal_param) {
 void sendOneByte()
 {
 //	int nb = oneByte.nb;
-//	oneByte.nb = 0;	
-		
+//	oneByte.nb = 0;
+
 	if (oneByte.nb != 0)
 	{
 		memset(&trans_desc,0,sizeof(spi_transaction_t));
-		
+
 		trans_desc.length    = 8*oneByte.nb ; // Number of bits NOT number of bytes.
 		trans_desc.tx_buffer = oneByte.data;
-		ESP_ERROR_CHECK(spi_device_transmit(handle, &trans_desc));							
-		oneByte.nb = 0;	
+		ESP_ERROR_CHECK(spi_device_transmit(handle, &trans_desc));
+		oneByte.nb = 0;
 	}
 }
 
 
 
-//IRAM_ATTR 
+//IRAM_ATTR
 void addOneByte(uint8_t bt)
 {
 	oneByte.data[oneByte.nb++] = bt;
@@ -90,7 +89,7 @@ int16_t ucg_com_hal(ucg_t *ucg, int16_t msg, uint16_t arg, uint8_t *data)
 {
   switch(msg)
   {
-    case UCG_COM_MSG_POWER_UP: 
+    case UCG_COM_MSG_POWER_UP:
 	{
       /* "data" is a pointer to ucg_com_info_t structure with the following information: */
       /*	((ucg_com_info_t *)data)->serial_clk_speed value in nanoseconds */
@@ -105,7 +104,7 @@ int16_t ucg_com_hal(ucg_t *ucg, int16_t msg, uint16_t arg, uint8_t *data)
 				ucg_esp32_hal.cs == UCG_ESP32_HAL_UNDEFINED) {
 			break;
 		}
-		
+
 // init gpio DC and Reset
 		uint64_t bitmask = 0;
 		if (ucg_esp32_hal.dc != UCG_ESP32_HAL_UNDEFINED) {
@@ -117,20 +116,20 @@ int16_t ucg_com_hal(ucg_t *ucg, int16_t msg, uint16_t arg, uint8_t *data)
 /*		if (ucg_esp32_hal.cs != UCG_ESP32_HAL_UNDEFINED) {
 			bitmask = bitmask | (1<<ucg_esp32_hal.cs);
 		}
-*/		
+*/
 		if (bitmask == 0) break;
-		
+
 		gpio_config_t gpioConfig;
 		gpioConfig.pin_bit_mask = bitmask;
 		gpioConfig.mode         = GPIO_MODE_OUTPUT;
 		gpioConfig.pull_up_en   = GPIO_PULLUP_ENABLE;
 		gpioConfig.pull_down_en = GPIO_PULLDOWN_DISABLE;
 		gpioConfig.intr_type    = GPIO_INTR_DISABLE;
-		ESP_ERROR_CHECK(gpio_config(&gpioConfig));		
+		ESP_ERROR_CHECK(gpio_config(&gpioConfig));
 		if (ucg_esp32_hal.reset != UCG_ESP32_HAL_UNDEFINED) gpio_set_level(ucg_esp32_hal.reset, 1);
-//		gpio_set_level(ucg_esp32_hal.cs, 1);		
-		gpio_set_level(ucg_esp32_hal.dc, 0);		
-		
+//		gpio_set_level(ucg_esp32_hal.cs, 1);
+		gpio_set_level(ucg_esp32_hal.dc, 0);
+
 #ifndef KaRadio32
 // init the spi master if not done elsewhere
  		  spi_bus_config_t bus_config;
@@ -141,7 +140,7 @@ int16_t ucg_com_hal(ucg_t *ucg, int16_t msg, uint16_t arg, uint8_t *data)
 		  bus_config.quadhd_io_num = -1; // Not used
 //done for vs1053
 		  ESP_ERROR_CHECK(spi_bus_initialize(KSPI, &bus_config, 1));
-#endif			
+#endif
 		spi_device_interface_config_t dev_config;
 		dev_config.address_bits     = 0;
 		dev_config.command_bits     = 0;
@@ -158,10 +157,7 @@ int16_t ucg_com_hal(ucg_t *ucg, int16_t msg, uint16_t arg, uint8_t *data)
 		dev_config.pre_cb           = NULL;
 		dev_config.post_cb          = NULL;
 		ESP_LOGI(TAG, "... Adding spi lcd bus  Speed= %d.",dev_config.clock_speed_hz);
-		ESP_ERROR_CHECK(spi_bus_add_device(ucg_esp32_hal.spi_no, &dev_config, &handle)); 
-		
-		// init TOuch screen if any
-		xpt_init();		
+		ESP_ERROR_CHECK(spi_bus_add_device(ucg_esp32_hal.spi_no, &dev_config, &handle));
 	}
 		break;
 
@@ -211,15 +207,15 @@ int16_t ucg_com_hal(ucg_t *ucg, int16_t msg, uint16_t arg, uint8_t *data)
       /* "arg" contains one byte, which should be sent to the display */
       /* The current status of the CD line is available */
       /* in bit 0 of u8g->com_status */
-/*		memset(&trans_desc,0,sizeof(spi_transaction_t));	  
+/*		memset(&trans_desc,0,sizeof(spi_transaction_t));
 		trans_desc.flags     =  SPI_TRANS_USE_TXDATA;
 		trans_desc.length    = 8;  // Number of bits NOT number of bytes.
-		trans_desc.tx_data[0] = arg;// data;	
-		ESP_ERROR_CHECK(spi_device_transmit(handle, &trans_desc));	
-*/	  
+		trans_desc.tx_data[0] = arg;// data;
+		ESP_ERROR_CHECK(spi_device_transmit(handle, &trans_desc));
+*/
 	  }
       break;
-    case UCG_COM_MSG_REPEAT_1_BYTE: 
+    case UCG_COM_MSG_REPEAT_1_BYTE:
 	if (arg ==0) break;
 	else
 	{
@@ -229,7 +225,7 @@ int16_t ucg_com_hal(ucg_t *ucg, int16_t msg, uint16_t arg, uint8_t *data)
       /* repeat sending the byte in data[0] "arg" times */
       /* The current status of the CD line is available */
       /* in bit 0 of u8g->com_status */
-		uint16_t i = arg;	  
+		uint16_t i = arg;
 //		spi_transaction_t trans_desc;
 		memset(&trans_desc,0,sizeof(spi_transaction_t));
 		uint8_t* txbf;
@@ -237,15 +233,15 @@ int16_t ucg_com_hal(ucg_t *ucg, int16_t msg, uint16_t arg, uint8_t *data)
 //		WORD_ALIGNED_ATTR void* txb = data;
 		if (txb == NULL) break;
 		txbf = txb;
-		while (i--) { *txbf++ = (char) data[0];} 
+		while (i--) { *txbf++ = (char) data[0];}
 		trans_desc.length    = 8*arg ; // Number of bits NOT number of bytes.
 		trans_desc.tx_buffer = txb;
-		ESP_ERROR_CHECK(spi_device_transmit(handle, &trans_desc));				
-		heap_caps_free(txb);	
+		ESP_ERROR_CHECK(spi_device_transmit(handle, &trans_desc));
+		heap_caps_free(txb);
 	}
-	
+
       break;
-    case UCG_COM_MSG_REPEAT_2_BYTES: 
+    case UCG_COM_MSG_REPEAT_2_BYTES:
 	if (arg ==0) break;
 	else
 	{
@@ -256,7 +252,7 @@ int16_t ucg_com_hal(ucg_t *ucg, int16_t msg, uint16_t arg, uint8_t *data)
       /* repeat sending the two bytes "arg" times */
       /* The current status of the CD line is available */
       /* in bit 0 of u8g->com_status */
-	  uint16_t i = arg;	  
+	  uint16_t i = arg;
 //	  spi_transaction_t trans_desc;
 	  memset(&trans_desc,0,sizeof(spi_transaction_t));
 		uint8_t* txbf;
@@ -264,14 +260,14 @@ int16_t ucg_com_hal(ucg_t *ucg, int16_t msg, uint16_t arg, uint8_t *data)
 //		WORD_ALIGNED_ATTR void* txb = data;
 		if (txb == NULL) break;
 		txbf = txb;
-		while (i--) { *txbf++ = (char) data[0]; *txbf++ = (char) data[1]; } 
+		while (i--) { *txbf++ = (char) data[0]; *txbf++ = (char) data[1]; }
 		trans_desc.length    = 16*arg ; // Number of bits NOT number of bytes.
 		trans_desc.tx_buffer = txb;
-		ESP_ERROR_CHECK(spi_device_transmit(handle, &trans_desc));				
-		heap_caps_free(txb);		
+		ESP_ERROR_CHECK(spi_device_transmit(handle, &trans_desc));
+		heap_caps_free(txb);
 	}
     break;
-    case UCG_COM_MSG_REPEAT_3_BYTES: 
+    case UCG_COM_MSG_REPEAT_3_BYTES:
 	if (arg ==0) break;
 	else
 	{
@@ -283,7 +279,7 @@ int16_t ucg_com_hal(ucg_t *ucg, int16_t msg, uint16_t arg, uint8_t *data)
       /* repeat sending the three bytes "arg" times */
       /* The current status of the CD line is available */
       /* in bit 0 of u8g->com_status */
-		uint16_t i = arg;	  
+		uint16_t i = arg;
 
 //	  spi_transaction_t trans_desc;
 	  memset(&trans_desc,0,sizeof(spi_transaction_t));
@@ -291,12 +287,12 @@ int16_t ucg_com_hal(ucg_t *ucg, int16_t msg, uint16_t arg, uint8_t *data)
 		uint8_t* txb = heap_caps_malloc(arg*4, MALLOC_CAP_DMA);
 		if (txb == NULL) break;
 		txbf = txb;
-		while (i--) { *txbf++ = (char) data[0]; *txbf++ = (char) data[1]; *txbf++ = (char) data[2];} 
+		while (i--) { *txbf++ = (char) data[0]; *txbf++ = (char) data[1]; *txbf++ = (char) data[2];}
 		*txbf = 0;
 		trans_desc.length    = 24*arg ; // Number of bits NOT number of bytes.
 		trans_desc.tx_buffer = txb;
-		ESP_ERROR_CHECK(spi_device_transmit(handle, &trans_desc));				
-		heap_caps_free(txb);	
+		ESP_ERROR_CHECK(spi_device_transmit(handle, &trans_desc));
+		heap_caps_free(txb);
 	}
     break;
     case UCG_COM_MSG_SEND_STR: {
@@ -305,7 +301,7 @@ int16_t ucg_com_hal(ucg_t *ucg, int16_t msg, uint16_t arg, uint8_t *data)
       /* "data" is an array with "arg" bytes */
       /* send "arg" bytes to the display */
 //	  spi_transaction_t trans_desc;
-	  memset(&trans_desc,0,sizeof(spi_transaction_t));	
+	  memset(&trans_desc,0,sizeof(spi_transaction_t));
 	  trans_desc.length    = 8*arg ; // Number of bits NOT number of bytes.
 	  trans_desc.tx_buffer = data;
 	  ESP_ERROR_CHECK(spi_device_transmit(handle, &trans_desc));
@@ -321,16 +317,16 @@ int16_t ucg_com_hal(ucg_t *ucg, int16_t msg, uint16_t arg, uint8_t *data)
 //	  printf("D");
 	  sendOneByte();
 //	  spi_transaction_t trans_desc;
-	  memset(&trans_desc,0,sizeof(spi_transaction_t));	
+	  memset(&trans_desc,0,sizeof(spi_transaction_t));
       while(arg > 0)
       {
 //		if ( *data != 0 )
 		{
 			if ( *data == 1 )
-			{// set CD (=D/C=A0) line to low 			
+			{// set CD (=D/C=A0) line to low
 				gpio_set_level(ucg_esp32_hal.dc, 1);}
 			else
-			{// set CD (=D/C=A0) line to high 
+			{// set CD (=D/C=A0) line to high
 				gpio_set_level(ucg_esp32_hal.dc, 0);
 			}
 		}

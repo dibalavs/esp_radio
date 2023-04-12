@@ -20,7 +20,6 @@
 #include "interface.h"
 #include "eeprom.h"
 #include "addoncommon.h"
-#include "xpt2046.h"
 #include "ucg_karadio32_fonts.h"
 
 #define TAG  "addonucg"
@@ -1136,9 +1135,6 @@ void lcd_initUcg(uint8_t *lcd_type)
 
 		setfont(text);
 		yy = ucg_GetHeight(&ucg);
-
-		// set size of screen on touch driver
-		setTouchSize(x, yy);
 
 		if (yy <= 80)
 			y = - ucg_GetFontDescent(&ucg)+ ucg_GetFontAscent(&ucg)+2 ; //interline

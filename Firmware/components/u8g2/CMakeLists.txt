@@ -1,4 +1,4 @@
-idf_component_register(SRCS 
+idf_component_register(SRCS
 	"csrc/u8g2_bitmap.c"
 	"csrc/u8g2_box.c"
 	"csrc/u8g2_buffer.c"
@@ -80,5 +80,5 @@ idf_component_register(SRCS
 	"csrc/u8x8_u8toa.c"
                     INCLUDE_DIRS "csrc"
 					"../../main/include"
-					PRIV_REQUIRES main ucglib driver nvs_flash xpt2046
+					PRIV_REQUIRES main ucglib driver nvs_flash
 					)

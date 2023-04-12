@@ -1,4 +1,4 @@
-idf_component_register(SRCS 
+idf_component_register(SRCS
 	"csrc/ucg_bitmap.c"
 	"csrc/ucg_box.c"
 	"csrc/ucg_ccs.c"
@@ -53,7 +53,7 @@ idf_component_register(SRCS
 	"csrc/ucg_scale.c"
 	"csrc/ucg_vector_font_data.c"
                     INCLUDE_DIRS "csrc"
-					PRIV_REQUIRES main driver xpt2046 nvs_flash u8g2
+					PRIV_REQUIRES main driver nvs_flash u8g2
 					)
 
 idf_build_set_property(COMPILE_OPTIONS "-Wno-error=unused-const-variable" APPEND)

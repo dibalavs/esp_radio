@@ -29,7 +29,6 @@
 #include "eeprom.h"
 #include "addonu8g2.h"
 #include "addonucg.h"
-#include "xpt2046.h"
 
 #include "esp_adc_cal.h"
 
@@ -1056,40 +1055,6 @@ void customKeyInit()
 	close_partition(handle,hardware);
 }
 
-// touch loop
-
-void touchLoop()
-{
-int tx,ty;
-	if (haveTouch())
-	{
-		if ( xpt_read_touch(&tx, &ty, 0)) {
-			ESP_LOGD(TAG,"tx: %d, ty: %d",tx,ty);
-			uint16_t width = GetWidth();
-			uint16_t height = GetHeight();
-			uint16_t xdiv2 = width/2;
-			uint16_t xdiv6 = width/6;
-			uint16_t ydiv2 = height/2;
-			uint16_t ydiv6 = height/6;
-			uint16_t xl = xdiv2-xdiv6;
-			uint16_t xh = xdiv2+xdiv6;
-			uint16_t yl = ydiv2-ydiv6;
-			uint16_t yh = ydiv2+ydiv6;
-			if ((ty > yl) && (ty < yh))
-			{
-				if ((tx > xl) && (tx < xh)) startStop(); // center
-				else {
-					if (tx < xl) evtStation(-1); //
-					else evtStation(+1);// evtStation(1);
-				}
-			} else
-				if (ty < yl) setRelVolume(+5);
-			else setRelVolume(-5);
-
-		}
-	}
-}
-
 static uint8_t divide = 0;
 // indirect call to service
 IRAM_ATTR void multiService()  // every 1ms
@@ -1265,7 +1230,6 @@ void task_addon(void *pvParams)
 
 		xTaskCreatePinnedToCore (task_lcd, "task_lcd", 2300, NULL, PRIO_LCD, &pxTaskLcd,CPU_LCD);
 		ESP_LOGI(TAG, "%s task: %x","task_lcd",(unsigned int)pxTaskLcd);
-		getTaskLcd(&pxTaskLcd); // give the handle to xpt
 	}
 
 	// Configure Deep Sleep start and wakeup options
@@ -1276,7 +1240,6 @@ void task_addon(void *pvParams)
 		adcLoop();  // compute the adc keyboard and battery
 		periphLoop(); // compute the encoder the buttons and joysticks
 		irLoop();  // compute the ir
-		touchLoop(); // compute the touch screen
 		if (itAskTime) // time to ntp. Don't do that in interrupt.
 		{
 			if (ntp_get_time(&dt) )
