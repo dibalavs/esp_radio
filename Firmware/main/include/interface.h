@@ -19,35 +19,30 @@
 #define RELEASE "2.3"
 #define REVISION "0"
 
-uint32_t checkUart(uint32_t speed);
+uint32_t iface_check_uart(uint32_t speed);
 extern unsigned short adcdiv;
-void switchCommand(void );
-void checkCommand(int size, char* s);
-esp_log_level_t getLogLevel();
-void setLogLevel(esp_log_level_t level);
-void wifiConnectMem();
-char* webInfo();
-char* webList(int id);
-uint16_t getCurrentStation();
-void setCurrentStation( uint16_t vol);
-void clientVol(char *s);
-uint8_t getLedGpio();
-void setLedGpio(uint8_t val);
-uint32_t getLcdOut();
-uint32_t getLcdStop();
-bool getAutoWifi(void);
-void setAutoWifi();
-int8_t get_rssi(void);
-void fmSeekUp();
-void fmSeekDown();
-void fmVol(char* tmp);
-void fmMute();
-void fmUnmute();
-void setDdmm(uint8_t dm);
-uint8_t getDdmm();
-void setRotat(uint8_t dm);
-uint8_t getRotat();
-void setHostname(char* s);
+void iface_switch_command(void );
+void iface_check_command(int size, char* s);
+esp_log_level_t iface_get_log_level();
+void iface_set_log_level(esp_log_level_t level);
+void iface_wifi_connect_mem();
+char* iface_web_info();
+char* iface_web_list(int id);
+uint16_t iface_get_current_station();
+void iface_set_current_station( uint16_t vol);
+void iface_client_vol(char *s);
+uint8_t iface_get_led_gpio();
+void iface_set_led_gpio(uint8_t val);
+uint32_t iface_get_lcd_out();
+uint32_t iface_get_lcd_stop();
+bool iface_get_auto_wifi(void);
+void iface_set_auto_wifi();
+int8_t iface_get_rssi(void);
+void iface_set_ddmm(uint8_t dm);
+uint8_t iface_get_ddmm();
+void iface_set_rotat(uint8_t dm);
+uint8_t iface_get_rotat();
+void iface_set_hostname(char* s);
 
 #define kprintf(fmt, ...) do {    \
 		telnetWrite(printf(fmt, ##__VA_ARGS__),fmt, ##__VA_ARGS__); \

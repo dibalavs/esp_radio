@@ -108,8 +108,6 @@ void addon_dt();
 void addon_wake_lcd();
 uint16_t addon_get_width();
 uint16_t addon_get_height();
-void addon_set_blv(int val);
-int addon_get_blv();
 int addon_get_bat_percent();
 
 void* addon_get_encoder(int num);

@@ -4,7 +4,7 @@
 //
 // (c) 2010 karl@pitrich.com
 // (c) 2014 karl@pitrich.com
-// 
+//
 // Timer-based rotary encoder logic by Peter Dannegger
 // http://www.mikrocontroller.net/articles/Drehgeber
 //
@@ -26,7 +26,7 @@
 
 
 
-// 
+//
 
 // ----------------------------------------------------------------------------
 typedef gpio_mode_t pinMode_t;
@@ -42,12 +42,12 @@ typedef gpio_mode_t pinMode_t;
 #ifndef __have__ClickButton_h__
   typedef enum Button_e {
     Open = 0,
-    Closed,    
+    Closed,
     Pressed,
     Held,
-    Released,   
+    Released,
     Clicked,
-    DoubleClicked   
+    DoubleClicked
   } Button;
 #endif
 
@@ -68,8 +68,8 @@ typedef gpio_mode_t pinMode_t;
   uint16_t keyDownTicks ;
   uint16_t doubleClickTicks ;
   unsigned long lastButtonCheck ;
-  
-  //printf("diff: %d  cur: %d  last: %d  delta: %d\n",diff,curr,enc->last,enc->delta);	
+
+  //printf("diff: %d  cur: %d  last: %d  delta: %d\n",diff,curr,enc->last,enc->delta);
 /*  int8_t pcurr;
   int16_t plast;
   int8_t pdiff;
@@ -77,20 +77,18 @@ typedef gpio_mode_t pinMode_t;
   uint16_t icount;
   uint16_t dcount;
   int16_t pdelta;
-*/  
-  } Encoder_t;	  
-  
+*/
+  } Encoder_t;
 
-  Encoder_t* ClickEncoderInit(int8_t A, int8_t B, int8_t BTN , bool half);
-  void setHalfStep(Encoder_t *enc, bool value);
-  bool getHalfStep(Encoder_t *enc);
-  void service(Encoder_t *enc); 
-  int16_t getValue(Encoder_t *enc);
-  Button getButton(Encoder_t *enc);
-  bool getPinState(Encoder_t *enc);
-  bool getpinsActive(Encoder_t *enc);
-  
 
+  Encoder_t* encoder_init(int8_t A, int8_t B, int8_t BTN , bool half);
+  void encoder_set_half_step(Encoder_t *enc, bool value);
+  bool encoder_get_half_step(Encoder_t *enc);
+  void encoder_service(Encoder_t *enc);
+  int16_t encoder_get_value(Encoder_t *enc);
+  Button encoder_get_button(Encoder_t *enc);
+  bool encoder_get_pin_state(Encoder_t *enc);
+  bool encoder_get_pins_active(Encoder_t *enc);
 
 // ----------------------------------------------------------------------------
 

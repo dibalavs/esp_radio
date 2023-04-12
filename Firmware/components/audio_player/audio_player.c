@@ -38,7 +38,7 @@ static int start_decoder_task(player_t *player)
 	int priority = PRIO_MAD;
 
     ESP_LOGD(TAG, "RAM left %d", esp_get_free_heap_size());
-	if (get_audio_output_mode() == VS1053)
+	if (app_get_audio_output_mode() == VS1053)
 	{
 		task_func = VS1053_task;
         task_name = (char*)"vsTask";
@@ -55,7 +55,7 @@ static int start_decoder_task(player_t *player)
 
 		case AUDIO_AAC:
         case OCTET_STREAM: // probably .aac
-			if (!bigSram())
+			if (!app_big_sram())
 			{
 				ESP_LOGE(TAG, "aac not supported on WROOM cpu");
 				spiRamFifoReset();
@@ -111,7 +111,7 @@ int audio_stream_consumer(const char *recv_buf, ssize_t bytes_read)
 		uint8_t fill_level = (bytes_in_buf * 100) / spiRamFifoLen();
 
 		//bool buffer_ok = (fill_level > (bigSram()?15:80)); // in %
-		if ((fill_level > (bigSram()?15:80)))
+		if ((fill_level > (app_big_sram()?15:80)))
 		{
 			t = 0;
 		// buffer is filled, start decoder
@@ -150,7 +150,7 @@ void audio_player_destroy()
 */
 void audio_player_start()
 {
-		if (get_audio_output_mode() != VS1053) renderer_start();
+		if (app_get_audio_output_mode() != VS1053) renderer_start();
 		player_instance->media_stream->eof = false;
 		player_instance->command = CMD_START;
 		player_instance->decoder_command = CMD_NONE;
@@ -163,7 +163,7 @@ void audio_player_stop()
 		player_instance->decoder_command = CMD_STOP;
 		player_instance->command = CMD_STOP;
 		player_instance->media_stream->eof = true;
-		if (get_audio_output_mode() != VS1053)renderer_stop();
+		if (app_get_audio_output_mode() != VS1053)renderer_stop();
 		player_instance->command = CMD_NONE;
 		player_status = STOPPED;
 }

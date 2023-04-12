@@ -253,19 +253,6 @@ void option_set_lcd_stop(uint32_t enca)
 
 	close_partition(hardware_handle,hardware);
 }
-void option_set_lcd_blv(int blv)
-{
-	esp_err_t err;
-	nvs_handle hardware_handle;
-	if (open_partition(hardware, option_space,NVS_READWRITE,&hardware_handle)!= ESP_OK)
-	{
-		ESP_LOGD(TAG,"set_lcd_blv");
-		return;
-	}
-	err = nvs_set_i32(hardware_handle, "O_LCD_BLV",blv);
-	if (err != ESP_OK) ESP_LOGD(TAG,"oset_lcd_blv err 0x%x",err);
-	close_partition(hardware_handle,hardware);
-}
 
 void option_get_lcd_out(uint32_t *enca, uint32_t *encb)
 {
@@ -312,38 +299,6 @@ void option_get_lcd_out(uint32_t *enca, uint32_t *encb)
 	}
 	close_partition(hardware_handle,hardware);
 }
-void option_get_lcd_blv(int *blv)
-{
-	esp_err_t err;
-	nvs_handle hardware_handle;
-	int lout;
-	*blv = 100;
-	if (open_partition(hardware, option_space,NVS_READWRITE,&hardware_handle)!= ESP_OK)
-	{
-		ESP_LOGD(TAG,"lcd_blv");
-		return;
-	}
-
-	err = nvs_get_i32(hardware_handle, "O_LCD_BLV",(int32_t *) &lout);
-	if (err == ESP_ERR_NVS_NOT_FOUND)
-	{
-		err = nvs_set_i32(hardware_handle, "O_LCD_BLV",*blv);
-//		option_set_lcd_blv(*blv); err = 0;
-	}
-	if (err != ESP_OK)
-	{
-		ESP_LOGD(TAG,"oget_lcd_blv err 0x%x",err);
-	}
-	else
-	{
-ESP_LOGD(TAG,"lcd_blv3");
-		if (lout == 255) lout = 100; // special case
-		*blv = lout;
-	}
-	close_partition(hardware_handle,hardware);
-}
-
-
 
 void gpio_get_ledgpio(gpio_num_t *enca)
 {
@@ -377,26 +332,6 @@ void gpio_set_ledgpio(gpio_num_t enca)
 
 	err = nvs_set_u8(hardware_handle, "P_LED_GPIO",enca);
 	if (err != ESP_OK) ESP_LOGD(TAG,"gpio_set_ledgpio err 0x%x",err);
-
-	close_partition(hardware_handle,hardware);
-}
-void gpio_get_joysticks(gpio_num_t *enca,gpio_num_t *enca1)
-{
-	esp_err_t err;
-	nvs_handle hardware_handle;
-	// init default
-	*enca = PIN_JOY_0;
-	*enca1 = PIN_JOY_1;
-
-	if (open_partition(hardware, gpio_space,NVS_READONLY,&hardware_handle)!= ESP_OK)
-	{
-		ESP_LOGD(TAG,"joys");
-		return;
-	}
-
-	err = nvs_get_u8(hardware_handle, "P_JOY_0",(uint8_t *) enca);
-	err = nvs_get_u8(hardware_handle, "P_JOY_1",(uint8_t *) enca1);
-	if (err != ESP_OK) ESP_LOGD(TAG,"g_get_joysticks err 0x%x",err);
 
 	close_partition(hardware_handle,hardware);
 }
@@ -455,7 +390,7 @@ void gpio_get_encoders(gpio_num_t *enca, gpio_num_t *encb, gpio_num_t *encbtn, g
 	esp_err_t err;
 	nvs_handle hardware_handle;
 	// init default
-	if (bigSram()) // default is not compatible (gpio 16 & 17)
+	if (app_big_sram()) // default is not compatible (gpio 16 & 17)
 	{
 		*enca = GPIO_NONE;
 		*encb= GPIO_NONE;

@@ -647,7 +647,7 @@ void draw(int i)
 		{
 		  addonucg_setfont(small);
 		  char strsec[30];
-		  if (getDdmm())
+		  if (iface_get_ddmm())
 			sprintf(strsec,"%02d-%02d  %02d:%02d:%02d",dt->tm_mday,dt->tm_mon+1,dt->tm_hour, dt->tm_min,dt->tm_sec);
 		  else
 			sprintf(strsec,"%02d-%02d  %02d:%02d:%02d",dt->tm_mon+1,dt->tm_mday,dt->tm_hour, dt->tm_min,dt->tm_sec);
@@ -849,7 +849,7 @@ static  void drawInfo(unsigned timein)
 
 
 //rssi
-  sprintf(strinf,"%02d dBm",get_rssi());
+  sprintf(strinf,"%02d dBm",iface_get_rssi());
   ucg_SetColor(&ucg,1,CBLACK);
   ucg_SetColor(&ucg,0,CTTFONT);
   ucg_DrawString(&ucg,4,yy-y,0,strinf);
@@ -882,7 +882,7 @@ void addonucg_draw_time(uint8_t mTscreen,unsigned timein)
 		scharset = charset;
 		charset = Latin;
 		addonucg_setfont(text);
-		sprintf(strdate,"IP: %s", getIp());
+		sprintf(strdate,"IP: %s", app_get_ip());
 		ucg_ClearScreen(&ucg);
         ucg_SetColor(&ucg,0,CRED);
 		TTitleStr[0] = 0;
@@ -890,7 +890,7 @@ void addonucg_draw_time(uint8_t mTscreen,unsigned timein)
         ucg_DrawString(&ucg,4,yy-(2*y),0,strdate);
 		charset = scharset;
       case 2:
-	    if (getDdmm())
+	    if (iface_get_ddmm())
 			sprintf(strdate,"%02d-%02d-%04d", dt->tm_mday, dt->tm_mon+1,  dt->tm_year+1900);
 	    else
 			sprintf(strdate,"%02d-%02d-%04d", dt->tm_mon+1, dt->tm_mday, dt->tm_year+1900);
@@ -1057,7 +1057,7 @@ void addonucg_playing()
 void addonucg_lcd_init(uint8_t *lcd_type)
 {
 	dt = addon_get_dt();
-	uint8_t rotat = getRotat();
+	uint8_t rotat = iface_get_rotat();
 	ESP_LOGI(TAG,"lcd init  type: %d, Rotat: %d",*lcd_type, rotat);
 	if (*lcd_type == LCD_NONE) return;
 

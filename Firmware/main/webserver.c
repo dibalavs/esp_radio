@@ -227,45 +227,45 @@ void setVolumei(int16_t vol) {
 	vol += clientOvol;
 	if (vol > 254) vol = 254;
 	if (vol <0) vol = 1;
-	if (get_audio_output_mode() == VS1053) VS1053_SetVolume(vol);
+	if (app_get_audio_output_mode() == VS1053) VS1053_SetVolume(vol);
 	if (vol <3) vol--;
 	renderer_volume(vol+2); // max 256
 }
 void setVolume(char* vol) {
 	int16_t uvol = atoi(vol);
-	setIvol(uvol);
+	app_set_ivol(uvol);
 	uvol += clientOvol;
 	if (uvol > 254) uvol = 254;
 	if (uvol <0) uvol = 1;
 	if(vol!= NULL) {
-		if (get_audio_output_mode() == VS1053) VS1053_SetVolume(uvol);
+		if (app_get_audio_output_mode() == VS1053) VS1053_SetVolume(uvol);
 		if (uvol <3) uvol--;
 		renderer_volume(uvol+2); // max 256
-		kprintf("##CLI.VOL#: %d\n",getIvol());
+		kprintf("##CLI.VOL#: %d\n",app_get_ivol());
 	}
 }
 // set the current volume with its offset
 static void setOffsetVolume(void) {
-	int16_t uvol = getIvol();
+	int16_t uvol = app_get_ivol();
 	uvol += clientOvol;
 	if (uvol > 254) uvol = 254;
 	if (uvol <=0) uvol = 1;
 	ESP_LOGV(TAG,"setOffsetVol: %d",clientOvol);
-	kprintf("##CLI.VOL#: %d\n",getIvol());
+	kprintf("##CLI.VOL#: %d\n",app_get_ivol());
 	setVolumei(uvol);
 }
 
 
 
 uint16_t getVolume() {
-	return (getIvol());
+	return (app_get_ivol());
 }
 
 // Set the volume with increment vol
 void setRelVolume(int8_t vol) {
 	char Vol[5];
 	int16_t rvol;
-	rvol = getIvol()+vol;
+	rvol = app_get_ivol()+vol;
 	if (rvol <0) rvol = 0;
 	if (rvol > 254) rvol = 254;
 	sprintf(Vol,"%d",rvol);
@@ -277,7 +277,7 @@ void setRelVolume(int8_t vol) {
 // send the rssi
 static void rssi(int socket) {
 	char answer[20];
-	sprintf(answer,"{\"wsrssi\":\"%d\"}",get_rssi());
+	sprintf(answer,"{\"wsrssi\":\"%d\"}",iface_get_rssi());
 	websocketwrite(socket,answer, strlen(answer));
 }
 
@@ -309,17 +309,17 @@ void websockethandle(int socket, wsopcode_t opcode, uint8_t * payload, size_t le
 		if (strstr((char*)payload,"&") != NULL)
 			*strstr((char*)payload,"&")=0;
 		else return;
-		startSleep(atoi((char*)payload+11));
+		app_start_sleep(atoi((char*)payload+11));
 	}
-	else if (strstr((char*)payload,"stopSleep")!= NULL){stopSleep();}
+	else if (strstr((char*)payload,"stopSleep")!= NULL){app_stop_sleep();}
 	else if (strstr((char*)payload,"startWake=")!= NULL)
 	{
 		if (strstr((char*)payload,"&") != NULL)
 			*strstr((char*)payload,"&")=0;
 		else return;
-		startWake(atoi((char*)payload+10));
+		app_start_wake(atoi((char*)payload+10));
 	}
-	else if (strstr((char*)payload,"stopWake")!= NULL){stopWake();}
+	else if (strstr((char*)payload,"stopWake")!= NULL){app_stop_wake();}
 	//monitor
 	else if (strstr((char*)payload,"monitor")!= NULL){wsMonitor();}
 	else if (strstr((char*)payload,"theme")!= NULL){theme();}
@@ -359,7 +359,7 @@ void playStationInt(int sid) {
 	if (g_device->currentstation != sid)
 	{
 		g_device->currentstation = sid;
-		setCurrentStation( sid);
+		iface_set_current_station( sid);
 		eeprom_save_device_settings(g_device);
 	}
 }
@@ -368,8 +368,8 @@ void playStation(char* id) {
 	int uid = atoi(id) ;
 	ESP_LOGV(TAG,"playstation: %d",uid);
 	if (uid < 255)
-		setCurrentStation (atoi(id)) ;
-	playStationInt(getCurrentStation());
+		iface_set_current_station (atoi(id)) ;
+	playStationInt(iface_get_current_station());
 }
 
 // https://circuits4you.com/2019/03/21/esp8266-url-encode-decode-example/
@@ -481,7 +481,7 @@ static void handlePOST(char* name, char* data, int data_size, int conn) {
 			if(getSParameterFromResponse(bass,6,"bass=", data, data_size)) {
 				if (g_device->bass != atoi(bass))
 				{
-					if (get_audio_output_mode() == VS1053)
+					if (app_get_audio_output_mode() == VS1053)
 					{
 						VS1053_SetBass(atoi(bass));
 						changed = true;
@@ -492,7 +492,7 @@ static void handlePOST(char* name, char* data, int data_size, int conn) {
 			if(getSParameterFromResponse(treble,6,"treble=", data, data_size)) {
 				if (g_device->treble != atoi(treble))
 				{
-					if (get_audio_output_mode() == VS1053)
+					if (app_get_audio_output_mode() == VS1053)
 					{
 						VS1053_SetTreble(atoi(treble));
 						changed = true;
@@ -503,7 +503,7 @@ static void handlePOST(char* name, char* data, int data_size, int conn) {
 			if(getSParameterFromResponse(bassfreq,6,"bassfreq=", data, data_size)) {
 				if (g_device->freqbass != atoi(bassfreq))
 				{
-					if (get_audio_output_mode() == VS1053)
+					if (app_get_audio_output_mode() == VS1053)
 					{
 						VS1053_SetBassFreq(atoi(bassfreq));
 						changed = true;
@@ -514,7 +514,7 @@ static void handlePOST(char* name, char* data, int data_size, int conn) {
 			if(getSParameterFromResponse(treblefreq,6,"treblefreq=", data, data_size)) {
 				if (g_device->freqtreble != atoi(treblefreq))
 				{
-					if (get_audio_output_mode() == VS1053)
+					if (app_get_audio_output_mode() == VS1053)
 					{
 						VS1053_SetTrebleFreq(atoi(treblefreq));
 						changed = true;
@@ -525,7 +525,7 @@ static void handlePOST(char* name, char* data, int data_size, int conn) {
 			if(getSParameterFromResponse(spacial,6,"spacial=", data, data_size)) {
 				if (g_device->spacial != atoi(spacial))
 				{
-						if (get_audio_output_mode() == VS1053)
+						if (app_get_audio_output_mode() == VS1053)
 						{
 							VS1053_SetSpatial(atoi(spacial));
 							changed = true;
@@ -703,13 +703,13 @@ static void handlePOST(char* name, char* data, int data_size, int conn) {
 	} else if(strcmp(name, "/icy") == 0)
 	{
 		ESP_LOGV(TAG,"icy vol");
-		char currentSt[7]; sprintf(currentSt,"%d",getCurrentStation());
+		char currentSt[7]; sprintf(currentSt,"%d",iface_get_current_station());
 		char vol[5]; sprintf(vol,"%d",(getVolume() ));
-		char treble[5]; sprintf(treble,"%d",(get_audio_output_mode() == VS1053)?VS1053_GetTreble():0);
-		char bass[5]; sprintf(bass,"%d",(get_audio_output_mode() == VS1053)?VS1053_GetBass():0);
-		char tfreq[5]; sprintf(tfreq,"%d",(get_audio_output_mode() == VS1053)?VS1053_GetTrebleFreq():0);
-		char bfreq[5]; sprintf(bfreq,"%d",(get_audio_output_mode() == VS1053)?VS1053_GetBassFreq():0);
-		char spac[5]; sprintf(spac,"%d",(get_audio_output_mode() == VS1053)?VS1053_GetSpatial():0);
+		char treble[5]; sprintf(treble,"%d",(app_get_audio_output_mode() == VS1053)?VS1053_GetTreble():0);
+		char bass[5]; sprintf(bass,"%d",(app_get_audio_output_mode() == VS1053)?VS1053_GetBass():0);
+		char tfreq[5]; sprintf(tfreq,"%d",(app_get_audio_output_mode() == VS1053)?VS1053_GetTrebleFreq():0);
+		char bfreq[5]; sprintf(bfreq,"%d",(app_get_audio_output_mode() == VS1053)?VS1053_GetBassFreq():0);
+		char spac[5]; sprintf(spac,"%d",(app_get_audio_output_mode() == VS1053)?VS1053_GetSpatial():0);
 
 		struct icyHeader *header = clientGetHeader();
 		ESP_LOGV(TAG,"icy start header %x",(int)header);
@@ -902,7 +902,7 @@ static void handlePOST(char* name, char* data, int data_size, int conn) {
 					if ((strcmp(g_device->hostname,host) != 0)&&(strcmp(host,"undefined") != 0))
 					{
 						strncpy(g_device->hostname,host,HOSTLEN-1);
-						setHostname(g_device->hostname);
+						iface_set_hostname(g_device->hostname);
 						changed = true;
 					}
 				}
@@ -1051,7 +1051,7 @@ static bool httpServerHandleConnection(int conn, char* buf, uint16_t buflen) {
 				if (param != NULL) {playStation(param);infree(param);}
 // start command
 				param = strstr(c,"start") ;
-				if (param != NULL) {playStationInt(getCurrentStation());}
+				if (param != NULL) {playStationInt(iface_get_current_station());}
 // stop command
 				param = strstr(c,"stop") ;
 				if (param != NULL) {clientDisconnect("Web stop");}
@@ -1084,7 +1084,7 @@ static bool httpServerHandleConnection(int conn, char* buf, uint16_t buflen) {
 // infos command
 				param = strstr(c,"infos") ;
 				if (param != NULL) {
-					char* vr = webInfo();
+					char* vr = iface_web_info();
 					respOk(conn,vr);
 					infree(vr);
 					return true;
@@ -1093,7 +1093,7 @@ static bool httpServerHandleConnection(int conn, char* buf, uint16_t buflen) {
 				param = getParameterFromResponse("list=", c, strlen(c)) ;
 				if ((param != NULL)&&(atoi(param)>=0)&&(atoi(param)<=254))
 				{
-					char* vr = webList(atoi(param));
+					char* vr = iface_web_list(atoi(param));
 					respOk(conn,vr);
 					infree(vr);
 					return true;

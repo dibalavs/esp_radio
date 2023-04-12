@@ -29,7 +29,7 @@ uint8_t rexp; // expansion ports for esplay
 
 //bool getpinsActives(Button_t *enc) {return enc->pinsActive;}
 
-Button_t* ClickButtonsInit(int8_t A, int8_t B, int8_t C, bool Active)
+Button_t* buttons_init(int8_t A, int8_t B, int8_t C, bool Active)
 {
 	Button_t* enc = kmalloc(sizeof(Button_t));
 	enc->pinBTN[0] = A;
@@ -71,32 +71,11 @@ Button_t* ClickButtonsInit(int8_t A, int8_t B, int8_t C, bool Active)
   return enc;
 }
 
-//Buttons on a gpio expander
-Button_t* ClickexpButtonsInit(int8_t A, int8_t B, int8_t C, bool Active)
-{
-	Button_t* enc = kmalloc(sizeof(Button_t));
-	enc->pinBTN[0] = A;
-	enc->pinBTN[1] = B;
-	enc->pinBTN[2] = C;
-	enc->expGpio = true;
-	enc->pinsActive = Active;
-	for (int i=0;i<3;i++)
-	{
-		enc->button[i] = Open;
-		enc->keyDownTicks[i] = 0;
-		enc->doubleClickTicks[i] = 0;
-//		enc->lastButtonCheck[i] = 0;
-	}
-	enc->doubleClickEnabled = true; enc->buttonHeldEnabled = true;
-
-  return enc;
-}
-
 // ----------------------------------------------------------------------------
 // call this every 1 millisecond via timer ISR
 //
 //void (*serviceEncoder)() = NULL;
-IRAM_ATTR void serviceBtn(Button_t *enc)
+IRAM_ATTR void buttons_service(Button_t *enc)
 {
   // handle enc->button
   //
@@ -156,7 +135,7 @@ IRAM_ATTR void serviceBtn(Button_t *enc)
 }
 
 // ----------------------------------------------------------------------------
-Button getButtons(Button_t *enc,uint8_t index)
+Button buttons_get(Button_t *enc,uint8_t index)
 {
   noInterrupts();
   Button ret = enc->button[index];

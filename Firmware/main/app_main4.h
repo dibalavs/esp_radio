@@ -140,9 +140,9 @@ gptimer_handle_t mstimer = NULL;
 gptimer_handle_t sleeptimer = NULL;
 gptimer_handle_t waketimer = NULL;
 
-IRAM_ATTR void noInterrupt1Ms() {}
+IRAM_ATTR void app_no_interrupt_1ms() {}
 // enable 1MS timer interrupt
-IRAM_ATTR void interrupt1Ms() {}
+IRAM_ATTR void app_interrupt_1ms() {}
 #else
 // disable 1MS timer interrupt
 IRAM_ATTR void noInterrupt1Ms() {timer_disable_intr(TIMERGROUP1MS, msTimer);}
@@ -152,13 +152,13 @@ IRAM_ATTR void interrupt1Ms() {timer_enable_intr(TIMERGROUP1MS, msTimer);}
 //IRAM_ATTR void interrupts() {interrupt1Ms();}
 #endif
 
-char* getIp() {return (localIp);}
-IRAM_ATTR uint8_t getIvol() {return clientIvol;}
-IRAM_ATTR void setIvol( uint8_t vol) {clientIvol = vol;}; //ctimeVol = 0;}
-IRAM_ATTR output_mode_t get_audio_output_mode() { return audio_output_mode;}
+char* app_get_ip() {return (localIp);}
+IRAM_ATTR uint8_t app_get_ivol() {return clientIvol;}
+IRAM_ATTR void app_set_ivol( uint8_t vol) {clientIvol = vol;}; //ctimeVol = 0;}
+IRAM_ATTR output_mode_t app_get_audio_output_mode() { return audio_output_mode;}
 
 //
-bool bigSram() { return bigRam;}
+bool app_big_sram() { return bigRam;}
 void* kmalloc(size_t memorySize)
 {
 	if (bigRam) return heap_caps_malloc(memorySize, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
@@ -184,7 +184,7 @@ static bool msCallback(gptimer_handle_t timer, const gptimer_alarm_event_data_t 
     evt.i1 = 0;
     evt.i2 = 0;
 	xQueueSendFromISR(event_qu, &evt, NULL);
-	if (serviceAddon != NULL) serviceAddon(); // for the encoders and buttons
+	if (app_service_addon != NULL) app_service_addon(); // for the encoders and buttons
 	return high_task_awoken == pdTRUE;
 }
 #else
@@ -256,7 +256,7 @@ void   wakeCallback(void *pArg) {
 }
 #endif
 #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
-uint64_t getSleep()
+uint64_t app_get_sleep()
 {
 	uint64_t ret=0;
 	ESP_ERROR_CHECK(gptimer_get_raw_count(sleeptimer,&ret));
@@ -276,7 +276,7 @@ uint64_t getSleep()
 }
 #endif
 #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
-uint64_t getWake()
+uint64_t app_get_wake()
 {
 	uint64_t ret=0;
 	ESP_ERROR_CHECK(gptimer_get_raw_count(waketimer,&ret));
@@ -303,7 +303,7 @@ void tsocket(const char* lab, uint32_t cnt)
 		free(title);
 }
 #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
-void stopSleep(){
+void app_stop_sleep(){
 	ESP_LOGD(TAG,"stopSleep");
     ESP_ERROR_CHECK(gptimer_stop(sleeptimer));
 	tsocket("lsleep",0);
@@ -315,7 +315,7 @@ gptimer_alarm_config_t  alarm_config = {
     .alarm_count = 0,
     .flags.auto_reload_on_alarm = false, // enable auto-reload
 };
-void startSleep(uint32_t delay){
+void app_start_sleep(uint32_t delay){
 	ESP_LOGD(TAG,"startSleep: %d min.",delay );
 	ESP_ERROR_CHECK(gptimer_stop(sleeptimer));
 	vTaskDelay(1);
@@ -326,7 +326,7 @@ void startSleep(uint32_t delay){
 	ESP_ERROR_CHECK(gptimer_start(sleeptimer));
 	tsocket("lsleep",delay);
 }
-void stopWake(){
+void app_stop_wake(){
 	ESP_LOGD(TAG,"stopWake");
 	ESP_ERROR_CHECK(gptimer_stop(waketimer));
 	tsocket("lwake",0);
@@ -334,7 +334,7 @@ void stopWake(){
 gptimer_event_callbacks_t cbsw = {
 		.on_alarm = wakeCallback, // register user callback
 };
-void startWake(uint32_t delay){
+void app_start_wake(uint32_t delay){
 	ESP_LOGD(TAG,"startWake: %d min.",delay );
 	ESP_ERROR_CHECK(gptimer_stop(waketimer));
 	vTaskDelay(1);
@@ -475,7 +475,7 @@ static renderer_config_t *create_renderer_config()
  * Parameters   : baud
  * Returns      : baud
 *******************************************************************************/
-uint32_t checkUart(uint32_t speed)
+uint32_t iface_check_uart(uint32_t speed)
 {
 	uint32_t valid[] = {1200,2400,4800,9600,14400,19200,28800,38400,57600,76880,115200,230400};
 	int i ;
@@ -547,7 +547,7 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base,
         xEventGroupClearBits(wifi_event_group, CONNECTED_BIT);
 		ESP_LOGE(TAG, "Wifi Disconnected.");
 		vTaskDelay(100);
-        if (!getAutoWifi()&&(wifiInitDone))
+        if (!iface_get_auto_wifi()&&(wifiInitDone))
 		{
 			ESP_LOGE(TAG, "reboot");
 			vTaskDelay(100);
@@ -608,7 +608,7 @@ static void unParse(char* str)
 static void start_wifi()
 {
     ESP_LOGI(TAG, "starting wifi");
-	setAutoWifi();
+	iface_set_auto_wifi();
 //	wifi_mode_t mode;
 	char ssid[SSIDLEN];
 	char pass[PASSLEN];
@@ -724,7 +724,7 @@ static void start_wifi()
 				g_device->current_ap++;
 				g_device->current_ap %=3;
 
-				if (getAutoWifi() && (g_device->current_ap == APMODE))
+				if (iface_get_auto_wifi() && (g_device->current_ap == APMODE))
 				{
 					if (fgetc(stdin)==0xFF) // if a char read, stop the autowifi
 					g_device->current_ap = STA1; // if autoWifi then wait for a reconnection to an AP
@@ -744,7 +744,7 @@ static void start_wifi()
 		{
 			g_device->current_ap++;
 			g_device->current_ap %=3;
-			if (getAutoWifi() && (g_device->current_ap == APMODE))
+			if (iface_get_auto_wifi() && (g_device->current_ap == APMODE))
 			{
 				char inp = fgetc(stdin);
 				printf("\nfgetc : %x\n",inp);
@@ -894,7 +894,7 @@ IRAM_ATTR void timerTask(void* p) {
 	gpio_num_t gpioLed;
 	queue_event_t evt;
 	gpio_get_ledgpio(&gpioLed);
-	setLedGpio(gpioLed);
+	iface_set_led_gpio(gpioLed);
 //	int uxHighWaterMark;
 	if (gpioLed != GPIO_NONE)
 	{
@@ -934,7 +934,7 @@ IRAM_ATTR void timerTask(void* p) {
 		}
 					if ((ledStatus)&&(ctimeMs >= cCur))
 					{
-						gpioLed = getLedGpio();
+						gpioLed = iface_get_led_gpio();
 						if (stateLed)
 						{
 							if (gpioLed != GPIO_NONE) gpio_set_level(gpioLed,ledPolarity?1:0);
@@ -1001,7 +1001,7 @@ void uartInterfaceTask(void *pvParameters) {
 			//else printf("uart d: %d, T= %d\n",d,t);
 			//switchCommand() ;  // hardware panel of command
 		}
-		checkCommand(t, tmp);
+		iface_check_command(t, tmp);
 		uxHighWaterMark = uxTaskGetStackHighWaterMark( NULL );
 		ESP_LOGD("uartInterfaceTask",striWATERMARK,uxHighWaterMark,xPortGetFreeHeapSize( ));
 
@@ -1030,7 +1030,7 @@ void autoPlay()
 			vTaskDelay(200);
 		}
 
-		setCurrentStation( g_device->currentstation);
+		iface_set_current_station( g_device->currentstation);
 		if ((g_device->autostart ==1)&&(g_device->currentstation != 0xFFFF))
 		{
 			kprintf("autostart: playing:%d, currentstation:%d\n",g_device->autostart,g_device->currentstation);
@@ -1126,12 +1126,12 @@ void app_main()
 	websocketinit();
 
 	// log level
-	setLogLevel(g_device->trace_level);
+	iface_set_log_level(g_device->trace_level);
 
 	//time display
 	uint8_t ddmm;
 	option_get_ddmm(&ddmm);
-	setDdmm(ddmm?1:0);
+	iface_set_ddmm(ddmm?1:0);
 
     init_hardware();
 
@@ -1142,7 +1142,7 @@ void app_main()
 
 	//uart speed
 	uspeed = g_device->uartspeed;
-	uspeed = checkUart(uspeed);
+	uspeed = iface_check_uart(uspeed);
 	uart_set_baudrate(UART_NUM_0, uspeed);
 	ESP_LOGI(TAG, "Set baudrate at %d",uspeed);
 	if (g_device->uartspeed != uspeed)
@@ -1167,7 +1167,7 @@ void app_main()
 	option_get_lcd_info(&g_device->lcd_type,&rt);
 	ESP_LOGI(TAG,"LCD Type %d",g_device->lcd_type);
 	//lcd rotation
-	setRotat(rt) ;
+	iface_set_rotat(rt) ;
 	addon_lcd_init(g_device->lcd_type);
 	ESP_LOGI(TAG, "Hardware init done...");
 
@@ -1175,7 +1175,7 @@ void app_main()
 	addon_lcd_welcome("","STARTING");
 
 	// volume
-	setIvol( g_device->vol);
+	app_set_ivol( g_device->vol);
 	ESP_LOGI(TAG, "Volume set to %d",g_device->vol);
 
 	xTaskCreatePinnedToCore(timerTask, "timerTask",2100, NULL, PRIO_TIMER, &pxCreatedTask,CPU_TIMER);
@@ -1251,7 +1251,7 @@ void app_main()
 	vTaskDelay(60);// wait tasks init
 	ESP_LOGI(TAG," Init Done");
 
-	setIvol( g_device->vol);
+	app_set_ivol( g_device->vol);
 	kprintf("READY. Type help for a list of commands\n");
 	// error log on telnet
 	esp_log_set_vprintf( (vprintf_like_t)lkprintf);

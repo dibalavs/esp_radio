@@ -22,7 +22,6 @@
 #include "addon.h"
 #include "addonu8g2.h"
 #include "app_main.h"
-#include "custom.h"
 //#include "rda5807Task.c"
 #include "ClickEncoder.h"
 #include "lwip/sockets.h"
@@ -124,7 +123,6 @@ sys.logt and sys.logt(x\"): Display and Change the log on telnet toggle. 0 = no 
 sys.log: do nothing apart a trace on uart (debug use)\n\
 sys.lcdout and sys.lcdout(\"x\"): Timer in seconds to switch off the lcd. 0= no timer\n\
 sys.lcdstop and sys.lcdstop(\"x\"): Timer in seconds to switch off the lcd on stop mode. 0= no timer\n\
-sys.lcdblv and sys.lcdblv(\"x\"): Value in percent of the backlight.\n\
 sys.lcd and sys.lcd(\"x\"): Display and Change the lcd type to x on next reset\n\
 "};
 
@@ -157,7 +155,7 @@ static IRAM_ATTR uint32_t lcd_stop = 0xFFFFFFFF;
 static esp_log_level_t s_log_default_level = ESP_LOG_NONE;
 extern void wsVol(char* vol);
 extern void playStation(char* id);
-void clientVol(char *s);
+void iface_client_vol(char *s);
 
 #define MAX_WIFI_STATIONS 50
 bool inside = false;
@@ -177,20 +175,20 @@ int lkprintf(const char *format, va_list ap)
 }
 
 
-uint8_t getDdmm()
+uint8_t iface_get_ddmm()
 {
 	return ddmm;
 }
-void setDdmm(uint8_t dm)
+void iface_set_ddmm(uint8_t dm)
 {
 	if (dm == 0)ddmm= 0;
 	else ddmm = 1;
 }
-uint8_t getRotat()
+uint8_t iface_get_rotat()
 {
 	return rotat;
 }
-void setRotat(uint8_t dm)
+void iface_set_rotat(uint8_t dm)
 {
 	if (dm == 0) rotat = 0;
 	else rotat = 1;
@@ -210,11 +208,11 @@ void setVolumew(char* vol)
 	wsVol(vol);
 }
 
-uint16_t getCurrentStation()
+uint16_t iface_get_current_station()
 {
 	return currentStation;
 }
-void setCurrentStation( uint16_t cst)
+void iface_set_current_station( uint16_t cst)
 {
 	currentStation = cst;
 }
@@ -229,7 +227,7 @@ uint8_t startsWith(const char *pre, const char *str)
 }
 
 //get rssi
-int8_t get_rssi(void)
+int8_t iface_get_rssi(void)
 {
 	wifi_ap_record_t wifidata;
     esp_wifi_sta_get_ap_info(&wifidata);
@@ -242,7 +240,7 @@ int8_t get_rssi(void)
 
 void readRssi()
 {
-	kprintf("##RSSI: %d\n",get_rssi());
+	kprintf("##RSSI: %d\n",iface_get_rssi());
 }
 
 void printInfo(char* s)
@@ -354,7 +352,7 @@ void wifiConnect(char* cmd)
 	kprintf("##WIFI.CON#\n");
 }
 
-void wifiConnectMem()
+void iface_wifi_connect_mem()
 {
 	kprintf("#WIFI.CON#\n");
 	kprintf("##AP1: %s#\n",g_device->ssid1);
@@ -364,9 +362,9 @@ void wifiConnectMem()
 
 static bool autoConWifi = true; // control for wifiReConnect & wifiDisconnect
 static bool autoWifi = false; // auto reconnect wifi if disconnected
-bool getAutoWifi(void)
+bool iface_get_auto_wifi(void)
 { return autoWifi;}
-void setAutoWifi()
+void iface_set_auto_wifi()
 { autoWifi = (g_device->options32& T_WIFIAUTO)?true:false;}
 
 void wifiAuto(char* cmd)
@@ -700,13 +698,13 @@ void clientInfo()
 		ntp_print_time();
 		clientSetName(si->name,currentStation);
 		clientPrintHeaders();
-		clientVol((char*)"");
+		iface_client_vol((char*)"");
 		clientPrintState();
 		free(si);
 	}
 }
 
-char* webInfo()
+char* iface_web_info()
 {
 	struct shoutcast_info* si;
 	si = eeprom_get_station(currentStation);
@@ -722,7 +720,7 @@ char* webInfo()
 	return resp;
 
 }
-char* webList(int id)
+char* iface_web_list(int id)
 {
 	struct shoutcast_info* si;
 	si = eeprom_get_station(id);
@@ -785,7 +783,7 @@ void sysUart(char* s)
 	if ((!empty)&&(t!=NULL))
 	{
 		uint32_t speed = atoi(t+2);
-		speed = checkUart(speed);
+		speed = iface_check_uart(speed);
 		g_device->uartspeed= speed;
 		eeprom_save_device_settings(g_device);
 		kprintf("Speed: %d\n",speed);
@@ -793,7 +791,7 @@ void sysUart(char* s)
 	kprintf("\n%sUART= %d# on next reset\n",msgsys,g_device->uartspeed);
 }
 
-void clientVol(char *s)
+void iface_client_vol(char *s)
 {
     char *t = strstr(s, parslashquote);
 	if(t == 0)
@@ -830,7 +828,7 @@ void clientWake(char *s)
 	if(t == 0)
 	{
 		// no argument, no action
-		uint64_t temps = getWake();
+		uint64_t temps = app_get_wake();
 		if (temps == 0ll) kprintf("No wake in progress\n");
 		else kprintf("#Wake in %lld m  %lld s##\n",temps/(60ll),temps%60ll);
 		return;
@@ -849,8 +847,8 @@ void clientWake(char *s)
         for(tmp=0; tmp<(t_end-t+1); tmp++) label[tmp] = 0;
         strncpy(label, t+2, (t_end-t));
 		if (atoi(label)==0)
-			stopWake();
-		else startWake(atoi(label));
+			app_stop_wake();
+		else app_start_wake(atoi(label));
 		free(label);
     }
 	clientWake((char*)"");
@@ -861,7 +859,7 @@ void clientSleep(char *s)
 	if(t == 0)
 	{
 		// no argument, no action
-		uint64_t temps = getSleep();
+		uint64_t temps = app_get_sleep();
 		if (temps == 0ll) kprintf("No sleep in progress\n");
 		else
 		kprintf("#Sleep in %lld m  %lld s##\n",temps/(60ll),temps%60ll);
@@ -880,8 +878,8 @@ void clientSleep(char *s)
         for(tmp=0; tmp<(t_end-t+1); tmp++) label[tmp] = 0;
         strncpy(label, t+2, (t_end-t));
 		if (atoi(label)==0)
-			stopSleep();
-		else startSleep(atoi(label));
+			app_stop_sleep();
+		else app_start_sleep(atoi(label));
 		free(label);
     }
 	clientSleep((char*)"");
@@ -931,7 +929,7 @@ void sysledgpio(char* s)
 		kprintf(stritCMDERROR);
 		return;
     }
-	setLedGpio(value);
+	iface_set_led_gpio(value);
 	gpio_output_conf(value);
 	eeprom_save_device_settings(g_device);
 	gpio_set_ledgpio(value); // write in nvs if any
@@ -939,9 +937,9 @@ void sysledgpio(char* s)
 //	led_gpio = GPIO_NONE; // for getLedGpio
 }
 
-void setLedGpio(uint8_t val) { led_gpio = val;g_device->led_gpio = val;}
+void iface_set_led_gpio(uint8_t val) { led_gpio = val;g_device->led_gpio = val;}
 
-IRAM_ATTR uint8_t getLedGpio()
+IRAM_ATTR uint8_t iface_get_led_gpio()
 {
 	return led_gpio;
 }
@@ -1040,7 +1038,7 @@ void syshenc(int nenc,char* s)
 		if (nenc ==0) g_device->options32 |= T_ENC0;
 		else g_device->options32 |= T_ENC1;
 	}
-	setHalfStep(encoder, value);
+	encoder_set_half_step(encoder, value);
 	if (nenc == 0) encvalue = g_device->options32&T_ENC0;
 	else encvalue = g_device->options32&T_ENC1;
 	syshenc(nenc,(char*)"");
@@ -1127,41 +1125,13 @@ void syslcdstop(char* s)
 	syslcdstop((char*) "");
 	addon_wake_lcd();
 }
-// Backlight value
-void syslcdblv(char* s)
-{
-	int lcd_blv = addon_get_blv();
 
-    char *t = strstr(s, parslashquote);
-	if(t == NULL)
-	{
-		kprintf("##LCD blv is ");
-		kprintf("%d#\n",lcd_blv);
-		return;
-	}
-	char *t_end  = strstr(t, parquoteslash);
-    if(t_end == NULL)
-    {
-		kprintf(stritCMDERROR);
-		return;
-    }
-	int value = atoi(t+2);
-	if (value > 100) value = 100;
-	if (value < 2) value = 2;
-	lcd_blv = value;
-	option_set_lcd_blv(lcd_blv);
-	backlight_percentage_set(lcd_blv);
-	addon_set_blv(lcd_blv);  // in addon
-	syslcdblv((char*) "");
-	addon_wake_lcd();
-}
-
-uint32_t getLcdOut()
+uint32_t iface_get_lcd_out()
 {
 	option_get_lcd_out(&lcd_out,&lcd_stop);
 	return lcd_out;
 }
-uint32_t getLcdStop()
+uint32_t iface_get_lcd_stop()
 {
 	return lcd_stop;
 }
@@ -1188,7 +1158,7 @@ void sysled(char* s)
 	 g_device->options |= T_LED; // set
 	 ledStatus = false;
 	 if (getState())
-	 { if (getLedGpio() != GPIO_NONE) gpio_set_level(getLedGpio(), ledPolarity ? 0 : 1);}
+	 { if (iface_get_led_gpio() != GPIO_NONE) gpio_set_level(iface_get_led_gpio(), ledPolarity ? 0 : 1);}
 	}
 	else  // blink mode
 	{ g_device->options &= NT_LED;  // clear
@@ -1221,7 +1191,7 @@ void sysledpol(char* s)
 		ledPolarity = true;
 		if (getState())
 		{
-			if (getLedGpio() != GPIO_NONE) gpio_set_level(getLedGpio(),ledPolarity ? 0 : 1);
+			if (iface_get_led_gpio() != GPIO_NONE) gpio_set_level(iface_get_led_gpio(),ledPolarity ? 0 : 1);
 		}
 	}
 	else
@@ -1267,7 +1237,7 @@ void heapSize()
 }
 
 // set hostname in mDNS
-void setHostname(char* s)
+void iface_set_hostname(char* s)
 {
 		ESP_ERROR_CHECK(mdns_service_remove("_http", "_tcp"));
 		ESP_ERROR_CHECK(mdns_service_remove("_telnet", "_tcp"));
@@ -1285,7 +1255,7 @@ void hostname(char* s)
 	char *t = strstr(s, parslashquote);
 	if(t == NULL)
 	{
-		kprintf("##SYS.HOST#: %s.local\n  IP:%s #\n",g_device->hostname,getIp());
+		kprintf("##SYS.HOST#: %s.local\n  IP:%s #\n",g_device->hostname,app_get_ip());
 		return;
 	}
 
@@ -1306,7 +1276,7 @@ void hostname(char* s)
 		g_device->hostname[(t_end-t)*sizeof(char)] = 0;
 	}
 	eeprom_save_device_settings(g_device);
-	setHostname(g_device->hostname);
+	iface_set_hostname(g_device->hostname);
 	hostname((char*) "");
 }
 
@@ -1336,13 +1306,13 @@ void displayLogLevel()
 	}
 }
 
-esp_log_level_t getLogLevel()
+esp_log_level_t iface_get_log_level()
 {
 	 return s_log_default_level;
 }
 
 
-void setLogLevel(esp_log_level_t level)
+void iface_set_log_level(esp_log_level_t level)
 {
 	esp_log_level_set("*", level);
 	s_log_default_level=level;
@@ -1384,21 +1354,6 @@ void setLogTelnet(char* s)
 	setLogTelnet((char*)"");
 	eeprom_save_device_settings(g_device);
 }
-
-
-
-/*
-void fmSeekUp()
-{seekUp();seekingComplete(); kprintf("##FM.FREQ#: %3.2f MHz\n",getFrequency());}
-void fmSeekDown()
-{seekDown();seekingComplete(); kprintf("##FM.FREQ#: %3.2f MHz\n",getFrequency());}
-void fmVol(char* tmp)
-{clientVol(tmp);}
-void fmMute()
-{RDA5807M_unmute(RDA5807M_FALSE); }
-void fmUnmute()
-{RDA5807M_unmute(RDA5807M_TRUE);}
-*/
 
 void sys_conf()
 {
@@ -1446,7 +1401,7 @@ void dbgSSL(char* s)
 }
 
 
-void checkCommand(int size, char* s)
+void iface_check_command(int size, char* s)
 {
 	char *tmp = (char*)kmalloc((size+1)*sizeof(char));
 	int i;
@@ -1475,7 +1430,7 @@ void checkCommand(int size, char* s)
 	{
 		if     (strcmp(tmp+5, "list") == 0) 	wifiScan();
 		else if(strcmp(tmp+5, "scan") == 0) 	wifiScan();
-		else if(strcmp(tmp+5, "con") == 0) 	wifiConnectMem();
+		else if(strcmp(tmp+5, "con") == 0) 	iface_wifi_connect_mem();
 		else if(strcmp(tmp+5, "recon") == 0) 	wifiReConnect();
 		else if(startsWith ("con", tmp+5)) 	wifiConnect(tmp);
 		else if(strcmp(tmp+5, "rssi") == 0) 	readRssi();
@@ -1500,7 +1455,7 @@ void checkCommand(int size, char* s)
 		else if(strcmp(tmp+4, "vol+") == 0) 	setVolumePlus();
 		else if(strcmp(tmp+4, "vol-") == 0) 	setVolumeMinus();
 		else if(strcmp(tmp+4, "info") == 0) 	clientInfo();
-		else if(startsWith (  "vol",tmp+4)) 	clientVol(tmp);
+		else if(startsWith (  "vol",tmp+4)) 	iface_client_vol(tmp);
 		else if(startsWith (  "edit",tmp+4)) 	clientEdit(tmp);
 		else if(startsWith (  "wake",tmp+4)) 	clientWake(tmp);
 		else if(startsWith (  "sleep",tmp+4)) 	clientSleep(tmp);
@@ -1531,18 +1486,17 @@ void checkCommand(int size, char* s)
 		else if(strcmp(tmp+4, "date") == 0) 	ntp_print_time();
 		else if(strncmp(tmp+4, "vers",4) == 0) 	kprintf("Release: %s, Revision: %s, KaRadio32\n",RELEASE,REVISION);
 		else if(startsWith(   "tzo",tmp+4)) 	tzoffset(tmp);
-		else if(strcmp(tmp+4, "logn") == 0) 	setLogLevel(ESP_LOG_NONE);
-		else if(strcmp(tmp+4, "loge") == 0) 	setLogLevel(ESP_LOG_ERROR);
-		else if(strcmp(tmp+4, "logw") == 0) 	setLogLevel(ESP_LOG_WARN);
-		else if(strcmp(tmp+4, "logi") == 0) 	setLogLevel(ESP_LOG_INFO);
-		else if(strcmp(tmp+4, "logd") == 0) 	setLogLevel(ESP_LOG_DEBUG);
-		else if(strcmp(tmp+4, "logv") == 0) 	setLogLevel(ESP_LOG_VERBOSE);
+		else if(strcmp(tmp+4, "logn") == 0) 	iface_set_log_level(ESP_LOG_NONE);
+		else if(strcmp(tmp+4, "loge") == 0) 	iface_set_log_level(ESP_LOG_ERROR);
+		else if(strcmp(tmp+4, "logw") == 0) 	iface_set_log_level(ESP_LOG_WARN);
+		else if(strcmp(tmp+4, "logi") == 0) 	iface_set_log_level(ESP_LOG_INFO);
+		else if(strcmp(tmp+4, "logd") == 0) 	iface_set_log_level(ESP_LOG_DEBUG);
+		else if(strcmp(tmp+4, "logv") == 0) 	iface_set_log_level(ESP_LOG_VERBOSE);
 		else if(startsWith(   "logt",tmp+4)) 	setLogTelnet(tmp);
 		else if(strcmp(tmp+4, "dlog") == 0) 	displayLogLevel();
 		else if(startsWith(   "log",tmp+4)) 	; // do nothing
 		else if(startsWith (  "lcdo",tmp+4)) 	syslcdout(tmp); // lcdout timer to switch off the lcd
 		else if(startsWith (  "lcds",tmp+4)) 	syslcdstop(tmp); // lcdout timer to switch off the lcd on stop state
-		else if(startsWith (  "lcdb",tmp+4)) 	syslcdblv(tmp); // lcd back light value
 		else if(startsWith (  "lcd",tmp+4)) 	syslcd(tmp);
 		else if(startsWith (  "ddmm",tmp+4)) 	sysddmm(tmp);
 		else if(startsWith (  "host",tmp+4)) 	hostname(tmp);

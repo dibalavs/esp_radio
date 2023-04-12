@@ -13,7 +13,6 @@
 #include "esp_sleep.h"
 #include "ClickEncoder.h"
 #include "ClickButtons.h"
-#include "ClickJoystick.h"
 #include "app_main.h"
 #include "gpio.h"
 #include "webclient.h"
@@ -21,7 +20,6 @@
 #include "interface.h"
 
 #include "addon.h"
-#include "custom.h"
 #include "u8g2_esp32_hal.h"
 #include "ucg_esp32_hal.h"
 #include "ntp.h"
@@ -91,17 +89,11 @@ static bool isEncoder0 = true;
 static bool isEncoder1 = true;
 static bool isButton0 = true;
 static bool isButton1 = true;
-static bool isJoystick0 = true;
-static bool isJoystick1 = true;
-static bool isEsplay = false;
 static bool isAdcKeyboard = false;
 static bool isAdcBatt = false;
 static esp_adc_cal_characteristics_t characteristics;
 static float adc_value = 0.0f;
 battery_state out_state;
-
-//backlight value
-static int blv = 100;
 
 void Screen(typeScreen st);
 void drawScreen();
@@ -112,21 +104,11 @@ Encoder_t* encoder1 = NULL;
 Button_t* button0 = NULL;
 Button_t* button1 = NULL;
 
-Joystick_t* joystick1 = NULL;
-Joystick_t* joystick0 = NULL;
-
-Button_t* expButton0 = NULL;
-Button_t* expButton1 = NULL;
-Button_t* expButton2 = NULL;
-
 struct tm* addon_get_dt() { return dt;}
 
 // Deep Sleep Power Save Input. https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/sleep_modes.html
 gpio_num_t deepSleep_io; /** Enter Deep Sleep if pin is set to level defined in P_LEVELPINSLEEP. */
 bool deepSleepLevel; /** Level to enter Deep Sleep / Wakeup if level is the opposite. */
-
-void addon_set_blv(int val) {blv = val;}
-int addon_get_blv() {return blv;}
 
 int addon_get_bat_percent()
 {
@@ -196,11 +178,10 @@ uint16_t addon_get_height()
 
 void addon_wake_lcd()
 {
-	if ((getLcdStop() != 0) && (!state))  timerLcdOut = getLcdStop(); // rearm the tempo
-	else timerLcdOut = getLcdOut(); // rearm the tempo
+	if ((iface_get_lcd_stop() != 0) && (!state))  timerLcdOut = iface_get_lcd_stop(); // rearm the tempo
+	else timerLcdOut = iface_get_lcd_out(); // rearm the tempo
 	if (itLcdOut==2)
 	{
-		LedBacklightOn(blv);
 		mTscreen= MTNEW;
 		evtScreen(stateScreen);
 		itLcdOut = 0;  //0 not activated, 1 sleep requested, 2 in sleep ;
@@ -210,9 +191,7 @@ void addon_wake_lcd()
 void sleepLcd()
 {
 	itLcdOut = 2;  // in sleep
-	if (!LedBacklightOff())
-		evtClearScreen();
-
+	// TODO; disable screen
 }
 
 void addon_lcd_init(uint8_t Type)
@@ -229,8 +208,6 @@ void addon_lcd_init(uint8_t Type)
 		addonu8g2_lcd_init(&lcd_type);
 	}
 	vTaskDelay(1);
-	// init the gpio for backlight
-	LedBacklightInit();
 
 }
 
@@ -274,7 +251,7 @@ char Version[20];
  // ----------------------------------------------------------------------------
 // call this every 1 millisecond via timer ISR
 //
-void (*serviceAddon)() = NULL;
+void (*app_service_addon)() = NULL;
 
 IRAM_ATTR  void addon_service(void)
 {
@@ -707,32 +684,6 @@ void adcLoop() {
 }
 
 //-----------------------
-// Compute the Joystick
-//----------------------
- void joystickCompute(Joystick_t *enc,bool role)
- {
-	int16_t newValue = 0;
-	{
-		Button state1 = getJoystick(enc,0);
-		Button state2 = getJoystick(enc,1);
-//		ESP_LOGD(TAG,"Button1: %i, Button2: %i",state1,state2);
-		newValue=((state1!=Open)?5:0)+((state2!=Open)?-5:0); // sstation take + or - in any value
-		typeScreen estate;
-		if (role) estate = sstation; else estate = svolume;
-		if ((stateScreen  != estate)&&(newValue != 0))
-		{
-			if(role) setRelVolume(newValue);else evtStation(-newValue);
-			ESP_LOGD(TAG,"Button1: %i, Button2: %i, value: %i",state1,state2,newValue);
-		}
-		if ((stateScreen  == estate)&&(newValue != 0))
-		{
-			if(role) evtStation(-newValue); else setRelVolume(newValue);
-			ESP_LOGD(TAG,"Button1: %i, Button2: %i, value: %i",state1,state2,newValue);
-		}
-	}
- }
-
-//-----------------------
 // Compute the Buttons
 //----------------------
  void buttonCompute(Button_t *enc,uint8_t role)
@@ -741,7 +692,7 @@ void adcLoop() {
 	Button state0;
 	if (role != ECTRL)
 	{
-	state0 = getButtons(enc,0);
+	state0 = buttons_get(enc,0);
 	if (state0 != Open)
 	{
 		ESP_LOGD(TAG,"Button0: %i",state0);
@@ -757,11 +708,11 @@ void adcLoop() {
 		}
 	} else
 	{
-		Button state1 = getButtons(enc,1);
-		Button state2 = getButtons(enc,2);
+		Button state1 = buttons_get(enc,1);
+		Button state2 = buttons_get(enc,2);
 		newValue=((state1!=Open)?5:0)+((state2!=Open)?-5:0); // sstation take + or - in any value
 		typeScreen estate = snull;
-		if ((isButton0 ^ isButton1)&& (!isEsplay)) // one button and not esplay
+		if ((isButton0 ^ isButton1)) // one button and not esplay
 		{
 			if (role) estate = sstation; else estate = svolume;
 //			ESP_LOGD(TAG,"Button1:nono: %d   %d    %d",isButton0,isButton1,isEsplay);
@@ -779,19 +730,13 @@ void adcLoop() {
 	} else //third control of esplay
 	{
 		Button state1;
-		state0 = getButtons(enc,0);
+		state0 = buttons_get(enc,0);
 		if (state0 == Clicked) toggletime();
 
-		state0 = getButtons(enc,1);
-		state1 = getButtons(enc,2);
-		if (state0 != Open) blv -=2;
-		else if (state1 != Open) blv +=2;
-		else return;
-		if (blv >100) blv = 100;
-		if (blv < 2) blv = 2;
-		addon_wake_lcd();
-		backlight_percentage_set(blv);
-		option_set_lcd_blv(blv);
+		state0 = buttons_get(enc,1);
+		state1 = buttons_get(enc,2);
+		if (state0 != Open || state1 != Open)
+			addon_wake_lcd();
 	}
 }
 
@@ -801,9 +746,9 @@ void adcLoop() {
 
 void encoderCompute(Encoder_t *enc,bool role)
 {
-	int16_t newValue = - getValue(enc);
+	int16_t newValue = - encoder_get_value(enc);
 	if (newValue != 0) ESP_LOGD(TAG,"encoder value: %d, stateScreen: %d",newValue,stateScreen);
-	Button newButton = getButton(enc);
+	Button newButton = encoder_get_button(enc);
 
    	// if an event on encoder switch
 	if (newButton != Open)
@@ -812,7 +757,7 @@ void encoderCompute(Encoder_t *enc,bool role)
 		// double click = toggle time
 		if (newButton == DoubleClicked) { toggletime();}
 		// switch held and rotated then change station
-		if ((newButton == Held)&&(getPinState(enc) == getpinsActive(enc)))
+		if ((newButton == Held)&&(encoder_get_pin_state(enc) == encoder_get_pins_active(enc)))
 		{
 			if (stateScreen!= (role?sstation:svolume))
 				role?evtStation(newValue):setRelVolume(newValue);
@@ -821,7 +766,7 @@ void encoderCompute(Encoder_t *enc,bool role)
 		// no event on button switch
 	{
 		typeScreen estate = snull;
-		if ((isEncoder0 ^ isEncoder1)&& (!isEsplay)) // one button and not esplay
+		if ((isEncoder0 ^ isEncoder1)) // one button and not esplay
 		{
 			if (role) estate = sstation; else estate = svolume;
 		}
@@ -845,19 +790,8 @@ void periphLoop()
 // button1 = station control or volume when pushed
 	if (isButton0) buttonCompute(button0,VCTRL);
 	if (isButton1) buttonCompute(button1,SCTRL);
-	if (!isEsplay)
-	{
-		if (isEncoder0) encoderCompute(encoder0,VCTRL);
-		if (isEncoder1) encoderCompute(encoder1,SCTRL);
-		if (isJoystick0) joystickCompute(joystick0,VCTRL);
-		if (isJoystick1) joystickCompute(joystick1,SCTRL);
-	} else
-	{
-//		ESP_LOGI(TAG,"rexp: 0x%x",rexp);
-		buttonCompute(expButton0,VCTRL);
-		buttonCompute(expButton1,SCTRL);
-		buttonCompute(expButton2,ECTRL);
-	}
+	if (isEncoder0) encoderCompute(encoder0,VCTRL);
+	if (isEncoder1) encoderCompute(encoder1,SCTRL);
 }
 
 
@@ -1015,22 +949,16 @@ void initButtonDevices()
 	bool abtn0,abtn1;
 	gpio_get_encoders(&enca0, &encb0, &encbtn0,&enca1, &encb1, &encbtn1);
 	if (enca1 == GPIO_NONE) isEncoder1 = false; //no encoder
-	else encoder1 = ClickEncoderInit(enca1, encb1, encbtn1,((g_device->options32&T_ENC1)==0)?false:true );
+	else encoder1 = encoder_init(enca1, encb1, encbtn1,((g_device->options32&T_ENC1)==0)?false:true );
 	if (enca0 == GPIO_NONE) isEncoder0 = false; //no encoder
-	else encoder0 = ClickEncoderInit(enca0, encb0, encbtn0,((g_device->options32&T_ENC0)==0)?false:true );
+	else encoder0 = encoder_init(enca0, encb0, encbtn0,((g_device->options32&T_ENC0)==0)?false:true );
 
 	gpio_get_buttons(&enca0, &encb0, &encbtn0,&enca1, &encb1, &encbtn1);
 	gpio_get_active_buttons(&abtn0, &abtn1);
 	if (enca1 == GPIO_NONE) isButton1 = false; //no buttons
-	else button1 = ClickButtonsInit(enca1, encb1, encbtn1,abtn1 );
+	else button1 = buttons_init(enca1, encb1, encbtn1,abtn1 );
 	if (enca0 == GPIO_NONE) isButton0 = false; //no buttons
-	else button0 = ClickButtonsInit(enca0, encb0, encbtn0,abtn0);
-
-	gpio_get_joysticks(&enca0,&enca1);
-	if (enca0 == GPIO_NONE) isJoystick0 = false; //no joystick
-	else joystick0 = ClickJoystickInit(enca0 );
-	if (enca1 == GPIO_NONE) isJoystick1 = false; //no joystick
-	else joystick1 = ClickJoystickInit(enca1);
+	else button0 = buttons_init(enca0, encb0, encbtn0,abtn0);
 }
 
 
@@ -1059,23 +987,13 @@ static uint8_t divide = 0;
 // indirect call to service
 IRAM_ATTR void multiService()  // every 1ms
 {
-	if (isEncoder0) service(encoder0);
-	if (isEncoder1) service(encoder1);
+	if (isEncoder0) encoder_service(encoder0);
+	if (isEncoder1) encoder_service(encoder1);
 //	ServiceAddon();
 	if (divide++ == 10) // only every 10ms
 	{
-		if (isButton0) serviceBtn(button0);
-		if (isButton1) serviceBtn(button1);
-		if (!isEsplay)
-		{
-			if (isJoystick0) serviceJoystick(joystick0);
-			if (isJoystick1) serviceJoystick(joystick1);
-		} else
-		{
-			serviceBtn(expButton0);
-			serviceBtn(expButton1);
-			serviceBtn(expButton2);
-		}
+		if (isButton0) buttons_service(button0);
+		if (isButton1) buttons_service(button1);
 
 		divide = 0;
 	}
@@ -1090,8 +1008,6 @@ void addon_task_lcd(void *pvParams)
 	event_lcd_t evt1 ; // lcd event
 	ESP_LOGD(TAG, "task_lcd Started, LCD Type %d",lcd_type);
 	defaultStateScreen = (g_device->options32&T_TOGGLETIME)? stime:smain;
-	option_get_lcd_blv(&blv); // init backlight value;
-	backlight_percentage_set(blv);
 	if (lcd_type != LCD_NONE)  drawFrame();
 
 	while (1)
@@ -1211,8 +1127,8 @@ void addon_task(void *pvParams)
 	initButtonDevices();
 	adcInit();
 
-	serviceAddon = &multiService;		; // connect the 1ms interruption
-	futurNum = getCurrentStation();
+	app_service_addon = &multiService;		; // connect the 1ms interruption
+	futurNum = iface_get_current_station();
 
 	//ir
 	// queue for events of the IR nec rx

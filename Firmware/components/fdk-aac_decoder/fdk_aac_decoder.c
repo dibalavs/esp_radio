@@ -53,7 +53,7 @@ void fdkaac_decoder_task(void *pvParameters)
     /* allocate bitstream buffer */
 //    buffer_t *in_buf = buf_create(INPUT_BUFFER_SIZE*48);
 	buffer_t *in_buf  = NULL;
-	int bf = bigSram()?12:6;
+	int bf = app_big_sram()?12:6;
     in_buf = buf_create_dma(INPUT_BUFFER_SIZE* bf );
 	if (in_buf==NULL) {
 		ESP_LOGE(TAG,"buf_create in_buf failed");

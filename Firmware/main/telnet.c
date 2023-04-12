@@ -1,4 +1,4 @@
-/* (c)jp cocatrix May 2016 
+/* (c)jp cocatrix May 2016
  *
  * Copyright 2016 karawin (http://www.karawin.fr)
 
@@ -15,7 +15,7 @@
 #include "lwip/opt.h"
 #include "esp_system.h"
 #include "lwip/sockets.h"
-#include "cencode_inc.h"
+#include "base64.h"
 #include "telnet.h"
 #include "interface.h"
 
@@ -52,8 +52,8 @@ void telnetinit(void)
 {
 	int i;
 	vSemaphoreCreateBinary(sTELNET);
-	
-	for (i = 0;i<NBCLIENTT;i++) 
+
+	for (i = 0;i<NBCLIENTT;i++)
 	{
 		telnetclients[i] = -1;
 	}
@@ -71,11 +71,11 @@ bool telnetnewclient(int socket)
 //	printf("ws newclient:%d\n",socket);
 	for (i = 0;i<NBCLIENTT;i++) if (telnetclients[i] == socket) return true;
 	else
-	for (i = 0;i<NBCLIENTT;i++) if (telnetclients[i] == -1) 
+	for (i = 0;i<NBCLIENTT;i++) if (telnetclients[i] == -1)
 	{
 		telnetclients[i] = socket;
 		return true;
-	}	
+	}
 	return false; // no more room
 }
 /////////////////////////////////////////////////////////////////////
@@ -84,8 +84,8 @@ void telnetremoveclient(int socket)
 {
 	int i ;
 //	printf("ws removeclient:%d\n",socket);
-	for (i = 0;i<NBCLIENTT;i++) 
-		if (telnetclients[i] == socket) 
+	for (i = 0;i<NBCLIENTT;i++)
+		if (telnetclients[i] == socket)
 		{
 			telnetclients[i] = -1;
 //			printf("ws removeclient:%d removed\n",socket);
@@ -98,7 +98,7 @@ void telnetremoveclient(int socket)
 bool istelnet( int socket)
 {
 	int i ;
-	for (i = 0;i<NBCLIENTT;i++) 
+	for (i = 0;i<NBCLIENTT;i++)
 		if ((telnetclients[i]!= -1)&&(telnetclients[i] == socket)) return true;
 	return false;
 }
@@ -106,10 +106,10 @@ bool istelnet( int socket)
 
 bool telnetAccept(int tsocket)
 {
-	if ((!istelnet(tsocket ))&&(telnetnewclient(tsocket))) 
+	if ((!istelnet(tsocket ))&&(telnetnewclient(tsocket)))
 	{
 //			printf("telnet write accept\n");
-			write(tsocket, strtWELCOME, strlen(strtWELCOME));  // reply to accept	
+			write(tsocket, strtWELCOME, strlen(strtWELCOME));  // reply to accept
 			return true;
 	} else close(tsocket);
 	return false;
@@ -118,19 +118,19 @@ void vTelnetWrite(uint32_t lenb,const char *fmt, va_list ap)
 {
 	char *buf = NULL;
 	int i;
-	
+
 	buf = (char *)kmalloc(lenb+1);
 	if (buf == NULL) return;
 	buf[0] = 0;
-	vsprintf(buf,fmt, ap);	
+	vsprintf(buf,fmt, ap);
 	// write to all clients
 	telnet_take_semaphore();
-	for (i = 0;i<NBCLIENTT;i++)	
+	for (i = 0;i<NBCLIENTT;i++)
 		if (istelnet( telnetclients[i]))
 		{
 			write( telnetclients[i],  buf, strlen(buf));
-		}	
-	telnet_give_semaphore();		
+		}
+	telnet_give_semaphore();
 	free (buf);
 }
 
@@ -144,22 +144,22 @@ void telnetWrite(uint32_t lenb,const char *fmt, ...)
 	if (buf == NULL) return;
 	buf[0] = 0;
 	strcpy(buf,"ok\n");
-	
+
 	va_list ap;
-	va_start(ap, fmt);	
+	va_start(ap, fmt);
 	rlen = 0;
-	rlen = vsprintf(buf,fmt, ap);		
+	rlen = vsprintf(buf,fmt, ap);
 	va_end(ap);
 	buf = realloc(buf,rlen+1);
 	if (buf == NULL) return;
 	// write to all clients
 	telnet_take_semaphore();
-	for (i = 0;i<NBCLIENTT;i++)	
+	for (i = 0;i<NBCLIENTT;i++)
 		if (istelnet( telnetclients[i]))
 		{
 			write( telnetclients[i],  buf, strlen(buf));
-		}	
-	telnet_give_semaphore();		
+		}
+	telnet_give_semaphore();
 	free (buf);
 
 }
@@ -178,17 +178,17 @@ void telnetNego(int tsocket)
 		if (iac[0] == 246) write(tsocket,"\n>",2);  // are you there
 	}
 }
-	
+
 void telnetCommand(int tsocket)
 {
 	if (irec == 0) return;
-	ESP_LOGV(TAG,"%sHEAPd0: %d #\n","##SYS.",xPortGetFreeHeapSize( ));	
+	ESP_LOGV(TAG,"%sHEAPd0: %d #\n","##SYS.",xPortGetFreeHeapSize( ));
 	brec[irec] = 0x0;
 	write(tsocket,"\n> ",1);
 	ESP_LOGV(TAG,"brec: %s\n",brec);
 	obrec = realloc(obrec,strlen(brec)+1);
 	strcpy(obrec,brec); // save old command
-	checkCommand(irec, brec);
+	iface_check_command(irec, brec);
 	write(tsocket,"> ",2);
 	irec = 0;
 }
@@ -197,14 +197,14 @@ int telnetRead(int tsocket)
 {
 	char *buf ;
 	int32_t recbytes ;
-	int i;	
-	buf = (char *)kmalloc(MAXDATAT);	
+	int i;
+	buf = (char *)kmalloc(MAXDATAT);
 	recbytes = 0;
     if (buf == NULL)
 	{
 		vTaskDelay(100); // wait a while and retry
-		buf = (char *)kmalloc(MAXDATAT);	
-	}	
+		buf = (char *)kmalloc(MAXDATAT);
+	}
 	if (buf != NULL)
 	{
 		recbytes = read(tsocket , buf, MAXDATAT);
@@ -214,15 +214,15 @@ int telnetRead(int tsocket)
 			{
 				if (errno != ECONNRESET )
 				{
-					ESP_LOGE(TAG,strtSOCKET,"read", errno);	
-				} 
-			} 
+					ESP_LOGE(TAG,strtSOCKET,"read", errno);
+				}
+			}
 			free(buf);
 			return 0; // free the socket
-		}	
+		}
 
 		buf = realloc(buf,recbytes+2);
-//		printf("%sHEAPdi1: %d #\nrecbytes: %d\n","##SYS.",xPortGetFreeHeapSize(),recbytes);	
+//		printf("%sHEAPdi1: %d #\nrecbytes: %d\n","##SYS.",xPortGetFreeHeapSize(),recbytes);
 		if (buf != NULL)
 		{
 			for (i = 0;i< recbytes;i++)
@@ -243,14 +243,14 @@ int telnetRead(int tsocket)
 					{
 						if ((buf[i+1]=='[') && (buf[i+2]=='A')) // arrow up
 						{
-							strcpy(brec,obrec); 
+							strcpy(brec,obrec);
 							write(tsocket,"\r",1);
 							write(tsocket,brec,strlen(brec));
 							irec = strlen(brec);
 							buf = realloc(buf,2);
-							vTaskDelay(2);	
+							vTaskDelay(2);
 							telnetCommand(tsocket);
-						}						
+						}
 						i =recbytes; // exit for
 					}
 					break;
@@ -259,21 +259,21 @@ int telnetRead(int tsocket)
 				break;
 				default:
 					brec[irec++] = buf[i];
-					if (irec == sizeof(brec)) irec = 0;	
+					if (irec == sizeof(brec)) irec = 0;
 				}
 				else // in iac
 				{
 					iac[iiac++] = buf[i];
 					if (iiac == 2)
-					{	
+					{
 						telnetNego(tsocket);
 						inIac = false;
 						iiac = 0;
 					}
 				}
-			}	
-			free(buf);	
-		}		
+			}
+			free(buf);
+		}
 	}
 	return recbytes;
 }

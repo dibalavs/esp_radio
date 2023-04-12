@@ -104,9 +104,9 @@ void test_https()
 void ramSinit()
 {
 	test_https();
-	if (https && !bigSram())
+	if (https && !app_big_sram())
 	{
-		if (get_audio_output_mode() == VS1053)
+		if (app_get_audio_output_mode() == VS1053)
 		{
 			if (getSPIRAMSIZE() == HTTPSVSRAM*1024) return; // no need
 			setSPIRAMSIZE(HTTPSVSRAM*1024);
@@ -120,14 +120,14 @@ void ramSinit()
 	else //ramInit();
 	//compute the size of the audio buffer for http
 	{
-		if (bigSram())
+		if (app_big_sram())
 		{
 			if (getSPIRAMSIZE() == BIGRAM*1024) return; // no need
 			setSPIRAMSIZE(BIGRAM*1024);		// more free heap
 		}
 		else
 		{
-			if (get_audio_output_mode() == VS1053)
+			if (app_get_audio_output_mode() == VS1053)
 			{
 				if (getSPIRAMSIZE() == SMALLRAM*1024) return; // no need
 				setSPIRAMSIZE(SMALLRAM*1024);		// more free heap
@@ -588,14 +588,14 @@ void wsStationNext()
 	struct shoutcast_info* si =NULL;
 	do {
 		if (si != NULL) incfree(si,"wsstationN");
-		setCurrentStation(getCurrentStation()+1);
-		if (getCurrentStation() >= 255)
-			setCurrentStation(0);
-		si = eeprom_get_station(getCurrentStation());
+		iface_set_current_station(iface_get_current_station()+1);
+		if (iface_get_current_station() >= 255)
+			iface_set_current_station(0);
+		si = eeprom_get_station(iface_get_current_station());
 	}
 	while (si == NULL || ((si != NULL)&&(strcmp(si->domain,"")==0)) || ((si != NULL)&&(strcmp( si->file,"")== 0)));
 
-	playStationInt(getCurrentStation());
+	playStationInt(iface_get_current_station());
 	incfree(si,"wsstation");
 }
 // websocket: previous station
@@ -604,16 +604,16 @@ void wsStationPrev()
 	struct shoutcast_info* si = NULL;
 	do {
 		if (si != NULL) incfree(si,"wsstationP");
-		if (getCurrentStation() >0)
+		if (iface_get_current_station() >0)
 		{
-			setCurrentStation(getCurrentStation()-1);
-			si = eeprom_get_station(getCurrentStation());
+			iface_set_current_station(iface_get_current_station()-1);
+			si = eeprom_get_station(iface_get_current_station());
 		}
 		else return;
 	}
 	while (si == NULL || ((si != NULL)&&(strcmp(si->domain,"")==0)) || ((si != NULL)&&(strcmp( si->file,"")== 0)));
 
-	playStationInt	(getCurrentStation());
+	playStationInt	(iface_get_current_station());
 	incfree(si,"wsstation");
 }
 
@@ -686,7 +686,7 @@ static void wsHeaders()
 {
 //remove	uint8_t header_num;
 	char currentSt[6];
-	sprintf(currentSt,"%d",getCurrentStation());
+	sprintf(currentSt,"%d",iface_get_current_station());
 	char* not2;
 	not2 = header.members.single.notice2;
 	if (not2 ==NULL) not2=header.members.single.audioinfo;
@@ -969,14 +969,14 @@ void clientDisconnect(const char* from)
 	}
 	if ((from[0]!='C') || (from[1]!='_'))
 		if (!ledStatus){
-			if (getLedGpio() != GPIO_NONE) gpio_set_level(getLedGpio(), ledPolarity ? 1 : 0);
+			if (iface_get_led_gpio() != GPIO_NONE) gpio_set_level(iface_get_led_gpio(), ledPolarity ? 1 : 0);
 		}
 //	esp_wifi_set_ps(WIFI_PS_MAX_MODEM);
 	vTaskDelay(1);
 	// save the volume if needed on stop state
-	if (g_device->vol != getIvol())
+	if (g_device->vol != app_get_ivol())
 	{
-		g_device->vol = getIvol();
+		g_device->vol = app_get_ivol();
 		eeprom_save_device_settings_volume(g_device);
 	}
 }
@@ -1369,7 +1369,7 @@ ESP_LOGD(TAG,"mt2 len:%d, clen:%d, metad:%d, l:%d, inpdata:%x,  rest:%d",len,cle
 			kprintf(CLIPLAY,0x0d,0x0a);
 			playing=1;
 			if (!ledStatus){
-			if (getLedGpio() != GPIO_NONE) gpio_set_level(getLedGpio(), ledPolarity ? 0 : 1);
+			if (iface_get_led_gpio() != GPIO_NONE) gpio_set_level(iface_get_led_gpio(), ledPolarity ? 0 : 1);
 			}
 			setVolumei(getVolume());
 		}
@@ -1440,7 +1440,7 @@ void clientTask(void *pvParams) {
 		xSemaphoreGive(sConnected);
 		if(xSemaphoreTake(sConnect, portMAX_DELAY))
 		{
-			if (get_audio_output_mode() == VS1053)  VS1053_HighPower();
+			if (app_get_audio_output_mode() == VS1053)  VS1053_HighPower();
 			xSemaphoreTake(sDisconnect, 0);
 			sockfd = socket(AF_INET, SOCK_STREAM, 0);
 			ESP_LOGD(TAG,"Socket: %d", sockfd);
@@ -1640,9 +1640,9 @@ void clientTask(void *pvParams) {
 				if (get_player_status() != STOPPED)
 					audio_player_stop();
 				player_config->media_stream->eof = true;
-				if (get_audio_output_mode() == VS1053) VS1053_flush_cancel();
+				if (app_get_audio_output_mode() == VS1053) VS1053_flush_cancel();
 				playing = 0;
-				if (get_audio_output_mode() == VS1053) VS1053_LowPower();
+				if (app_get_audio_output_mode() == VS1053) VS1053_LowPower();
 				strcpy(userAgent,g_device->ua);
 			}
 

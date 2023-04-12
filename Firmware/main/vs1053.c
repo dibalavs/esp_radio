@@ -426,7 +426,7 @@ void VS1053_Start(){
 	VS1053_DisableAnalog();
 	vTaskDelay(1);
 	ESP_LOGI(TAG,"volume: %d",g_device->vol);
-	setIvol( g_device->vol);
+	app_set_ivol( g_device->vol);
 	VS1053_SetVolume( g_device->vol);
 	VS1053_SetTreble(g_device->treble);
 	VS1053_SetBass(g_device->bass);

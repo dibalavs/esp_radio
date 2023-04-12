@@ -4,7 +4,7 @@
 //
 // (c) 2010 karl@pitrich.com
 // (c) 2014 karl@pitrich.com
-// 
+//
 // Timer-based rotary encoder logic by Peter Dannegger
 // http://www.mikrocontroller.net/articles/Drehgeber
 //
@@ -26,7 +26,7 @@
 
 
 
-// 
+//
 
 // ----------------------------------------------------------------------------
 typedef gpio_mode_t pinMode_t;
@@ -43,12 +43,12 @@ typedef gpio_mode_t pinMode_t;
 #ifndef __have__ClickEncoder_h__
   typedef enum Buttons_e {
     Open = 0,
-    Closed,    
+    Closed,
     Pressed,
     Held,
-    Released,   
+    Released,
     Clicked,
-    DoubleClicked   
+    DoubleClicked
   } Button;
 #endif
 
@@ -56,21 +56,16 @@ typedef gpio_mode_t pinMode_t;
   int8_t pinBTN[3];
   bool expGpio;
   bool pinsActive;
-  
+
   volatile Button button[3];
   bool doubleClickEnabled;
   bool buttonHeldEnabled;
   uint16_t keyDownTicks[3] ;
-  uint16_t doubleClickTicks[3] ; 
+  uint16_t doubleClickTicks[3] ;
 //  unsigned long lastButtonCheck[3];
-  } Button_t;	  
-  
-  
-  Button_t* ClickButtonsInit(int8_t A, int8_t B, int8_t C , bool Active);
-  Button_t* ClickexpButtonsInit(int8_t A, int8_t B, int8_t C , bool Active);
-  void serviceBtn(Button_t *enc); 
-  Button getButtons(Button_t *enc,uint8_t index);
-  uint8_t i2c_keypad_read();
-// ----------------------------------------------------------------------------
-extern uint8_t rexp; // expansion ports for esplay
+  } Button_t;
+
+  Button_t* buttons_init(int8_t A, int8_t B, int8_t C , bool Active);
+  void buttons_service(Button_t *enc);
+  Button buttons_get(Button_t *enc,uint8_t index);
 #endif // __have__ClickButton_h__

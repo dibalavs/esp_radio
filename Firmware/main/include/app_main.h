@@ -36,10 +36,9 @@
 
 #ifndef MAIN_INCLUDE_APP_MAIN_H_
 #define MAIN_INCLUDE_APP_MAIN_H_
-//#include "audio_renderer.h"
 
-
-
+#include <stdbool.h>
+#include <stdint.h>
 
 #define TIMER_DIVIDER 16 	//5000000Hz 5MHz
 #define TIMER_DIVIDER1MS TIMER_BASE_CLK/10000 //10000Hz
@@ -102,31 +101,28 @@ typedef struct {
     int i2;                 /*!< TIMER_xxx timer number */
 } queue_event_t;
 
-output_mode_t get_audio_output_mode() ;
+output_mode_t app_get_audio_output_mode() ;
 
-uint8_t getIvol();
-void setIvol( uint8_t vol);
-bool bigSram();
+uint8_t app_get_ivol();
+void app_set_ivol( uint8_t vol);
+bool app_big_sram();
 
 void* kmalloc(size_t memorySize);
 void* kcalloc(size_t elementCount, size_t elementSize);
 
+uint64_t app_get_sleep();
+uint64_t app_get_wake();
+void app_start_sleep(uint32_t delay);
+void app_stop_sleep();
+void app_start_wake(uint32_t delay);
+void app_stop_wake();
+void app_no_interrupt_1ms();
+void app_interrupt_1ms();
 
-//void sleepCallback(void *pArg);
-//void wakeCallback(void *pArg);
-uint64_t getSleep();
-uint64_t getWake();
-void startSleep(uint32_t delay);
-void stopSleep();
-void startWake(uint32_t delay);
-void stopWake();
-void noInterrupt1Ms();
-void interrupt1Ms();
+#define noInterrupts app_no_interrupt_1ms
+#define interrupts app_interrupt_1ms
 
-#define noInterrupts noInterrupt1Ms
-#define interrupts interrupt1Ms
-
-char* getIp();
-extern void (*serviceAddon)(void);
+char* app_get_ip();
+extern void (*app_service_addon)(void);
 
 #endif /* MAIN_INCLUDE_APP_MAIN_H_ */

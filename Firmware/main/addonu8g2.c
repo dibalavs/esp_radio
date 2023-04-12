@@ -237,7 +237,7 @@ static void screenBottomU8g2()
 	if (yy != 32) // not enough room
 	{
 		char strsec[36];
-		if (getDdmm())
+		if (iface_get_ddmm())
 			sprintf(strsec,"%02d-%02d-%04d  %02d:%02d:%02d",dt->tm_mday,dt->tm_mon+1,dt->tm_year+1900, dt->tm_hour, dt->tm_min,dt->tm_sec);
 		else
 			sprintf(strsec,"%02d-%02d-%04d  %02d:%02d:%02d",dt->tm_mon+1,dt->tm_mday,dt->tm_year+1900, dt->tm_hour, dt->tm_min,dt->tm_sec);
@@ -341,11 +341,11 @@ void addonu8g2_draw_ttitle(char* ttitle)
 
     // draw ip
 	addonu8g2_setfont(small);
-	sprintf(strIp,"IP: %s", getIp());
+	sprintf(strIp,"IP: %s", app_get_ip());
 //	u8g2_DrawUTF8(&u8g2,(x/2)-(u8g2_GetUTF8Width(&u8g2,strIp)/2),yy-getFontLineSpacing(),strIp);
 	u8g2_DrawUTF8(&u8g2,(x/2)-(u8g2_GetUTF8Width(&u8g2,strIp)/2),yy-(2*getFontLineSpacing()),strIp);
 	// Rssi
-	sprintf(strIp,"%d dBm", get_rssi());
+	sprintf(strIp,"%d dBm", iface_get_rssi());
 	u8g2_DrawUTF8(&u8g2,4,yy-(getFontLineSpacing()),strIp);
 
 	// Battery
@@ -420,7 +420,7 @@ void addonu8g2_draw_time(uint8_t mTscreen,unsigned timein)
 	u8g2_ClearBuffer(&u8g2);
   u8g2_FirstPage(&u8g2);
   do {
-	if (getDdmm())
+	if (iface_get_ddmm())
 		sprintf(strdate,"%02d-%02d-%04d", dt->tm_mday, dt->tm_mon+1,  dt->tm_year+1900);
     else
 		sprintf(strdate,"%02d-%02d-%04d", dt->tm_mon+1, dt->tm_mday, dt->tm_year+1900);
@@ -536,7 +536,7 @@ void addonu8g2_lcd_init(uint8_t *lcd_type)
 
 	u8g2_esp32_hal_init(u8g2_esp32_hal);
 
-	if (getRotat())
+	if (iface_get_rotat())
 		rotat = U8G2_R2;
 	else
 		rotat = U8G2_R0;

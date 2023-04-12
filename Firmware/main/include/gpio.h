@@ -136,7 +136,6 @@ void option_get_audio_output(output_mode_t *oom);
 void gpio_get_encoders(gpio_num_t *enca, gpio_num_t *encb, gpio_num_t *encbtn, gpio_num_t *enca1, gpio_num_t *encb1, gpio_num_t *encbtn1);
 void gpio_get_active_buttons(bool *abtn0, bool *abtn1);
 void gpio_get_buttons(gpio_num_t *enca, gpio_num_t *encb, gpio_num_t *encc, gpio_num_t *enca1, gpio_num_t *encb1, gpio_num_t *encc1);
-void gpio_get_joysticks(gpio_num_t *enca,gpio_num_t *enca1);
 void gpio_get_ir_signal(gpio_num_t *ir);
 void gpio_get_adc(adc1_channel_t  *channel, adc1_channel_t *chanbatt);
 void gpio_get_lcd_backlightl(gpio_num_t *lcdb);
@@ -149,10 +148,8 @@ void option_set_lcd_info(uint8_t enca, uint8_t rt);
 void option_get_ddmm(uint8_t *enca);
 void option_set_ddmm(uint8_t enca);
 void option_get_lcd_out(uint32_t *enca,uint32_t *encb);
-void option_get_lcd_blv(int *blv);
 void option_set_lcd_stop(uint32_t enca);
 void option_set_lcd_out(uint32_t enca);
-void option_set_lcd_blv(int blv);
 uint8_t gpioToChannel(uint8_t gpio);
 void gpio_get_pinSleep(gpio_num_t *pin, bool *aLevel);
 
