@@ -1,4 +1,4 @@
-/* (c)jp cocatrix May 2017 
+/* (c)jp cocatrix May 2017
 	quick and dirty websocket inplementation for wifi webradio
 Inspirated by:
  * Copyright (c) 2015 Markus Sattler. All rights reserved.
@@ -9,10 +9,11 @@ Inspirated by:
 
 #ifndef __WEBSOCKET_H__
 #define __WEBSOCKET_H__
+
+#include <stdbool.h>
+
 // max size of the WS Message Header
 #define WEBSOCKETS_MAX_HEADER_SIZE  (14)
-
-
 
 typedef  uint32_t u32;
 //#include "crypto/sha1_i.h"
@@ -47,37 +48,37 @@ typedef struct {
 
 
 typedef struct {
-	int socket;	
+	int socket;
 } client_t;
 
 extern client_t webserverclients[NBCLIENT];
 
 // public:
 // init some data
-void websocketinit(void);
+void websocket_init(void);
 // a demand received, accept it
-void websocketAccept(int wsocket,char* bufin,int buflen);
-// a socket with a websocket . 
-bool websocketnewclient(int socket);
+void websocket_accept(int wsocket,char* bufin,int buflen);
+// a socket with a websocket .
+bool websocket_new_client(int socket);
 // a socket with a websocket closed
-void websocketremoveclient(int socket);
+void websocket_remove_client(int socket);
 // is socket a websocket?
-bool iswebsocket( int socket);
+bool is_websocket( int socket);
 //read a message. close the connection if error
-void websocketparsedata(int socket,char* buf, int recbytes);
+void websocket_parse_data(int socket,char* buf, int recbytes);
 //write a txt data
-void websocketwrite(int socket,char* buf, int len);
+void websocket_write(int socket,char* buf, int len);
 //read a txt data
-int websocketRead(int conn);
+int websocket_read(int conn);
 //broadcast a txt data to all clients
-void websocketbroadcast(char* buf, int len);
+void websocket_broadcast(char* buf, int len);
 //broadcast a txt data to all clients but the sender
-void websocketlimitedbroadcast(int socket,char* buf, int len);
+void websocket_limited_broadcast(int socket,char* buf, int len);
 // the websocket server task
-void websocketTask(void* pvParams) ;
+void websocket_task(void* pvParams) ;
 //private:
-bool sendFrame(int socket, wsopcode_t opcode, uint8_t * payload , size_t length );
+bool websocket_send_frame(int socket, wsopcode_t opcode, uint8_t * payload , size_t length );
 // parse a new client request and prepare the answer
-uint32_t decodeHttpMessage (char * inputMessage, char * outputMessage);
-void wsclientDisconnect(int socket, uint16_t code, char * reason , size_t reasonLen );
+uint32_t websocket_decode_http_message (char * inputMessage, char * outputMessage);
+void websocket_client_disconnect(int socket, uint16_t code, char * reason , size_t reasonLen );
 #endif

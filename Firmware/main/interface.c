@@ -153,7 +153,7 @@ static IRAM_ATTR uint32_t lcd_out = 0xFFFFFFFF;
 static IRAM_ATTR uint32_t lcd_stop = 0xFFFFFFFF;
 
 static esp_log_level_t s_log_default_level = ESP_LOG_NONE;
-extern void wsVol(char* vol);
+extern void webclient_ws_vol(char* vol);
 extern void playStation(char* id);
 void iface_client_vol(char *s);
 
@@ -170,7 +170,7 @@ int lkprintf(const char *format, va_list ap)
   int i = vprintf(format,ap);
 
 // send to all telnet clients
-  if (logTel) vTelnetWrite(i,format,ap);
+  if (logTel) telnet_vwrite(i,format,ap);
   return i;
 }
 
@@ -196,16 +196,16 @@ void iface_set_rotat(uint8_t dm)
 
 void setVolumePlus()
 {
-	setRelVolume(10);
+	webserver_set_rel_volume(10);
 }
 void setVolumeMinus()
 {
-	setRelVolume(-10);
+	webserver_set_rel_volume(-10);
 }
 void setVolumew(char* vol)
 {
-	setVolume(vol);
-	wsVol(vol);
+	webserver_set_volume(vol);
+	webclient_ws_vol(vol);
 }
 
 uint16_t iface_get_current_station()
@@ -450,10 +450,10 @@ void clientParseUrl(char* s)
         uint8_t tmp;
         for(tmp=0; tmp<(t_end-t+1); tmp++) url[tmp] = 0;
         strncpy(url, t+2, (t_end-t));
-        clientSetURL(url);
+        webclient_set_url(url);
 		char* title = kmalloc(strlen(url)+13);
 		sprintf(title,"{\"iurl\":\"%s\"}",url);
-		websocketbroadcast(title, strlen(title));
+		websocket_broadcast(title, strlen(title));
 		free(title);
         free(url);
     }
@@ -478,10 +478,10 @@ void clientParsePath(char* s)
         for(tmp=0; tmp<(t_end-t+1); tmp++) path[tmp] = 0;
         strncpy(path, t+2, (t_end-t));
 //kprintf("cli.path: %s\n",path);
-        clientSetPath(path);
+        webclient_set_path(path);
 		char* title = kmalloc(strlen(path)+14);
 		sprintf(title,"{\"ipath\":\"%s\"}",path);
-		websocketbroadcast(title, strlen(title));
+		websocket_broadcast(title, strlen(title));
 		free(title);
         free(path);
     }
@@ -506,10 +506,10 @@ void clientParsePort(char *s)
         for(tmp=0; tmp<(t_end-t+1); tmp++) port[tmp] = 0;
         strncpy(port, t+2, (t_end-t));
         uint16_t porti = atoi(port);
-        clientSetPort(porti);
+        webclient_set_port(porti);
 		char* title = kmalloc(24);
 		sprintf(title,"{\"iport\":\"%d\"}",porti);
-		websocketbroadcast(title, strlen(title));
+		websocket_broadcast(title, strlen(title));
 		free(title);
         free(port);
     }
@@ -696,10 +696,10 @@ void clientInfo()
 	if (si != NULL)
 	{
 		ntp_print_time();
-		clientSetName(si->name,currentStation);
-		clientPrintHeaders();
+		webclient_set_name(si->name,currentStation);
+		webclient_print_headers();
 		iface_client_vol((char*)"");
-		clientPrintState();
+		webclient_print_state();
 		free(si);
 	}
 }
@@ -713,7 +713,7 @@ char* iface_web_info()
 	{
 		if (resp != NULL)
 		{
-			sprintf(resp,"vol: %d\nnum: %d\nstn: %s\ntit: %s\nsts: %d\n",getVolume(),currentStation,si->name,getMeta(),getState());
+			sprintf(resp,"vol: %d\nnum: %d\nstn: %s\ntit: %s\nsts: %d\n",webserver_get_volume(),currentStation,si->name,webclient_get_meta(),webclient_get_state());
 		}
 		free(si);
 	}
@@ -797,7 +797,7 @@ void iface_client_vol(char *s)
 	if(t == 0)
 	{
 		// no argument, return the current volume
-		kprintf("%sVOL#: %d\n",msgcli,getVolume());
+		kprintf("%sVOL#: %d\n",msgcli,webserver_get_volume());
 		return;
 	}
 	char *t_end  = strstr(t, parquoteslash)-2;
@@ -1157,7 +1157,7 @@ void sysled(char* s)
 	{
 	 g_device->options |= T_LED; // set
 	 ledStatus = false;
-	 if (getState())
+	 if (webclient_get_state())
 	 { if (iface_get_led_gpio() != GPIO_NONE) gpio_set_level(iface_get_led_gpio(), ledPolarity ? 0 : 1);}
 	}
 	else  // blink mode
@@ -1189,7 +1189,7 @@ void sysledpol(char* s)
 	{
 		g_device->options |= T_LEDPOL; // set
 		ledPolarity = true;
-		if (getState())
+		if (webclient_get_state())
 		{
 			if (iface_get_led_gpio() != GPIO_NONE) gpio_set_level(iface_get_led_gpio(),ledPolarity ? 0 : 1);
 		}
@@ -1445,12 +1445,12 @@ void iface_check_command(int size, char* s)
 		if     (startsWith (  "url", tmp+4)) 	clientParseUrl(tmp);
 		else if(startsWith (  "path", tmp+4))	clientParsePath(tmp);
 		else if(startsWith (  "port", tmp+4)) 	clientParsePort(tmp);
-		else if(strcmp(tmp+4, "instant") == 0) {clientDisconnect("cli instantplay");clientConnectOnce();}
+		else if(strcmp(tmp+4, "instant") == 0) {webclient_disconnect("cli instantplay");webclient_connect_once();}
 		else if(strcmp(tmp+4, "start") == 0) 	clientPlay((char*)"(\"255\")"); // outside value to play the current station
-		else if(strcmp(tmp+4, "stop") == 0) 	clientDisconnect("cli stop");
+		else if(strcmp(tmp+4, "stop") == 0) 	webclient_disconnect("cli stop");
 		else if(startsWith (  "list", tmp+4)) 	clientList(tmp);
-		else if(strcmp(tmp+4, "next") == 0) 	wsStationNext();
-		else if(strncmp(tmp+4,"previous",4) == 0) wsStationPrev();
+		else if(strcmp(tmp+4, "next") == 0) 	webclient_ws_station_next();
+		else if(strncmp(tmp+4,"previous",4) == 0) webclient_ws_station_prev();
 		else if(startsWith (  "play",tmp+4)) 	clientPlay(tmp);
 		else if(strcmp(tmp+4, "vol+") == 0) 	setVolumePlus();
 		else if(strcmp(tmp+4, "vol-") == 0) 	setVolumeMinus();
@@ -1472,11 +1472,11 @@ void iface_check_command(int size, char* s)
 		else if(strcmp(tmp+4, "conf") == 0) 	sys_conf();
 
 #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 4, 0)
-		else if(strcmp(tmp+4, "update") == 0) 	update_firmware((char*)"KaRadio32_4");
-		else if(strcmp(tmp+4, "prerelease") == 0) 	update_firmware((char*)"KaRadio32_4prv");
+		else if(strcmp(tmp+4, "update") == 0) 	ota_update_firmware((char*)"KaRadio32_4");
+		else if(strcmp(tmp+4, "prerelease") == 0) 	ota_update_firmware((char*)"KaRadio32_4prv");
 #else
-		else if(strcmp(tmp+4, "update") == 0) 	update_firmware((char*)"KaRadio32");
-		else if(strcmp(tmp+4, "prerelease") == 0) 	update_firmware((char*)"KaRadio32prv");
+		else if(strcmp(tmp+4, "update") == 0) 	ota_update_firmware((char*)"KaRadio32");
+		else if(strcmp(tmp+4, "prerelease") == 0) 	ota_update_firmware((char*)"KaRadio32prv");
 #endif
 
 		else if(startsWith (  "patch",tmp+4)) 	syspatch(tmp);

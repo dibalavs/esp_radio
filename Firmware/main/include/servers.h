@@ -7,5 +7,5 @@
 #ifndef __SERVERS_H__
 #define __SERVERS_H__
 // the telnet server task
-void serversTask(void* pvParams) ;
+void servers_task(void* pvParams) ;
 #endif

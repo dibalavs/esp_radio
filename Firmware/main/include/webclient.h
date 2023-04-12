@@ -57,33 +57,32 @@ struct icyHeader
 
 enum clientStatus {C_HEADER0, C_HEADER, C_HEADER1,C_METADATA, C_DATA, C_PLAYLIST, C_PLAYLIST1 };
 
-void clientInit();
-uint8_t clientIsConnected();
-bool clientParsePlaylist(char* s);
-void clientSetURL(char* url);
-void clientSetName(const char* name,uint16_t index);
-void clientSetPath(char* path);
-void clientSetPort(uint16_t port);
-bool clientPrintHeaders();
-void clientPrintState();
-bool getState();
-char* getMeta();
-void ramInit();
+void webclient_init();
+uint8_t webclient_is_connected();
+bool webclient_parse_playlist(char* s);
+void webclient_set_url(char* url);
+void webclient_set_name(const char* name,uint16_t index);
+void webclient_set_path(char* path);
+void webclient_set_port(uint16_t port);
+bool webclient_print_headers();
+void webclient_print_state();
+bool webclient_get_state();
+char* webclient_get_meta();
 
 
-struct icyHeader* clientGetHeader();
-void clientConnect();
-void clientSilentConnect(); 
-void clientConnectOnce();
-void clientDisconnect(const char* from);
-void clientSilentDisconnect();
-bool clientSaveOneHeader(const char* t, uint16_t len, uint8_t header_num);
-void clientTask(void *pvParams);
-void wsVol(char* vol);
-void wsMonitor();
-void wsStationNext();
-void wsStationPrev();
-uint8_t wolfSSL_getLogState();
+struct icyHeader* webclient_get_header();
+void webclient_connect();
+void webclient_silent_connect();
+void webclient_connect_once();
+void webclient_disconnect(const char* from);
+void webclient_silent_disconnect();
+bool webclient_save_one_header(const char* t, uint16_t len, uint8_t header_num);
+void webclient_task(void *pvParams);
+void webclient_ws_vol(char* vol);
+void webclient_ws_monitor();
+void webclient_ws_station_next();
+void webclient_ws_station_prev();
+uint8_t webclient_wolfssl_get_log_state();
 
 
 #endif

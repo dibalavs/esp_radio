@@ -16,13 +16,13 @@
 #include <time.h>
 #include "eeprom.h"
 
-int8_t  applyTZ(struct tm *time) {
+int8_t  timezone_apply_tz(struct tm *time) {
 
 	bool dst = false;
 	int8_t tzo = g_device->tzoffseth;
 	if ((unsigned char)g_device->tzoffsetm == 0xFF) g_device->tzoffsetm = 0; // if not initialized
 	int8_t tzom = g_device->tzoffsetm;
- 
+
 	// apply base timezone offset
 //	time->tm_hour += 1; // e.g. central europe
 	time->tm_min += tzom;

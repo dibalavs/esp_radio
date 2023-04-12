@@ -56,7 +56,7 @@ static int binary_file_length = 0;
 static bool taskState = false;
 
 static unsigned int  reclen = 0;
-	
+
 
 /******************************************************************************
  * FunctionName : wsUpgrade
@@ -69,7 +69,7 @@ void wsUpgrade(const char* str,int count,int total)
 	char answer[50];
 	if (strlen(str)!= 0)
 		sprintf(answer,"{\"upgrade\":\"%s\"}",str);
-	else		
+	else
 	{
 		int value = count*100/total;
 		memset(answer,0,50);
@@ -81,11 +81,11 @@ void wsUpgrade(const char* str,int count,int total)
 		else
 			sprintf(answer,"{\"upgrade\":\"%d / %d\"}",value,100);
 	}
-	websocketbroadcast(answer, strlen(answer));
+	websocket_broadcast(answer, strlen(answer));
 }
-	
-	
-	
+
+
+
 /*read buffer by byte still delim ,return read bytes counts*/
 static int read_until(char *buffer, char delim, int len)
 {
@@ -132,7 +132,7 @@ static bool read_past_http_header(char text[], int total_len, esp_ota_handle_t u
 
 /******************************************************************************
  * FunctionName : ota task
- * Description  : 
+ * Description  :
  * Parameters   : none
  * Returns      : none
 *******************************************************************************/
@@ -142,10 +142,10 @@ static void ota_task(void *pvParameter)
 	char http_request[80] = {0};
 	struct hostent *serv ;
 	int sockfd;
-	struct sockaddr_in dest;	
+	struct sockaddr_in dest;
 	char* name = (char*)pvParameter; // name of the bin file to load
     unsigned int cnt =0;
-	clientDisconnect("OTA");
+	webclient_disconnect("OTA");
 
 	//esp32: found a partition to flash
     esp_err_t err;
@@ -166,20 +166,20 @@ static void ota_task(void *pvParameter)
     }
     ESP_LOGI(TAG, "Running partition type %d subtype %d (offset 0x%08x)",
              running->type, running->subtype, running->address);
-	
-		
+
+
 	// prepare connection to the server
 	serv =(struct hostent*)gethostbyname("karadio.karawin.fr");
 	sockfd = socket(AF_INET, SOCK_STREAM, 0);
 	if(sockfd >= 0) {ESP_LOGI(TAG,"WebClient Socket created"); }
 	else {ESP_LOGE(TAG,"socket create errno: %d",errno);wsUpgrade("Failed: socket errno", 0,100); goto exit;}
-	bzero(&dest, sizeof(dest));	
+	bzero(&dest, sizeof(dest));
     dest.sin_family = AF_INET;
     dest.sin_port   = htons(80);
     dest.sin_addr.s_addr = inet_addr(inet_ntoa(*(struct in_addr*)(serv-> h_addr_list[0]))); // remote server ip
 	ESP_LOGI(TAG,"distant ip: %x   ADDR:%s\n", dest.sin_addr.s_addr, inet_ntoa(*(struct in_addr*)(serv-> h_addr_list[0])));
 
-	
+
 	/*---Connect to server---*/
 	if (connect(sockfd, (struct sockaddr*)&dest, sizeof(dest)) >= 0)
 		{ESP_LOGI(TAG,"Connected to server");}
@@ -190,8 +190,8 @@ static void ota_task(void *pvParameter)
 		wsUpgrade("Connect to server failed!" , 0,100);
 		goto exit;
 	}
-	
-	
+
+
 	 int res = -1;
     /*send GET request to http server*/
 	sprintf(http_request,strupd,name);
@@ -229,7 +229,7 @@ static void ota_task(void *pvParameter)
 			kprintf("Error: receive data error! errno=%d\n", errno);
 			wsUpgrade("Error: receive data error!" , 0,100);
             goto exit;
-        } else if (buff_len > 0 && !resp_body_start) 
+        } else if (buff_len > 0 && !resp_body_start)
 		{ /*deal with response header*/
 			/*the header*/
 			char header[BUFFSIZE + 1] = { 0 };
@@ -239,12 +239,12 @@ static void ota_task(void *pvParameter)
 			{
 				char* str = NULL;
 				str=strstr(header,"Content-Length:");
-				if (str!=NULL) reclen = atoi(str+15);				
+				if (str!=NULL) reclen = atoi(str+15);
 				ESP_LOGI(TAG, "must receive:%d bytes",reclen);
 				kprintf("must receive:%d bytes\n",reclen);
 			}
-			
-			
+
+
         } else if (buff_len > 0 && resp_body_start) { /*deal with response body*/
             memcpy(ota_write_data, text, buff_len);
             err = esp_ota_write( update_handle, (const void *)ota_write_data, buff_len);
@@ -254,7 +254,7 @@ static void ota_task(void *pvParameter)
 				wsUpgrade("Error: esp_ota_write failed!" , 0,100);
                 goto exit;
             }
-			vTaskDelay(1);			
+			vTaskDelay(1);
             binary_file_length += buff_len;
 //            ESP_LOGI(TAG, "Have written image length %d  of  %d", binary_file_length,reclen);
 			cnt = (cnt+1) & 0x1F;
@@ -266,7 +266,7 @@ static void ota_task(void *pvParameter)
 			{
 				flag = false; // all received, exit
 				kprintf("Have written image length %d  of  %d\n", binary_file_length,reclen);
-				wsUpgrade("", binary_file_length,reclen);				
+				wsUpgrade("", binary_file_length,reclen);
 				ESP_LOGI(TAG, "Connection closed, all packets received");
 				kprintf("\nConnection closed, all packets received\n");
 				close(sockfd);
@@ -305,12 +305,12 @@ static void ota_task(void *pvParameter)
     ESP_LOGI(TAG, "Prepare to restart system!");
 	kprintf("Update firmware succeded. Restarting\n");
 	vTaskDelay(10);
-    esp_restart();	
-	
+    esp_restart();
+
 	exit:
 	taskState = false;
 	close(sockfd);
-	(void)vTaskDelete( NULL ); 	
+	(void)vTaskDelete( NULL );
 }
 
 /******************************************************************************
@@ -319,7 +319,7 @@ static void ota_task(void *pvParameter)
  * Parameters   : none
  * Returns      : none
 *******************************************************************************/
-void update_firmware(char* fname)
+void ota_update_firmware(char* fname)
 {
 	if (!taskState)
 	{

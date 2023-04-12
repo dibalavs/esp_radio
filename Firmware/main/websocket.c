@@ -55,23 +55,23 @@ void  websocketacceptKey(char* clientKey,char* Output) {
     base64_encode_local(sha1HashBin, 20,Output);
 }
 
-void wsclientDisconnect(int socket, uint16_t code, char * reason, size_t reasonLen) {
+void websocket_client_disconnect(int socket, uint16_t code, char * reason, size_t reasonLen) {
 	if(reason) {
-         sendFrame(socket, WSop_close, (uint8_t *) reason, reasonLen);
+         websocket_send_frame(socket, WSop_close, (uint8_t *) reason, reasonLen);
     } else {
          uint8_t buffer[2];
          buffer[0] = ((code >> 8) & 0xFF);
          buffer[1] = (code & 0xFF);
-         sendFrame(socket, WSop_close, &buffer[0], 2);
+         websocket_send_frame(socket, WSop_close, &buffer[0], 2);
     }
-    websocketremoveclient(socket);
+    websocket_remove_client(socket);
 }
 
 
 
 ///////////////////////
 // init some data
-void websocketinit(void)
+void websocket_init(void)
 {
 	int i;
 	for (i = 0;i<NBCLIENT;i++)
@@ -81,7 +81,7 @@ void websocketinit(void)
 }
 ////////////////////////////////////////////////////////////////////////////////////////////
 // decode and build the accept answer to open the websocket
-uint32_t decodeHttpMessage (char * inputMessage, char * outputMessage)
+uint32_t websocket_decode_http_message (char * inputMessage, char * outputMessage)
 {
 	const char str1[98] = "HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: ";
 	const char s[3] = "\r\n";
@@ -126,7 +126,7 @@ uint32_t decodeHttpMessage (char * inputMessage, char * outputMessage)
 }
 /////////////////////////////////////////////////////////////////////
 // a socket with a websocket request. Note it and answer to the client
-bool websocketnewclient(int socket)
+bool websocket_new_client(int socket)
 {
 	int i ;
 //	printf("ws newclient:%d\n",socket);
@@ -141,7 +141,7 @@ bool websocketnewclient(int socket)
 }
 /////////////////////////////////////////////////////////////////////
 // remove the client in the list of clients
-void websocketremoveclient(int socket)
+void websocket_remove_client(int socket)
 {
 	int i ;
 	for (i = 0;i<NBCLIENT;i++)
@@ -155,7 +155,7 @@ void websocketremoveclient(int socket)
 }
 ////////////////////////
 // is socket a websocket?
-bool iswebsocket( int socket)
+bool is_websocket( int socket)
 {
 	int i ;
 	for (i = 0;i<NBCLIENT;i++)
@@ -164,7 +164,7 @@ bool iswebsocket( int socket)
 }
 ///////////////////////////
 // send a message to client
-bool sendFrame(int socket, wsopcode_t opcode, uint8_t * payload , size_t length )
+bool websocket_send_frame(int socket, wsopcode_t opcode, uint8_t * payload , size_t length )
 {
 //remove    uint8_t maskKey[4] = { 0x00, 0x00, 0x00, 0x00 };
     uint8_t buffer[WEBSOCKETS_MAX_HEADER_SIZE] = { 0 };
@@ -233,14 +233,14 @@ bool sendFrame(int socket, wsopcode_t opcode, uint8_t * payload , size_t length 
 
 /////////////////////////////////////////////
 //read a txt data. close the socket if errno
-void websocketparsedata(int socket, char* buf, int len)
+void websocket_parse_data(int socket, char* buf, int len)
 {
 	int recbytes = len;
 	wsMessageHeader_t header;
 	uint8_t * payload = (uint8_t *)buf;
 	uint8_t headerLen = 2;
 	header.maskKey = 0;
-	if (!iswebsocket(socket)) return;
+	if (!is_websocket(socket)) return;
 	while(headerLen > recbytes) recbytes += read(socket , buf+recbytes, MAXDATA-recbytes);
 	header.fin = ((*payload >> 7) & 0x01);
 	header.opCode = (wsopcode_t) (*payload & 0x0F);
@@ -295,69 +295,69 @@ void websocketparsedata(int socket, char* buf, int len)
             case WSop_text:
                 // no break here!
             case WSop_binary:
-			websockethandle(socket, header.opCode, payload, header.payloadLen);
+			webserver_websocket_handle(socket, header.opCode, payload, header.payloadLen);
                 break;
             case WSop_ping:
                 // send pong back
-                sendFrame(socket, WSop_pong, payload, header.payloadLen);
+                websocket_send_frame(socket, WSop_pong, payload, header.payloadLen);
                 break;
             case WSop_pong:
                 break;
             case WSop_close:
-				websocketremoveclient(socket);
+				websocket_remove_client(socket);
                 break;
             case WSop_continuation:
-                wsclientDisconnect(socket, 1003,NULL,0);
+                websocket_client_disconnect(socket, 1003,NULL,0);
                 break;
             default:
-                wsclientDisconnect(socket, 1002,NULL,0);
+                websocket_client_disconnect(socket, 1002,NULL,0);
                 break;
         }
 }
 
 //write a txt data
-void websocketwrite(int socket, char* buf, int len)
+void websocket_write(int socket, char* buf, int len)
 {
-	sendFrame(socket, WSop_text, (uint8_t *)buf , len );
+	websocket_send_frame(socket, WSop_text, (uint8_t *)buf , len );
 }
 //broadcast a txt data to all clients
-void websocketbroadcast(char* buf, int len)
+void websocket_broadcast(char* buf, int len)
 {
 	int i ;
 	ESP_LOGV(TAG,"websocketbroadcast: %s",buf);
 	for (i = 0;i<NBCLIENT;i++)
-		if (iswebsocket( webserverclients[i].socket))
+		if (is_websocket( webserverclients[i].socket))
 		{
-			websocketwrite( webserverclients[i].socket,  buf, len);
+			websocket_write( webserverclients[i].socket,  buf, len);
 		}
 }
 //broadcast a txt data to all clients but the sender
-void websocketlimitedbroadcast(int socket,char* buf, int len)
+void websocket_limited_broadcast(int socket,char* buf, int len)
 {
 	int i ;
 	ESP_LOGV(TAG,"websocketlimitedbroadcast: %s",buf);
 	for (i = 0;i<NBCLIENT;i++)
-		if (iswebsocket( webserverclients[i].socket))
+		if (is_websocket( webserverclients[i].socket))
 		{
-			if (webserverclients[i].socket != socket) websocketwrite( webserverclients[i].socket,  buf, len);
+			if (webserverclients[i].socket != socket) websocket_write( webserverclients[i].socket,  buf, len);
 		}
 }
 
 
-void websocketAccept(int wsocket,char* bufin,int buflen)
+void websocket_accept(int wsocket,char* bufin,int buflen)
 {
 int32_t recbytes = 0;
 	char buf[150];
 	bufin[buflen] = 0;
-		if ((!iswebsocket(wsocket ))&&(websocketnewclient(wsocket)))
+		if ((!is_websocket(wsocket ))&&(websocket_new_client(wsocket)))
 		{
-			recbytes = decodeHttpMessage (bufin, buf);
+			recbytes = websocket_decode_http_message (bufin, buf);
 			buf[recbytes+1] = 0;
 			write(wsocket, buf, strlen(buf));  // reply to accept
 		}
 }
 
-int websocketRead(int conn)
+int websocket_read(int conn)
 {
 	char buf[MAXDATA];
 	int32_t recbytes = 0;
@@ -370,14 +370,14 @@ int websocketRead(int conn)
 				if ((errno != 104 /*ECONNRESET*/ )&&(errno != 113 /*EHOSTUNREACH*/ ))
 				{
 					printf (strwSOCKET,"read", errno);
-					wsclientDisconnect(conn, 500,NULL,0);
+					websocket_client_disconnect(conn, 500,NULL,0);
 				}
 				return recbytes;
 			}
 		}
 		if (recbytes > 0)
 		{
-			websocketparsedata(conn, buf, recbytes);
+			websocket_parse_data(conn, buf, recbytes);
 		}
 	}
 	return recbytes;

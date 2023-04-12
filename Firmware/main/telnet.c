@@ -48,7 +48,7 @@ static void telnet_give_semaphore() {
 
 ///////////////////////
 // init some data
-void telnetinit(void)
+void telnet_init(void)
 {
 	int i;
 	vSemaphoreCreateBinary(sTELNET);
@@ -65,7 +65,7 @@ void telnetinit(void)
 
 /////////////////////////////////////////////////////////////////////
 // a socket with a websocket request. Note it and answer to the client
-bool telnetnewclient(int socket)
+bool telnet_new_client(int socket)
 {
 	int i ;
 //	printf("ws newclient:%d\n",socket);
@@ -80,7 +80,7 @@ bool telnetnewclient(int socket)
 }
 /////////////////////////////////////////////////////////////////////
 // remove the client in the list of clients
-void telnetremoveclient(int socket)
+void telnet_remove_client(int socket)
 {
 	int i ;
 //	printf("ws removeclient:%d\n",socket);
@@ -95,7 +95,7 @@ void telnetremoveclient(int socket)
 }
 ////////////////////////
 // is socket a telnet one?
-bool istelnet( int socket)
+bool is_telnet( int socket)
 {
 	int i ;
 	for (i = 0;i<NBCLIENTT;i++)
@@ -104,9 +104,9 @@ bool istelnet( int socket)
 }
 
 
-bool telnetAccept(int tsocket)
+bool telnet_accept(int tsocket)
 {
-	if ((!istelnet(tsocket ))&&(telnetnewclient(tsocket)))
+	if ((!is_telnet(tsocket ))&&(telnet_new_client(tsocket)))
 	{
 //			printf("telnet write accept\n");
 			write(tsocket, strtWELCOME, strlen(strtWELCOME));  // reply to accept
@@ -114,7 +114,7 @@ bool telnetAccept(int tsocket)
 	} else close(tsocket);
 	return false;
 }
-void vTelnetWrite(uint32_t lenb,const char *fmt, va_list ap)
+void telnet_vwrite(uint32_t lenb,const char *fmt, va_list ap)
 {
 	char *buf = NULL;
 	int i;
@@ -126,7 +126,7 @@ void vTelnetWrite(uint32_t lenb,const char *fmt, va_list ap)
 	// write to all clients
 	telnet_take_semaphore();
 	for (i = 0;i<NBCLIENTT;i++)
-		if (istelnet( telnetclients[i]))
+		if (is_telnet( telnetclients[i]))
 		{
 			write( telnetclients[i],  buf, strlen(buf));
 		}
@@ -135,7 +135,7 @@ void vTelnetWrite(uint32_t lenb,const char *fmt, va_list ap)
 }
 
 //broadcast a txt data to all clients
-void telnetWrite(uint32_t lenb,const char *fmt, ...)
+void telnet_write(uint32_t lenb,const char *fmt, ...)
 {
 	int i ;
 	char *buf = NULL;
@@ -155,7 +155,7 @@ void telnetWrite(uint32_t lenb,const char *fmt, ...)
 	// write to all clients
 	telnet_take_semaphore();
 	for (i = 0;i<NBCLIENTT;i++)
-		if (istelnet( telnetclients[i]))
+		if (is_telnet( telnetclients[i]))
 		{
 			write( telnetclients[i],  buf, strlen(buf));
 		}
@@ -193,7 +193,7 @@ void telnetCommand(int tsocket)
 	irec = 0;
 }
 
-int telnetRead(int tsocket)
+int telnet_read(int tsocket)
 {
 	char *buf ;
 	int32_t recbytes ;

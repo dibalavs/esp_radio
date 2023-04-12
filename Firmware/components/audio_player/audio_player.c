@@ -59,7 +59,7 @@ static int start_decoder_task(player_t *player)
 			{
 				ESP_LOGE(TAG, "aac not supported on WROOM cpu");
 				spiRamFifoReset();
-				clientDisconnect("no AAC");
+				webclient_disconnect("no AAC");
 				return -1;
 			}
 
@@ -98,7 +98,7 @@ int audio_stream_consumer(const char *recv_buf, ssize_t bytes_read)
 
     // don't bother consuming bytes if stopped
     if(player_instance->command == CMD_STOP) {
-		clientSilentDisconnect();
+		webclient_silent_disconnect();
         return -2;
     }
 	if (bytes_read >0)
@@ -118,7 +118,7 @@ int audio_stream_consumer(const char *recv_buf, ssize_t bytes_read)
 			if (start_decoder_task(player_instance) != 0) {
 				ESP_LOGE(TAG, "Decoder task failed");
 				audio_player_stop();
-				clientDisconnect("decoder failed");
+				webclient_disconnect("decoder failed");
 				return -1;
 			}
 		}

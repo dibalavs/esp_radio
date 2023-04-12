@@ -443,12 +443,12 @@ void drawScreen()
 void stopStation()
 {
 //    irStr[0] = 0;
-	clientDisconnect("addon stop");
+	webclient_disconnect("addon stop");
 }
 void startStation()
 {
  //   irStr[0] = 0;
-    playStationInt(futurNum); ;
+    webserver_play_station_int(futurNum); ;
 }
 void startStop()
 {
@@ -461,7 +461,7 @@ void stationOk()
        if (strlen(irStr) >0)
 	   {
 		  futurNum = atoi(irStr);
-          playStationInt(futurNum);
+          webserver_play_station_int(futurNum);
 	   }
         else
         {
@@ -639,13 +639,13 @@ void adcLoop() {
 //			printf("VOLTAGE: %d\n",voltage);
 		if ((voltage >400) && (voltage < 590)) // volume +
 		{
-			setRelVolume(+5);
+			webserver_set_rel_volume(+5);
 			wasVol = true;
 			ESP_LOGD(TAG,"Volume+ : %i",voltage);
 		}
 		else if ((voltage >730) && (voltage < 830)) // volume -
 		{
-			setRelVolume(-5);
+			webserver_set_rel_volume(-5);
 			wasVol = true;
 			ESP_LOGD(TAG,"Volume- : %i",voltage);
 		}
@@ -703,7 +703,7 @@ void adcLoop() {
 		{
 			if (stateScreen!= ((role)?sstation:svolume))
 			{
-				(role)?evtStation(newValue):setRelVolume(newValue);
+				(role)?evtStation(newValue):webserver_set_rel_volume(newValue);
 			}
 		}
 	} else
@@ -720,11 +720,11 @@ void adcLoop() {
 		if ((state1 != Open)||(state2 != Open))  ESP_LOGD(TAG,"Button1: %i, Button2: %i, newValue: %d, estate: %d, stateScreen: %d",state1,state2,newValue,estate,stateScreen);
 		if ((stateScreen  != estate)&&(newValue != 0))
 		{
-			if(role) setRelVolume(newValue);else evtStation(newValue);
+			if(role) webserver_set_rel_volume(newValue);else evtStation(newValue);
 		}
 		if ((stateScreen  == estate)&&(newValue != 0))
 		{
-			if(role) evtStation(newValue); else setRelVolume(newValue);
+			if(role) evtStation(newValue); else webserver_set_rel_volume(newValue);
 		}
 	}
 	} else //third control of esplay
@@ -760,7 +760,7 @@ void encoderCompute(Encoder_t *enc,bool role)
 		if ((newButton == Held)&&(encoder_get_pin_state(enc) == encoder_get_pins_active(enc)))
 		{
 			if (stateScreen!= (role?sstation:svolume))
-				role?evtStation(newValue):setRelVolume(newValue);
+				role?evtStation(newValue):webserver_set_rel_volume(newValue);
 		}
 	}	//else
 		// no event on button switch
@@ -773,11 +773,11 @@ void encoderCompute(Encoder_t *enc,bool role)
 
 		if ((stateScreen  != estate)&&(newValue != 0))
 		{
-			if(role) setRelVolume(newValue);else evtStation(newValue);
+			if(role) webserver_set_rel_volume(newValue);else evtStation(newValue);
 		}
 		if ((stateScreen  == estate)&&(newValue != 0))
 		{
-			if(role) evtStation(newValue); else setRelVolume(newValue);
+			if(role) evtStation(newValue); else webserver_set_rel_volume(newValue);
 		}
 	}
 }
@@ -809,9 +809,9 @@ bool irCustom(uint32_t evtir, bool repeat)
 		switch (i)
 		{
 			case KEY_UP: evtStation(+1);  break;
-			case KEY_LEFT: setRelVolume(-5);  break;
+			case KEY_LEFT: webserver_set_rel_volume(-5);  break;
 			case KEY_OK: if (!repeat ) stationOk();   break;
-			case KEY_RIGHT: setRelVolume(+5);   break;
+			case KEY_RIGHT: webserver_set_rel_volume(+5);   break;
 			case KEY_DOWN: evtStation(-1);  break;
 			case KEY_0: if (!repeat ) nbStation('0');   break;
 			case KEY_1: if (!repeat ) nbStation('1');  break;
@@ -823,7 +823,7 @@ bool irCustom(uint32_t evtir, bool repeat)
 			case KEY_7: if (!repeat ) nbStation('7');  break;
 			case KEY_8: if (!repeat ) nbStation('8');  break;
 			case KEY_9: if (!repeat ) nbStation('9');  break;
-			case KEY_STAR: if (!repeat ) playStationInt(futurNum);  break;
+			case KEY_STAR: if (!repeat ) webserver_play_station_int(futurNum);  break;
 			case KEY_DIESE: if (!repeat )  stopStation();  break;
 			case KEY_INFO: if (!repeat ) toggletime();  break;
 			default: ;
@@ -863,7 +863,7 @@ event_ir_t evt;
 		case 0xDF2041:
 		case 0xFF0044:
 		case 0xF70842:
-		case 0xF70815: /*(" LEFT");*/  setRelVolume(-5);
+		case 0xF70815: /*(" LEFT");*/  webserver_set_rel_volume(-5);
 		break;
 		case 0xDF204A:
 		case 0xFF0040:
@@ -873,7 +873,7 @@ event_ir_t evt;
 		case 0xDF2003:
 		case 0xFF0043:
 		case 0xF70841:
-		case 0xF70814: /*(" RIGHT");*/ setRelVolume(+5);
+		case 0xF70814: /*(" RIGHT");*/ webserver_set_rel_volume(+5);
 		break;
 		case 0xDF204D:
 		case 0xDF2009:
@@ -918,7 +918,7 @@ event_ir_t evt;
 		break;
 		case 0xDF2045:
 		case 0xFF0042:
-		case 0xF70817: /*(" *");*/   if (!evt.repeat_flag ) playStationInt(futurNum);
+		case 0xF70817: /*(" *");*/   if (!evt.repeat_flag ) webserver_play_station_int(futurNum);
 		break;
 		case 0xDF201B:
 		case 0xFF0052:
@@ -1160,7 +1160,7 @@ void addon_task(void *pvParams)
 		{
 			if (ntp_get_time(&dt) )
 			{
-				applyTZ(dt);
+				timezone_apply_tz(dt);
 				timestamp = mktime(dt);
 				syncTime = true;
 			}
@@ -1188,7 +1188,7 @@ void addon_task(void *pvParams)
 					&& playable
 					&& ( futurNum!= atoi(  isColor?addonucg_get_name_num_ucg():addonu8g2_get_name_num()  )))
 				{
-					playStationInt(futurNum);
+					webserver_play_station_int(futurNum);
 					vTaskDelay(2);
 				}
 				if (!itAskStime)

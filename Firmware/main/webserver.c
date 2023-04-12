@@ -223,7 +223,7 @@ static void clientSetOvol(int8_t ovol)
 }
 
 // set the volume with vol,  add offset
-void setVolumei(int16_t vol) {
+void webserver_set_volumei(int16_t vol) {
 	vol += clientOvol;
 	if (vol > 254) vol = 254;
 	if (vol <0) vol = 1;
@@ -231,7 +231,7 @@ void setVolumei(int16_t vol) {
 	if (vol <3) vol--;
 	renderer_volume(vol+2); // max 256
 }
-void setVolume(char* vol) {
+void webserver_set_volume(char* vol) {
 	int16_t uvol = atoi(vol);
 	app_set_ivol(uvol);
 	uvol += clientOvol;
@@ -252,25 +252,25 @@ static void setOffsetVolume(void) {
 	if (uvol <=0) uvol = 1;
 	ESP_LOGV(TAG,"setOffsetVol: %d",clientOvol);
 	kprintf("##CLI.VOL#: %d\n",app_get_ivol());
-	setVolumei(uvol);
+	webserver_set_volumei(uvol);
 }
 
 
 
-uint16_t getVolume() {
+uint16_t webserver_get_volume() {
 	return (app_get_ivol());
 }
 
 // Set the volume with increment vol
-void setRelVolume(int8_t vol) {
+void webserver_set_rel_volume(int8_t vol) {
 	char Vol[5];
 	int16_t rvol;
 	rvol = app_get_ivol()+vol;
 	if (rvol <0) rvol = 0;
 	if (rvol > 254) rvol = 254;
 	sprintf(Vol,"%d",rvol);
-	setVolume(Vol);
-	wsVol(Vol);
+	webserver_set_volume(Vol);
+	webclient_ws_vol(Vol);
 }
 
 
@@ -278,7 +278,7 @@ void setRelVolume(int8_t vol) {
 static void rssi(int socket) {
 	char answer[20];
 	sprintf(answer,"{\"wsrssi\":\"%d\"}",iface_get_rssi());
-	websocketwrite(socket,answer, strlen(answer));
+	websocket_write(socket,answer, strlen(answer));
 }
 
 
@@ -290,7 +290,7 @@ static void theme() {
 }
 
 // treat the received message of the websocket
-void websockethandle(int socket, wsopcode_t opcode, uint8_t * payload, size_t length)
+void webserver_websocket_handle(int socket, wsopcode_t opcode, uint8_t * payload, size_t length)
 {
 	//wsvol
 //	ESP_LOGV(TAG,"websocketHandle: %s",payload);
@@ -302,7 +302,7 @@ void websockethandle(int socket, wsopcode_t opcode, uint8_t * payload, size_t le
 		else return;
 //		setVolume(payload+6);
 		sprintf(answer,"{\"wsvol\":\"%s\"}",payload+6);
-		websocketlimitedbroadcast(socket,answer, strlen(answer));
+		websocket_limited_broadcast(socket,answer, strlen(answer));
 	}
 	else if (strstr((char*)payload,"startSleep=")!= NULL)
 	{
@@ -321,40 +321,40 @@ void websockethandle(int socket, wsopcode_t opcode, uint8_t * payload, size_t le
 	}
 	else if (strstr((char*)payload,"stopWake")!= NULL){app_stop_wake();}
 	//monitor
-	else if (strstr((char*)payload,"monitor")!= NULL){wsMonitor();}
+	else if (strstr((char*)payload,"monitor")!= NULL){webclient_ws_monitor();}
 	else if (strstr((char*)payload,"theme")!= NULL){theme();}
 	else if (strstr((char*)payload,"wsrssi")!= NULL){rssi(socket);}
 }
 
 
-void playStationInt(int sid) {
+void webserver_play_station_int(int sid) {
 	struct shoutcast_info* si;
 	char answer[24];
 	si = eeprom_get_station(sid);
 
 	if(si != NULL &&si->domain && si->file) {
 			vTaskDelay(1);
-			clientSilentDisconnect();
+			webclient_silent_disconnect();
 			ESP_LOGV(TAG,"playstationInt: %d, new station: %s",sid,si->name);
-			clientSetName(si->name,sid);
-			clientSetURL(si->domain);
-			clientSetPath(si->file);
-			clientSetPort(si->port);
+			webclient_set_name(si->name,sid);
+			webclient_set_url(si->domain);
+			webclient_set_path(si->file);
+			webclient_set_port(si->port);
 			clientSetOvol(si->ovol);
 
 //printf("Name: %s, url: %s, path: %s\n",	si->name,	si->domain, si->file);
 
-			clientConnect();
+			webclient_connect();
 			setOffsetVolume();
 			for (int i = 0;i<100;i++)
 			{
-				if (clientIsConnected()) break;
+				if (webclient_is_connected()) break;
 				vTaskDelay(1);
 			}
 	}
 	infree(si);
 	sprintf(answer,"{\"wsstation\":\"%d\"}",sid);
-	websocketbroadcast(answer, strlen(answer));
+	websocket_broadcast(answer, strlen(answer));
 	ESP_LOGI(TAG,"playstationInt: %d, g_device: %d",sid,g_device->currentstation);
 	if (g_device->currentstation != sid)
 	{
@@ -369,7 +369,7 @@ void playStation(char* id) {
 	ESP_LOGV(TAG,"playstation: %d",uid);
 	if (uid < 255)
 		iface_set_current_station (atoi(id)) ;
-	playStationInt(iface_get_current_station());
+	webserver_play_station_int(iface_get_current_station());
 }
 
 // https://circuits4you.com/2019/03/21/esp8266-url-encode-decode-example/
@@ -426,21 +426,21 @@ static void handlePOST(char* name, char* data, int data_size, int conn) {
 			char port[10];
 			tst &=getSParameterFromResponse(port,10,"port=", data, data_size);
 			if(tst) {
-				clientDisconnect("Post instPlay");
+				webclient_disconnect("Post instPlay");
 				for (int i = 0;i<100;i++)
 				{
-					if(!clientIsConnected())break;
+					if(!webclient_is_connected())break;
 					vTaskDelay(1);
 				}
-				clientSetURL(url);
-				clientSetPath(path);
-				clientSetPort(atoi(port));
+				webclient_set_url(url);
+				webclient_set_path(path);
+				webclient_set_port(atoi(port));
 				clientSetOvol(0);
-				clientConnectOnce();
+				webclient_connect_once();
 				setOffsetVolume();
 				for (int i = 0;i<100;i++)
 				{
-					if (clientIsConnected()) break;
+					if (webclient_is_connected()) break;
 					vTaskDelay(1);
 				}
 			}
@@ -462,8 +462,8 @@ static void handlePOST(char* name, char* data, int data_size, int conn) {
 				vol = atoi(param);
 				if(vol < 0 || vol > 254) { return; }
 				ESP_LOGD(TAG,"/sounvol vol: %s num:%d", param, vol);
-				setVolume(param); // setVolume waits for a string
-				wsVol(param);
+				webserver_set_volume(param); // setVolume waits for a string
+				webclient_ws_vol(param);
 				respOk(conn,NULL);
 				return;
 			}
@@ -582,7 +582,7 @@ static void handlePOST(char* name, char* data, int data_size, int conn) {
 			char nb[6] ;
 			bool res;
 			uint16_t unb,uid = 0;
-			bool pState = getState();  // remember if we are playing
+			bool pState = webclient_get_state();  // remember if we are playing
 			res=getSParameterFromResponse(nb,6,"nb=", data, data_size);
 			if (res)
 			{	ESP_LOGV(TAG,"Setstation: nb init:%s",nb);
@@ -645,8 +645,8 @@ static void handlePOST(char* name, char* data, int data_size, int conn) {
 			eeprom_save_multi_station(si, uid,unb);
 			ESP_LOGV(TAG,"save station return: %d, unb:%d, addr:%x",uid,unb,(int)si);
 			infree (si);
-			if (pState != getState())
-				if (pState) {clientConnect();vTaskDelay(100);}	 //we was playing so start again the play
+			if (pState != webclient_get_state())
+				if (pState) {webclient_connect();vTaskDelay(100);}	 //we was playing so start again the play
 		}
 	} else if(strcmp(name, "/play") == 0) {
 		if(data_size > 4) {
@@ -685,18 +685,18 @@ static void handlePOST(char* name, char* data, int data_size, int conn) {
 		return;
 
 	} else if(strcmp(name, "/stop") == 0) {
-		if (clientIsConnected())
+		if (webclient_is_connected())
 		{
-			clientDisconnect("Post Stop");
+			webclient_disconnect("Post Stop");
 			for (int i = 0;i<100;i++)
 			{
-				if (!clientIsConnected()) break;
+				if (!webclient_is_connected()) break;
 				vTaskDelay(4);
 			}
 		}
 	} else if(strcmp(name, "/upgrade") == 0) {
 #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 4, 0)
-		update_firmware((char*)"KaRadio32_4");  // start the OTA
+		ota_update_firmware((char*)"KaRadio32_4");  // start the OTA
 #else
 		update_firmware((char*)"KaRadio32");  // start the OTA
 #endif
@@ -704,14 +704,14 @@ static void handlePOST(char* name, char* data, int data_size, int conn) {
 	{
 		ESP_LOGV(TAG,"icy vol");
 		char currentSt[7]; sprintf(currentSt,"%d",iface_get_current_station());
-		char vol[5]; sprintf(vol,"%d",(getVolume() ));
+		char vol[5]; sprintf(vol,"%d",(webserver_get_volume() ));
 		char treble[5]; sprintf(treble,"%d",(app_get_audio_output_mode() == VS1053)?VS1053_GetTreble():0);
 		char bass[5]; sprintf(bass,"%d",(app_get_audio_output_mode() == VS1053)?VS1053_GetBass():0);
 		char tfreq[5]; sprintf(tfreq,"%d",(app_get_audio_output_mode() == VS1053)?VS1053_GetTrebleFreq():0);
 		char bfreq[5]; sprintf(bfreq,"%d",(app_get_audio_output_mode() == VS1053)?VS1053_GetBassFreq():0);
 		char spac[5]; sprintf(spac,"%d",(app_get_audio_output_mode() == VS1053)?VS1053_GetSpatial():0);
 
-		struct icyHeader *header = clientGetHeader();
+		struct icyHeader *header = webclient_get_header();
 		ESP_LOGV(TAG,"icy start header %x",(int)header);
 		char* not2;
 		not2 = header->members.single.notice2;
@@ -759,7 +759,7 @@ static void handlePOST(char* name, char* data, int data_size, int conn) {
 			ESP_LOGV(TAG,"test: len fmt:%d %d\n%s\n",strlen(strsICY),strlen(strsICY),buf);
 			write(conn, buf, strlen(buf));
 			infree(buf);
-			wsMonitor();
+			webclient_ws_monitor();
 			return;
 		}
 	} else if(strcmp(name, "/hardware") == 0)
@@ -1012,7 +1012,7 @@ static bool httpServerHandleConnection(int conn, char* buf, uint16_t buflen) {
 		ESP_LOGV(TAG,"GET socket:%d len: %d, str:\n%s",conn,buflen,buf);
 		if( ((d = strstr(buf,"Connection:")) !=NULL)&& ((d = strstr(d," Upgrade")) != NULL))
 		{  // a websocket request
-			websocketAccept(conn,buf,buflen);
+			websocket_accept(conn,buf,buflen);
 			ESP_LOGD(TAG,"websocketAccept socket: %d",conn);
 			return false;
 		} else
@@ -1036,40 +1036,40 @@ static bool httpServerHandleConnection(int conn, char* buf, uint16_t buflen) {
 				param = getParameterFromResponse("volume=", c, strlen(c)) ;
 				if ((param != NULL)&&(atoi(param)>=0)&&(atoi(param)<=254))
 				{
-					setVolume(param);
-					wsVol(param);
+					webserver_set_volume(param);
+					webclient_ws_vol(param);
 				}
 				infree(param);
 // volume+ command
 				param = strstr(c,"volume+") ;
-				if (param != NULL) {setRelVolume(5);}
+				if (param != NULL) {webserver_set_rel_volume(5);}
 // volume- command
 				param = strstr(c,"volume-") ;
-				if (param != NULL) {setRelVolume(-5);}
+				if (param != NULL) {webserver_set_rel_volume(-5);}
 // play command
 				param = getParameterFromResponse("play=", c, strlen(c)) ;
 				if (param != NULL) {playStation(param);infree(param);}
 // start command
 				param = strstr(c,"start") ;
-				if (param != NULL) {playStationInt(iface_get_current_station());}
+				if (param != NULL) {webserver_play_station_int(iface_get_current_station());}
 // stop command
 				param = strstr(c,"stop") ;
-				if (param != NULL) {clientDisconnect("Web stop");}
+				if (param != NULL) {webclient_disconnect("Web stop");}
 // next command
 				param = strstr(c,"next") ;
-				if (param != NULL) {wsStationNext();}
+				if (param != NULL) {webclient_ws_station_next();}
 // prev command
 				param = strstr(c,"prev") ;
-				if (param != NULL) {wsStationPrev();}
+				if (param != NULL) {webclient_ws_station_prev();}
 // instantplay command
 				param = getParameterFromComment("instant=", c, strlen(c)) ;
 				if (param != NULL) {
-					clientDisconnect("Web Instant");
+					webclient_disconnect("Web Instant");
 					pathParse(param);
-					clientParsePlaylist(param);
+					webclient_parse_playlist(param);
 					infree(param);
-					clientSetName("Instant Play",255);
-					clientConnectOnce();
+					webclient_set_name("Instant Play",255);
+					webclient_connect_once();
 					vTaskDelay(1);
 				}
 // version command
@@ -1140,7 +1140,7 @@ static bool httpServerHandleConnection(int conn, char* buf, uint16_t buflen) {
 #define RECLEN	768
 #define DRECLEN (RECLEN*2)
 // Server child task to handle a request from a browser.
-void serverclientTask(void *pvParams) {
+void webserver_client_task(void *pvParams) {
 	struct timeval timeout;
     timeout.tv_sec = 6;
     timeout.tv_usec = 0;

@@ -15,12 +15,12 @@
 extern SemaphoreHandle_t semclient;
 extern SemaphoreHandle_t semfile;
 
-void serverclientTask(void *pvParams);
-void playStationInt(int sid);
-void websockethandle(int socket, wsopcode_t opcode, uint8_t * payload, size_t length);
-uint16_t getVolume(void);
-void setVolume(char* vol);
-void setVolumei(int16_t vol);
-void setRelVolume(int8_t vol);
+void webserver_client_task(void *pvParams);
+void webserver_play_station_int(int sid);
+void webserver_websocket_handle(int socket, wsopcode_t opcode, uint8_t * payload, size_t length);
+uint16_t webserver_get_volume(void);
+void webserver_set_volume(char* vol);
+void webserver_set_volumei(int16_t vol);
+void webserver_set_rel_volume(int8_t vol);
 
 #endif

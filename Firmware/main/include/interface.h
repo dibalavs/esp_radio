@@ -45,7 +45,7 @@ uint8_t iface_get_rotat();
 void iface_set_hostname(char* s);
 
 #define kprintf(fmt, ...) do {    \
-		telnetWrite(printf(fmt, ##__VA_ARGS__),fmt, ##__VA_ARGS__); \
+		telnet_write(printf(fmt, ##__VA_ARGS__),fmt, ##__VA_ARGS__); \
 		addon_parse(fmt, ##__VA_ARGS__);\
 	} while (0)
 

@@ -299,7 +299,7 @@ void tsocket(const char* lab, uint32_t cnt)
 {
 		char* title = kmalloc(strlen(lab)+50);
 		sprintf(title,"{\"%s\":\"%d\"}",lab,cnt*60);
-		websocketbroadcast(title, strlen(title));
+		websocket_broadcast(title, strlen(title));
 		free(title);
 }
 #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
@@ -526,7 +526,7 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base,
 		ESP_LOGI(TAG, "Wifi connected");
 		if (wifiInitDone)
 		{
-			clientSaveOneHeader("Wifi Connected.",18,METANAME);
+			webclient_save_one_header("Wifi Connected.",18,METANAME);
 			vTaskDelay(1000);
 			autoPlay();
 		} // retry
@@ -558,9 +558,9 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base,
 			{
 				ESP_LOGE(TAG, "Connection tried again");
 //				clientDisconnect("Wifi Disconnected.");
-				clientSilentDisconnect();
+				webclient_silent_disconnect();
 				vTaskDelay(100);
-				clientSaveOneHeader("Wifi Disconnected.",18,METANAME);
+				webclient_save_one_header("Wifi Disconnected.",18,METANAME);
 				vTaskDelay(100);
 				while (esp_wifi_connect() == ESP_ERR_WIFI_SSID) vTaskDelay(10);
 			} else
@@ -923,10 +923,10 @@ IRAM_ATTR void timerTask(void* p) {
 						addon_service();
 					break;
 					case TIMER_SLEEP:
-						clientDisconnect("Timer"); // stop the player
+						webclient_disconnect("Timer"); // stop the player
 					break;
 					case TIMER_WAKE:
-						clientConnect(); // start the player
+						webclient_connect(); // start the player
 					break;
 					default:
 					break;
@@ -1018,14 +1018,14 @@ void autoPlay()
 	sprintf(apmode,"at IP %s",localIp);
 	if (g_device->current_ap == APMODE)
 	{
-		clientSaveOneHeader("Configure the AP with the web page",34,METANAME);
-		clientSaveOneHeader(apmode,strlen(apmode),METAGENRE);
+		webclient_save_one_header("Configure the AP with the web page",34,METANAME);
+		webclient_save_one_header(apmode,strlen(apmode),METAGENRE);
 	} else
 	{
-		clientSaveOneHeader(apmode,strlen(apmode),METANAME);
+		webclient_save_one_header(apmode,strlen(apmode),METANAME);
 		if ((audio_output_mode == VS1053) && (getVsVersion() < 3))
 		{
-			clientSaveOneHeader("Invalid audio output. VS1053 not found",38,METAGENRE);
+			webclient_save_one_header("Invalid audio output. VS1053 not found",38,METAGENRE);
 			ESP_LOGE(TAG,"Invalid audio output. VS1053 not found");
 			vTaskDelay(200);
 		}
@@ -1035,8 +1035,8 @@ void autoPlay()
 		{
 			kprintf("autostart: playing:%d, currentstation:%d\n",g_device->autostart,g_device->currentstation);
 			vTaskDelay(10); // wait a bit
-			playStationInt(g_device->currentstation);
-		} else clientSaveOneHeader("Ready",5,METANAME);
+			webserver_play_station_int(g_device->currentstation);
+		} else webclient_save_one_header("Ready",5,METANAME);
 	}
 }
 
@@ -1122,8 +1122,8 @@ void app_main()
 		logTel = false; //
 
 	// init softwares
-	telnetinit();
-	websocketinit();
+	telnet_init();
+	websocket_init();
 
 	// log level
 	iface_set_log_level(g_device->trace_level);
@@ -1198,7 +1198,7 @@ void app_main()
 //init softwares
 //-----------------------------------------------------
 
-	clientInit();
+	webclient_init();
 	ESP_LOGE(TAG, "RAM left ac: %u", esp_get_free_heap_size());
 	//initialize mDNS service
     err = mdns_init();
@@ -1239,10 +1239,10 @@ void app_main()
 
 	//start tasks of KaRadio32
 	vTaskDelay(1);
-	xTaskCreatePinnedToCore(clientTask, "clientTask", 3700, NULL, PRIO_CLIENT, &pxCreatedTask,CPU_CLIENT);
+	xTaskCreatePinnedToCore(webclient_task, "clientTask", 3700, NULL, PRIO_CLIENT, &pxCreatedTask,CPU_CLIENT);
 	ESP_LOGI(TAG, "%s task: %x","clientTask",(unsigned int)pxCreatedTask);
 	vTaskDelay(1);
-    xTaskCreatePinnedToCore(serversTask, "serversTask", 3100, NULL, PRIO_SERVER, &pxCreatedTask,CPU_SERVER);
+    xTaskCreatePinnedToCore(servers_task, "serversTask", 3100, NULL, PRIO_SERVER, &pxCreatedTask,CPU_SERVER);
 	ESP_LOGI(TAG, "%s task: %x","serversTask",(unsigned int)pxCreatedTask);
 	vTaskDelay(1);
 	xTaskCreatePinnedToCore (addon_task, "task_addon", 2200, NULL, PRIO_ADDON, &pxCreatedTask,CPU_ADDON);

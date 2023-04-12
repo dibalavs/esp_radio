@@ -158,19 +158,19 @@ void ramSinit()
 }
 
 
-bool getState()
+bool webclient_get_state()
 {
 	 return playing;
 }
 
-void clientPrintState()
+void webclient_print_state()
 {
 	if (playing)
 		kprintf(CLIPLAY,0x0d,0x0a);
 	else
 		kprintf(CLISTOP,"State");
 }
-void clientInit() {
+void webclient_init() {
 	vSemaphoreCreateBinary(sHeader);
 	vSemaphoreCreateBinary(sConnect);
 	vSemaphoreCreateBinary(sConnected);
@@ -180,7 +180,7 @@ void clientInit() {
 	xSemaphoreTake(sDisconnect, portMAX_DELAY);
 }
 
-uint8_t clientIsConnected() {
+uint8_t webclient_is_connected() {
 	if(xSemaphoreTake(sConnected, 0)) {
 		xSemaphoreGive(sConnected);
 		return 0;
@@ -203,7 +203,7 @@ void dump(uint8_t* from, uint32_t len )
 	printf("\n");
 }
 
-struct icyHeader* clientGetHeader()
+struct icyHeader* webclient_get_header()
 {
 	return &header;
 }
@@ -279,7 +279,7 @@ string_rec  = kcalloc(strlen(string)+1, sizeof(uint8_t));
 
 
 // extract the url from a playlist m3u pls etc....
-bool clientParsePlaylist(char* s)
+bool webclient_parse_playlist(char* s)
 {
   char* str;
   char* ns;
@@ -302,7 +302,7 @@ bool clientParsePlaylist(char* s)
 // skip if icy lines
   if (strstr(s,"icy-") != NULL)
   {
-	clientSetPath((char*)"/;");
+	webclient_set_path((char*)"/;");
 	return true;
   }
 
@@ -352,9 +352,9 @@ bool clientParsePlaylist(char* s)
 	}
 //	ESP_LOGV(TAG,"parse str path %s",path);
 
-	if (strncmp(url,"localhost",9)!=0) clientSetURL(url);
-	clientSetPath(path);
-	clientSetPort(atoi(port));
+	if (strncmp(url,"localhost",9)!=0) webclient_set_url(url);
+	webclient_set_path(path);
+	webclient_set_port(atoi(port));
 	ESP_LOGV(TAG,"clientParsePlaylist: url: %s, path: %s, port: %s",url,path,port);
 	return true;
   }
@@ -430,7 +430,7 @@ bool clientPrintMeta()
 	return true;
 }
 
-char* getMeta()
+char* webclient_get_meta()
 {
 	return (header.members.mArr[METADATA] == NULL)?parEmpty:header.members.mArr[METADATA];
 }
@@ -575,7 +575,7 @@ static void clientSaveMetadata(char* s,int len)
 			sprintf(title,"{\"meta\":\"%s\"}",t_end);
 			int blen;
 			title = pseudoUtf8(title,&blen);
-			websocketbroadcast(title, blen);
+			websocket_broadcast(title, blen);
 			incfree(title,"title");
 		} else ESP_LOGV(TAG,strcMALLOC1,"Title");
 	}
@@ -583,7 +583,7 @@ static void clientSaveMetadata(char* s,int len)
 }
 
 // websocket: next station
-void wsStationNext()
+void webclient_ws_station_next()
 {
 	struct shoutcast_info* si =NULL;
 	do {
@@ -595,11 +595,11 @@ void wsStationNext()
 	}
 	while (si == NULL || ((si != NULL)&&(strcmp(si->domain,"")==0)) || ((si != NULL)&&(strcmp( si->file,"")== 0)));
 
-	playStationInt(iface_get_current_station());
+	webserver_play_station_int(iface_get_current_station());
 	incfree(si,"wsstation");
 }
 // websocket: previous station
-void wsStationPrev()
+void webclient_ws_station_prev()
 {
 	struct shoutcast_info* si = NULL;
 	do {
@@ -613,22 +613,22 @@ void wsStationPrev()
 	}
 	while (si == NULL || ((si != NULL)&&(strcmp(si->domain,"")==0)) || ((si != NULL)&&(strcmp( si->file,"")== 0)));
 
-	playStationInt	(iface_get_current_station());
+	webserver_play_station_int	(iface_get_current_station());
 	incfree(si,"wsstation");
 }
 
 // websocket: broadcast volume to all client
-void wsVol(char* vol)
+void webclient_ws_vol(char* vol)
 {
 	char answer[21];
 	if (vol != NULL)
 	{
 		sprintf(answer,"{\"wsvol\":\"%s\"}",vol);
-		websocketbroadcast(answer, strlen(answer));
+		websocket_broadcast(answer, strlen(answer));
 	}
 }
 // websocket: broadcast monitor url
-void wsMonitor()
+void webclient_ws_monitor()
 {
 	char *answer;
 	uint16_t len;
@@ -640,7 +640,7 @@ void wsMonitor()
 		if ((clientPath[0]!= 0))
 		{
 			sprintf(answer,"{\"monitor\":\"%s:%d%s\"}",clientURL,clientPort,clientPath);
-			websocketbroadcast(answer, strlen(answer));
+			websocket_broadcast(answer, strlen(answer));
 		}
 		free(answer);
 	}
@@ -719,7 +719,7 @@ static void wsHeaders()
 	ESP_LOGV(TAG,"WSH: len:%d  \"%s\"",strlen(wsh),wsh);
 	int len;
 	wsh = pseudoUtf8(wsh, &len);
-	websocketbroadcast(wsh, len);
+	websocket_broadcast(wsh, len);
 	incfree (wsh,"wsh");
 }
 
@@ -745,7 +745,7 @@ bool clientPrintOneHeader(uint8_t header_num)
 return true;
 }
 
-bool clientPrintHeaders()
+bool webclient_print_headers()
 {
 	uint8_t header_num;
 	for(header_num=0; header_num<ICY_HEADER_COUNT; header_num++) {
@@ -758,7 +758,7 @@ bool clientPrintHeaders()
 	return true;
 }
 
-bool clientSaveOneHeader(const char* t, uint16_t len, uint8_t header_num)
+bool webclient_save_one_header(const char* t, uint16_t len, uint8_t header_num)
 {
 	char* tt;
 	int i;
@@ -811,10 +811,10 @@ bool clientParseHeader(char* s)
 
 		if(contentType == KMIME_UNKNOWN) {
 			ESP_LOGD(TAG, "unknown contentType: %s", t);
-			clientSaveOneHeader("unknown contentType",19,METANAME);
+			webclient_save_one_header("unknown contentType",19,METANAME);
 			wsHeaders(); // update all server
 			vTaskDelay(10);
-			clientDisconnect("unknown contentType");
+			webclient_disconnect("unknown contentType");
 			cstatus = C_HEADER;
 		}
 		ESP_LOGD(TAG, "contentType: %d", contentType);
@@ -835,7 +835,7 @@ bool clientParseHeader(char* s)
 				uint16_t len = t_end - t;
 				if(header_num != METAINT) // Text header field
 				{
-					ret = clientSaveOneHeader(t, len, header_num);
+					ret = webclient_save_one_header(t, len, header_num);
 				}
 				else // Numerical header field
 				{
@@ -859,7 +859,7 @@ bool clientParseHeader(char* s)
 }
 
 
-void clientSetName(const char* name,uint16_t index)
+void webclient_set_name(const char* name,uint16_t index)
 {
 	kprintf("##CLI.NAMESET#: %d %s\n",index,name);
 }
@@ -876,7 +876,7 @@ char* cleanURL()
 }
 
 
-void clientSetURL(char* url)
+void webclient_set_url(char* url)
 {
 	clientURL[0] = 0;
 	if (strstr(url,"http") == NULL) strcpy(clientURL,"http://");
@@ -888,7 +888,7 @@ void clientSetURL(char* url)
 	kprintf("##CLI.URLSET#: %s\n",clientURL);
 }
 
-void clientSetPath(char* path)
+void webclient_set_path(char* path)
 {
 	if (path[0] == 0xff) return; // wrong path
 	if (strlen(path) > PATHMAX)
@@ -898,14 +898,14 @@ void clientSetPath(char* path)
 	kprintf("##CLI.PATHSET#: %s\n",clientPath);
 }
 
-void clientSetPort(uint16_t port)
+void webclient_set_port(uint16_t port)
 {
 	clientPort = port;
 	kprintf("##CLI.PORTSET#: %d\n",port);
 }
 
 
-void clientConnect()
+void webclient_connect()
 {
 	cstatus = C_HEADER;
 	once = 0;
@@ -913,24 +913,24 @@ void clientConnect()
 		xSemaphoreGive(sConnect);
 //		esp_wifi_set_ps (WIFI_PS_MIN_MODEM);
 	} else {
-		clientDisconnect("clientConnect");
-		clientSaveOneHeader("No ip found",11,METANAME);
+		webclient_disconnect("clientConnect");
+		webclient_save_one_header("No ip found",11,METANAME);
 		wsHeaders();
 		vTaskDelay(1);
 	}
 }
-void clientConnectOnce()
+void webclient_connect_once()
 {
 	cstatus = C_HEADER;
 	if((serverInfo = (struct hostent*)gethostbyname(cleanURL()))) {
 		xSemaphoreGive(sConnect);
 //		esp_wifi_set_ps (WIFI_PS_MIN_MODEM);
 	} else {
-		clientDisconnect("clientConnectOnce");
+		webclient_disconnect("clientConnectOnce");
 	}
 	once = 1; // play one time
 }
-void clientSilentConnect()
+void webclient_silent_connect()
 {
 	cstatus = C_HEADER;
 	once = 0;
@@ -938,24 +938,24 @@ void clientSilentConnect()
 		xSemaphoreGive(sConnect);
 //		esp_wifi_set_ps (WIFI_PS_MIN_MODEM);
 	} else {
-		clientSilentDisconnect();
+		webclient_silent_disconnect();
 	}
 }
-void clientSilentDisconnect()
+void webclient_silent_disconnect()
 {
 	xSemaphoreGive(sDisconnect);
 	if (get_player_status()!=STOPPED)
 		audio_player_stop();
 	for (int i = 0;i<100;i++)
 	{
-		if(!clientIsConnected())break;
+		if(!webclient_is_connected())break;
 		vTaskDelay(1);
 	}
 //	esp_wifi_set_ps(WIFI_PS_MAX_MODEM);
 
 }
 
-void clientDisconnect(const char* from)
+void webclient_disconnect(const char* from)
 {
 	extern bool ledPolarity;
 	kprintf(CLISTOP,from);
@@ -964,7 +964,7 @@ void clientDisconnect(const char* from)
 		audio_player_stop();
 	for (int i = 0;i<100;i++)
 	{
-		if(!clientIsConnected())break;
+		if(!webclient_is_connected())break;
 		vTaskDelay(1);
 	}
 	if ((from[0]!='C') || (from[1]!='_'))
@@ -1011,24 +1011,24 @@ void clientReceiveCallback(int sockfd, char *pdata, int len)
 		}
 		if (t1 != NULL) { //
 			kprintf(CLIPLAY,0x0d,0x0a);
-			clientSaveOneHeader(notfound, 9,METANAME);
+			webclient_save_one_header(notfound, 9,METANAME);
 			wsHeaders();
 			vTaskDelay(1);
 			cstatus = C_HEADER;
-			clientDisconnect("C_LIST");
+			webclient_disconnect("C_LIST");
 			return;
 		}
 	}
 	switch (cstatus)
 	{
 	case C_PLAYLIST:
-         if (!clientParsePlaylist(pdata)) //need more
+         if (!webclient_parse_playlist(pdata)) //need more
 		  cstatus = C_PLAYLIST1;
-		else {clientDisconnect("C_PLIST");  }
+		else {webclient_disconnect("C_PLIST");  }
     break;
 	case C_PLAYLIST1:
-       clientDisconnect("C_PLIST1");
-        clientParsePlaylist(pdata) ;//more?
+       webclient_disconnect("C_PLIST1");
+        webclient_parse_playlist(pdata) ;//more?
 		cstatus = C_PLAYLIST;
 	break;
 	case C_HEADER0:
@@ -1043,8 +1043,8 @@ void clientReceiveCallback(int sockfd, char *pdata, int len)
 			{
 				ESP_LOGV(TAG,"Header Len=%d,\n %s",len,pdata);
 				ESP_LOGI(TAG,"Header: Moved");
-				clientDisconnect("C_HDER");
-				clientParsePlaylist(pdata);
+				webclient_disconnect("C_HDER");
+				webclient_parse_playlist(pdata);
 				cstatus = C_PLAYLIST;
 
 			}
@@ -1064,7 +1064,7 @@ void clientReceiveCallback(int sockfd, char *pdata, int len)
 						if (t2 != NULL)
 						{
 							ESP_LOGV(TAG,"Internal Server Error");
-							clientDisconnect("Internal Server Error");
+							webclient_disconnect("Internal Server Error");
 							cstatus = C_HEADER;
 
 						}
@@ -1073,7 +1073,7 @@ void clientReceiveCallback(int sockfd, char *pdata, int len)
 							metad = header.members.single.metaint;
 						ESP_LOGD(TAG,"t1: 0x%x, cstatus: %d, icyfound: %d  metad:%d Metaint:%d\n", (int) t1,cstatus, icyfound,metad,  (header.members.single.metaint));
 						cstatus = C_DATA;	// a stream found
-						setVolumei(1);
+						webserver_set_volumei(1);
 /////////////////////////////////////////////////////////////////////////////////////////////////
 						player_config->media_stream->eof = false;
 						audio_player_start();
@@ -1098,7 +1098,7 @@ void clientReceiveCallback(int sockfd, char *pdata, int len)
 									ilen = recv(sockfd, pdata+len, RECEIVE+8-len, 0);
 									if (ilen >0) len += ilen;
 								}
-								if (ilen <0) {clientDisconnect("chunk2");break;}
+								if (ilen <0) {webclient_disconnect("chunk2");break;}
 							}
 							chunked = (uint32_t) strtol(t1, NULL, 16) +2;
 							if (strchr((t1),0x0A) != NULL)
@@ -1115,14 +1115,14 @@ void clientReceiveCallback(int sockfd, char *pdata, int len)
 				} else
 				{
 					t1 = NULL;
-					if (i++ > 20) {clientDisconnect("header1");break;}
+					if (i++ > 20) {webclient_disconnect("header1");break;}
 					vTaskDelay(1); //avoid watchdog is infernal loop
 
 					if (https)
 						bread = wolfSSL_read(ssl, pdata+len, RECEIVE-len);
 					else
 						bread = recvfrom(sockfd, pdata+len, RECEIVE-len, 0, NULL, NULL);
-					if (bread <0) {clientDisconnect("header11");break;}
+					if (bread <0) {webclient_disconnect("header11");break;}
 					if (bread >0) len += bread;
 				}
 			} while (t1 == NULL);
@@ -1173,7 +1173,7 @@ void clientReceiveCallback(int sockfd, char *pdata, int len)
 									bread = wolfSSL_read(ssl, pdata+len, 9);
 								else
 									bread = recvfrom(sockfd, pdata+len, 9, 0, NULL, NULL);
-								if (bread <0) {clientDisconnect("chunk1");break;}
+								if (bread <0) {webclient_disconnect("chunk1");break;}
 								if (bread >0) clen = bread;
 								else clen = 0;
 								lc+=clen;len+=clen;
@@ -1185,7 +1185,7 @@ void clientReceiveCallback(int sockfd, char *pdata, int len)
 							if ((inpchr != NULL) &&(inpchr- (inpdata+cchunk) <16))
 								*inpchr = 0; // replace lf by a end of string
 							else {
-								clientDisconnect("chunk"); clientConnect();
+								webclient_disconnect("chunk"); webclient_connect();
 								lc = 0;
 								break;
 							}
@@ -1308,7 +1308,7 @@ ESP_LOGD(TAG,"mtlen len:%d, clen:%d, metad:%d, l:%d, inpdata:%x,  rest:%d",len,c
 					if (audio_stream_consumer((char*)inpdata, metad)== -1)
 					{
 						playing=1;
-						clientSaveOneHeader("Cannot decode",13,METANAME);
+						webclient_save_one_header("Cannot decode",13,METANAME);
 						wsHeaders();
 						vTaskDelay(100);
 					}
@@ -1335,7 +1335,7 @@ ESP_LOGD(TAG,"mt2 len:%d, clen:%d, metad:%d, l:%d, inpdata:%x,  rest:%d",len,cle
 					if (audio_stream_consumer((char*)inpdata, rest)== -1)
 					{
 						playing=1;
-						clientSaveOneHeader("Cannot decode",13,METANAME);
+						webclient_save_one_header("Cannot decode",13,METANAME);
 						wsHeaders();
 						vTaskDelay(100);
 					}
@@ -1356,7 +1356,7 @@ ESP_LOGD(TAG,"mt2 len:%d, clen:%d, metad:%d, l:%d, inpdata:%x,  rest:%d",len,cle
 				if (audio_stream_consumer((char*)(pdata+rest), len)== -1)
 				{
 					playing=1;
-					clientSaveOneHeader("Cannot decode",13,METANAME);
+					webclient_save_one_header("Cannot decode",13,METANAME);
 					wsHeaders();
 					vTaskDelay(100);
 				}
@@ -1371,7 +1371,7 @@ ESP_LOGD(TAG,"mt2 len:%d, clen:%d, metad:%d, l:%d, inpdata:%x,  rest:%d",len,cle
 			if (!ledStatus){
 			if (iface_get_led_gpio() != GPIO_NONE) gpio_set_level(iface_get_led_gpio(), ledPolarity ? 0 : 1);
 			}
-			setVolumei(getVolume());
+			webserver_set_volumei(webserver_get_volume());
 		}
 	} // switch
 }
@@ -1385,17 +1385,17 @@ uint8_t bufrec[RECEIVE+20];
 
 void wolfSSL_log_function(const int logLevel, const char *const logMessage){
 //    ESP_LOGD(TAG,"WOLFSSL:%s\n",logMessage);
-if (logLevel <= wolfSSL_getLogState())
+if (logLevel <= webclient_wolfssl_get_log_state())
 	kprintf("WOLFSSL:%d %s\n",logLevel,logMessage);
 }
 
-uint8_t wolfSSL_getLogState()
+uint8_t webclient_wolfssl_get_log_state()
 {
 	uint8_t level[4]= {0,1,3,4};
 	return (level[(g_device->options&T_WOLFSSL)>>S_WOLFSSL]);
 }
 
-void clientTask(void *pvParams) {
+void webclient_task(void *pvParams) {
 	portBASE_TYPE uxHighWaterMark;
 	struct timeval timeout;
     timeout.tv_usec = 0;
@@ -1530,7 +1530,7 @@ void clientTask(void *pvParams) {
 					ESP_LOGE(TAG,"Socket: %d  setsockopt: %d  errno:%d ",sockfd, IP_TOS,errno);
 //////
 				cnterror = 0;
-				wsMonitor();
+				webclient_ws_monitor();
 				ramSinit();
 				do
 				{
@@ -1586,11 +1586,11 @@ void clientTask(void *pvParams) {
 			{
 				NotConnected:
 				ESP_LOGE(TAG,"Socket: %d  connect errno:%d ",sockfd,errno);
-				clientSaveOneHeader("Connection error",16,METANAME);
+				webclient_save_one_header("Connection error",16,METANAME);
 				wsHeaders();
 				shutdown(sockfd,SHUT_RDWR); // stop the socket
 				vTaskDelay(1);
-				clientDisconnect("Invalid");
+				webclient_disconnect("Invalid");
 				if (https){
 					if (ssl) wolfSSL_free(ssl);     /* Free the wolfSSL object */
 					ESP_LOGI(TAG,"SSL Cleanup Socket: %d",sockfd);
@@ -1603,9 +1603,9 @@ void clientTask(void *pvParams) {
 			{
 					if ((playing)&&(once == 0))  // try restart
 					{
-						clientDisconnect("try restart");
+						webclient_disconnect("try restart");
 						vTaskDelay(1);
-						clientConnect();
+						webclient_connect();
 						playing=1; // force
 					}
 					else if ((!playing)&&(once == 1)){ // nothing played. Force the read of the buffer
@@ -1613,25 +1613,25 @@ void clientTask(void *pvParams) {
 						if ((!playing )&& (spiRamFifoFill())) {
 							playing=1;
 							vTaskDelay(1);
-							setVolumei(getVolume());
+							webserver_set_volumei(webserver_get_volume());
 							kprintf(CLIPLAY,0x0d,0x0a);
 							while (spiRamFifoFill()) vTaskDelay(200);
 //							vTaskDelay(100);
 							playing=0;
-							clientDisconnect("Data not played");
+							webclient_disconnect("Data not played");
 						}
 					}
 						//
 					else if ((!playing)&&(once == 0)) {  // nothing received
-							clientDisconnect(nodata);
-							clientSaveOneHeader(nodata,7,METANAME);
+							webclient_disconnect(nodata);
+							webclient_save_one_header(nodata,7,METANAME);
 							wsHeaders();
 							vTaskDelay(1);
 					}
 					else{  //playing & once=1 and no more received stream
 						while (spiRamFifoFill()) vTaskDelay(200);
 						vTaskDelay(100);
-						clientDisconnect("once");
+						webclient_disconnect("once");
 					}
 			}//jpc
 
@@ -1657,7 +1657,7 @@ void clientTask(void *pvParams) {
 			close(sockfd);
 			if (cstatus == C_PLAYLIST)
 			{
-			  clientConnect();
+			  webclient_connect();
 			}
 			vTaskDelay(2);
 			uxHighWaterMark = uxTaskGetStackHighWaterMark( NULL );
