@@ -1,6 +1,8 @@
 #ifndef _UCG_KARADIO32_H
 #define _UCG_KARADIO32_H
 
+#include "ucg.h"
+
 extern const ucg_fntpgm_uint8_t ucg_font_crox1c[] UCG_FONT_SECTION("ucg_font_crox1c");
 extern const ucg_fntpgm_uint8_t ucg_font_crox1cb[] UCG_FONT_SECTION("ucg_font_crox1cb");
 extern const ucg_fntpgm_uint8_t ucg_font_crox1h[] UCG_FONT_SECTION("ucg_font_crox1h");

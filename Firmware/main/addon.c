@@ -19,6 +19,9 @@
 #include "webserver.h"
 #include "interface.h"
 
+#include "u8g2.h"
+#include "ucg.h"
+
 #include "addon.h"
 #include "u8g2_esp32_hal.h"
 #include "ucg_esp32_hal.h"

@@ -21,6 +21,7 @@
 #include "eeprom.h"
 #include "addoncommon.h"
 #include "ucg_karadio32_fonts.h"
+#include "ucg.h"
 
 #define TAG  "addonucg"
 
@@ -51,8 +52,7 @@
 #define TIME      8
 
 
-
-
+extern ucg_t ucg;
 
 static uint16_t HHeader= 40;
 

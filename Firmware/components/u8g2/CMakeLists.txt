@@ -80,5 +80,5 @@ idf_component_register(SRCS
 	"csrc/u8x8_u8toa.c"
                     INCLUDE_DIRS "csrc"
 					"../../main/include"
-					PRIV_REQUIRES main ucglib driver nvs_flash
+					PRIV_REQUIRES main driver nvs_flash
 					)

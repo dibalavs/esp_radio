@@ -18,6 +18,8 @@
 #include "interface.h"
 #include "eeprom.h"
 #include "addoncommon.h"
+#include "u8g2.h"
+
 /*==========================================*/
 //#include "u8g2-karadio32_fonts.h"
 extern const uint8_t u8g2_font_4x6_t_latcyr[] U8G2_FONT_SECTION("u8g2_font_4x6_t_latcyr");
@@ -30,6 +32,8 @@ extern const uint8_t u8g2_font_8x13_t_latcyr[] U8G2_FONT_SECTION("u8g2_font_8x13
 extern const uint8_t u8g2_font_9x15_t_latcyr[] U8G2_FONT_SECTION("u8g2_font_9x15_t_latcyr");
 extern const uint8_t u8g2_font_10x20_t_latcyr[] U8G2_FONT_SECTION("u8g2_font_10x20_t_latcyr");
 #define TAG  "addonu8g2"
+
+extern u8g2_t u8g2; // a structure which will contain all the data for one display
 
 // nams <--> num of line
 #define STATIONNAME 0

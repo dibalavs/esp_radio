@@ -9,15 +9,18 @@
 #define UCG_ESP32_HAL_H_
 
 //my adaptation. Comment for a generic product
-#define KaRadio32 
+#define KaRadio32
+
+#include "ucg.h"
+#include <hal/gpio_types.h>
 
 #define UCG_ESP32_HAL_UNDEFINED (-1)
 #define ONEBYTEMAX 4
 #define ONEBYTEMAXM1 ONEBYTEMAX-1
 typedef struct {
-#ifdef KaRadio32	
+#ifdef KaRadio32
 	uint8_t spi_no;
-#endif	
+#endif
 	gpio_num_t clk;
 	gpio_num_t mosi;
 	gpio_num_t sda; // data for I²C
@@ -37,11 +40,11 @@ typedef struct {
 } ucg_esp32_oneByte;
 
 
-#ifdef KaRadio32	
+#ifdef KaRadio32
 #define UCG_ESP32_HAL_DEFAULT {UCG_ESP32_HAL_UNDEFINED,UCG_ESP32_HAL_UNDEFINED, UCG_ESP32_HAL_UNDEFINED, UCG_ESP32_HAL_UNDEFINED, UCG_ESP32_HAL_UNDEFINED, UCG_ESP32_HAL_UNDEFINED, UCG_ESP32_HAL_UNDEFINED, UCG_ESP32_HAL_UNDEFINED }
 #else
 #define UCG_ESP32_HAL_DEFAULT {UCG_ESP32_HAL_UNDEFINED, UCG_ESP32_HAL_UNDEFINED, UCG_ESP32_HAL_UNDEFINED, UCG_ESP32_HAL_UNDEFINED, UCG_ESP32_HAL_UNDEFINED, UCG_ESP32_HAL_UNDEFINED, UCG_ESP32_HAL_UNDEFINED }
-#endif	
+#endif
 
 
 

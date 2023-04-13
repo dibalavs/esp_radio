@@ -12,9 +12,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
-#include "u8g2.h"
-#include "ucg.h"
-
 
 // lcd_type
 // min 128x64
@@ -93,8 +90,6 @@ typedef struct {
 #define ECTRL	2
 
 extern QueueHandle_t event_ir;
-extern u8g2_t u8g2;
-extern ucg_t ucg;
 void addon_task(void *pvParams);
 void addon_task_lcd(void *pvParams);
 void addon_lcd_init(uint8_t Type);
