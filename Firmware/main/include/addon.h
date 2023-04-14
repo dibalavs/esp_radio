@@ -103,7 +103,6 @@ void addon_dt();
 void addon_wake_lcd();
 uint16_t addon_get_width();
 uint16_t addon_get_height();
-int addon_get_bat_percent();
 
 void* addon_get_encoder(int num);
 struct tm* addon_get_dt();

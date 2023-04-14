@@ -62,8 +62,7 @@ Copyright (C) 2017  KaraWin
 #include "u8g2_esp32_hal.h"
 #include "addon.h"
 #include "addonu8g2.h"
-#include "ClickButtons.h"
-
+#include "buttons.h"
 #include "eeprom.h"
 
 /////////////////////////////////////////////////////
@@ -71,10 +70,6 @@ Copyright (C) 2017  KaraWin
 #include "bt_config.h"
 #include "driver/gpio.h"
 #include "driver/i2c.h"
-//#include "esp_wifi.h"
-//#include "xi2c.h"
-//#include "fonts.h"
-//#include "ssd1306.h"
 #include "nvs_flash.h"
 #include "gpio.h"
 #include "servers.h"
@@ -82,15 +77,10 @@ Copyright (C) 2017  KaraWin
 #include "webserver.h"
 #include "interface.h"
 #include "vs1053.h"
-#include "ClickEncoder.h"
 #include "addon.h"
 #include "esp_idf_version.h"
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
 #include "driver/gptimer.h"
-#else
-#include "driver/timer.h"
-#endif
-//#include "rda5807Task.h"
+#include "ext_gpio.h"
 
 #include <bus.h>
 
@@ -135,7 +125,6 @@ static bool divide = false;
 esp_netif_t *ap;
 esp_netif_t *sta;
 
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
 gptimer_handle_t mstimer = NULL;
 gptimer_handle_t sleeptimer = NULL;
 gptimer_handle_t waketimer = NULL;
@@ -143,14 +132,6 @@ gptimer_handle_t waketimer = NULL;
 IRAM_ATTR void app_no_interrupt_1ms() {}
 // enable 1MS timer interrupt
 IRAM_ATTR void app_interrupt_1ms() {}
-#else
-// disable 1MS timer interrupt
-IRAM_ATTR void noInterrupt1Ms() {timer_disable_intr(TIMERGROUP1MS, msTimer);}
-// enable 1MS timer interrupt
-IRAM_ATTR void interrupt1Ms() {timer_enable_intr(TIMERGROUP1MS, msTimer);}
-//IRAM_ATTR void noInterrupts() {noInterrupt1Ms();}
-//IRAM_ATTR void interrupts() {interrupt1Ms();}
-#endif
 
 char* app_get_ip() {return (localIp);}
 IRAM_ATTR uint8_t app_get_ivol() {return clientIvol;}
@@ -172,9 +153,6 @@ void* kcalloc(size_t elementCount, size_t elementSize)
 
 }
 
-
-
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
 static bool msCallback(gptimer_handle_t timer, const gptimer_alarm_event_data_t *edata, void *user_ctx)
 {
 	BaseType_t high_task_awoken = pdFALSE;
@@ -184,28 +162,10 @@ static bool msCallback(gptimer_handle_t timer, const gptimer_alarm_event_data_t 
     evt.i1 = 0;
     evt.i2 = 0;
 	xQueueSendFromISR(event_qu, &evt, NULL);
-	if (app_service_addon != NULL) app_service_addon(); // for the encoders and buttons
+	buttons_service();
 	return high_task_awoken == pdTRUE;
 }
-#else
-//-----------------------------------
-// every 500µs
-IRAM_ATTR void   msCallback(void *pArg) {
-	int timer_idx = (int) pArg;
-	queue_event_t evt;
-//	queue_event_t evt;
-	TIMERG1.hw_timer[timer_idx].update = 1;
-	TIMERG1.int_clr_timers.t0 = 1; //isr ack
-	evt.type = TIMER_1MS;
-    evt.i1 = TIMERGROUP1MS;
-    evt.i2 = timer_idx;
-	xQueueSendFromISR(event_queue, &evt, NULL);
-	if (serviceAddon != NULL) serviceAddon(); // for the encoders and buttons
-	TIMERG1.hw_timer[timer_idx].config.alarm_en = 1;
-}
-#endif
 
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
 static bool sleepCallback(gptimer_handle_t timer, const gptimer_alarm_event_data_t *edata, void *user_ctx)
 {
 	BaseType_t high_task_awoken = pdFALSE;
@@ -218,19 +178,7 @@ static bool sleepCallback(gptimer_handle_t timer, const gptimer_alarm_event_data
 	xQueueSendFromISR(event_qu, &evt, NULL);
 	return high_task_awoken == pdTRUE;
 }
-#else
-void   sleepCallback(void *pArg) {
-	int timer_idx = (int) pArg;
-	queue_event_t evt;
-	TIMERG0.int_clr_timers.t0 = 1; //isr ack
-		evt.type = TIMER_SLEEP;
-        evt.i1 = TIMERGROUP;
-        evt.i2 = timer_idx;
-	xQueueSendFromISR(event_queue, &evt, NULL);
-	TIMERG0.hw_timer[timer_idx].config.alarm_en = 0;
-}
-#endif
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
+
 static bool wakeCallback(gptimer_handle_t timer, const gptimer_alarm_event_data_t *edata, void *user_ctx)
 {
 	BaseType_t high_task_awoken = pdFALSE;
@@ -243,19 +191,7 @@ static bool wakeCallback(gptimer_handle_t timer, const gptimer_alarm_event_data_
 	xQueueSendFromISR(event_qu, &evt, NULL);
 	return high_task_awoken == pdTRUE;
 }
-#else
-void   wakeCallback(void *pArg) {
-	int timer_idx = (int) pArg;
-	queue_event_t evt;
-	TIMERG0.int_clr_timers.t1 = 1;
-        evt.i1 = TIMERGROUP;
-        evt.i2 = timer_idx;
-		evt.type = TIMER_WAKE;
-	xQueueSendFromISR(event_queue, &evt, NULL);
-	TIMERG0.hw_timer[timer_idx].config.alarm_en = 0;
-}
-#endif
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
+
 uint64_t app_get_sleep()
 {
 	uint64_t ret=0;
@@ -263,19 +199,7 @@ uint64_t app_get_sleep()
 	ESP_LOGD(TAG,"getSleep: ret: %lld",ret);
 	return ret/10000ll;
 }
-#else
-//return the current timer value in sec
-uint64_t getSleep()
-{
-	uint64_t ret=0;
-	uint64_t tot=0;
-	timer_get_alarm_value(TIMERGROUP, sleepTimer,&tot);
-	timer_get_counter_value(TIMERGROUP, sleepTimer,&ret);
-	ESP_LOGD(TAG,"getSleep: ret: %lld, tot: %lld, return %lld",ret,tot,tot-ret);
-	return ((tot)-ret)/5000000;
-}
-#endif
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
+
 uint64_t app_get_wake()
 {
 	uint64_t ret=0;
@@ -283,17 +207,6 @@ uint64_t app_get_wake()
 	ESP_LOGD(TAG,"getWake: ret: %lld",ret);
 	return ret/10000ll;
 }
-#else
-uint64_t getWake()
-{
-	uint64_t ret=0;
-	uint64_t tot=0;
-	timer_get_alarm_value(TIMERGROUP, wakeTimer,&tot);
-	timer_get_counter_value(TIMERGROUP, wakeTimer,&ret);
-	ESP_LOGD(TAG,"getWake: ret: %lld, tot: %lld  return %lld",ret,(tot),tot-ret);
-	return ((tot)-ret)/5000000;
-}
-#endif
 
 void tsocket(const char* lab, uint32_t cnt)
 {
@@ -302,7 +215,7 @@ void tsocket(const char* lab, uint32_t cnt)
 		websocket_broadcast(title, strlen(title));
 		free(title);
 }
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
+
 void app_stop_sleep(){
 	ESP_LOGD(TAG,"stopSleep");
     ESP_ERROR_CHECK(gptimer_stop(sleeptimer));
@@ -345,52 +258,10 @@ void app_start_wake(uint32_t delay){
 	ESP_ERROR_CHECK(gptimer_start(waketimer));
 	tsocket("lwake",delay);
 }
-#else
-void stopSleep(){
-	ESP_LOGD(TAG,"stopSleep");
-	ESP_ERROR_CHECK(timer_pause(TIMERGROUP, sleepTimer));
-	ESP_ERROR_CHECK(timer_set_alarm_value(TIMERGROUP, sleepTimer, 0x00000000ULL));
-	ESP_ERROR_CHECK(timer_set_counter_value(TIMERGROUP, sleepTimer, 0x00000000ULL));
-	tsocket("lsleep",0);
-}
-void startSleep(uint32_t delay)
-{
-	ESP_LOGD(TAG,"startSleep: %d min.",delay );
-	if (delay == 0) return;
-	stopSleep();
-	ESP_ERROR_CHECK(timer_set_counter_value(TIMERGROUP, sleepTimer, 0x00000000ULL));
-	ESP_ERROR_CHECK(timer_set_alarm_value(TIMERGROUP, sleepTimer,TIMERVALUE(delay*60)));
-	ESP_ERROR_CHECK(timer_enable_intr(TIMERGROUP, sleepTimer));
-	ESP_ERROR_CHECK(timer_set_alarm(TIMERGROUP, sleepTimer,TIMER_ALARM_EN));
-	ESP_ERROR_CHECK(timer_start(TIMERGROUP, sleepTimer));
-	tsocket("lsleep",delay);
-}
-
-void stopWake(){
-	ESP_LOGD(TAG,"stopWake");
-	ESP_ERROR_CHECK(timer_pause(TIMERGROUP, wakeTimer));
-	ESP_ERROR_CHECK(timer_set_counter_value(TIMERGROUP, wakeTimer, 0x00000000ULL));
-	ESP_ERROR_CHECK(timer_set_alarm_value(TIMERGROUP, wakeTimer, 0x00000000ULL));
-	tsocket("lwake",0);
-}
-void startWake(uint32_t delay)
-{
-	ESP_LOGD(TAG,"startWake: %d min.",delay);
-	if (delay == 0) return;
-	stopWake();
-	ESP_ERROR_CHECK(timer_set_counter_value(TIMERGROUP, wakeTimer, 0x00000000ULL));
-	ESP_ERROR_CHECK(timer_set_alarm_value(TIMERGROUP, wakeTimer,TIMERVALUE(delay*60)));
-	ESP_ERROR_CHECK(timer_enable_intr(TIMERGROUP, wakeTimer));
-	ESP_ERROR_CHECK(timer_set_alarm(TIMERGROUP, wakeTimer,TIMER_ALARM_EN));
-	ESP_ERROR_CHECK(timer_start(TIMERGROUP, wakeTimer));
-	tsocket("lwake",delay);
-}
-#endif
 
 void initTimers()
 {
 	event_queue = xQueueCreate(10, sizeof(queue_event_t));
-#if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(5, 0, 0)
 gptimer_config_t timer_config = {
     .clk_src = GPTIMER_CLK_SRC_APB,
     .direction = GPTIMER_COUNT_DOWN,
@@ -415,38 +286,6 @@ gptimer_alarm_config_t  alarm_config = {
 
 	ESP_ERROR_CHECK(gptimer_new_timer(&timer_config, &sleeptimer));
 	ESP_ERROR_CHECK(gptimer_new_timer(&timer_config, &waketimer));
-
-#else
-	timer_config_t config;
-	config.alarm_en = 1;
-    config.auto_reload = TIMER_AUTORELOAD_DIS;
-    config.counter_dir = TIMER_COUNT_UP;
-    config.divider = TIMER_DIVIDER;
-    config.intr_type = TIMER_INTR_LEVEL;
-    config.counter_en = TIMER_PAUSE;
-
-	/*Configure timer sleep*/
-    ESP_ERROR_CHECK(timer_init(TIMERGROUP, sleepTimer, &config));
-	ESP_ERROR_CHECK(timer_pause(TIMERGROUP, sleepTimer));
-	ESP_ERROR_CHECK(timer_isr_register(TIMERGROUP, sleepTimer, sleepCallback, (void*) sleepTimer, 0, NULL));
-	/*Configure timer wake*/
-    ESP_ERROR_CHECK(timer_init(TIMERGROUP, wakeTimer, &config));
-	ESP_ERROR_CHECK(timer_pause(TIMERGROUP, wakeTimer));
-	ESP_ERROR_CHECK(timer_isr_register(TIMERGROUP, wakeTimer, wakeCallback, (void*) wakeTimer, 0, NULL));
-	/*Configure timer 1MS*/
-	config.auto_reload = TIMER_AUTORELOAD_EN;
-	config.divider = TIMER_DIVIDER1MS ;
-	ESP_ERROR_CHECK(timer_init(TIMERGROUP1MS, msTimer, &config));
-	ESP_ERROR_CHECK(timer_pause(TIMERGROUP1MS, msTimer));
-	ESP_ERROR_CHECK(timer_isr_register(TIMERGROUP1MS, msTimer, msCallback, (void*) msTimer, 0, NULL));
-	/* start 1MS timer*/
-	ESP_ERROR_CHECK(timer_set_counter_value(TIMERGROUP1MS, msTimer, 0x00000000ULL));
-	ESP_ERROR_CHECK(timer_set_alarm_value(TIMERGROUP1MS, msTimer,TIMERVALUE1MS(1)));
-	ESP_ERROR_CHECK(timer_enable_intr(TIMERGROUP1MS, msTimer));
-	ESP_ERROR_CHECK(timer_set_alarm(TIMERGROUP1MS, msTimer,TIMER_ALARM_EN));
-	ESP_ERROR_CHECK(timer_start(TIMERGROUP1MS, msTimer));
-#endif
-
 }
 
 //////////////////////////////////////////////////////////////////
@@ -497,6 +336,8 @@ static void init_hardware()
 	bus_init_spi();
 	bus_init_i2c();
 	bus_init_i2s();
+
+	ext_gpio_init();
 
 	if (VS1053_HW_init()) // init spi
 		VS1053_Start();

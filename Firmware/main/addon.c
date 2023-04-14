@@ -11,8 +11,7 @@
 #include <sys/time.h>
 #include <time.h>
 #include "esp_sleep.h"
-#include "ClickEncoder.h"
-#include "ClickButtons.h"
+#include "buttons.h"
 #include "app_main.h"
 #include "gpio.h"
 #include "webclient.h"
@@ -30,8 +29,7 @@
 #include "eeprom.h"
 #include "addonu8g2.h"
 #include "addonucg.h"
-
-#include "esp_adc_cal.h"
+#include <ext_gpio.h>
 
 #define TAG  "addon"
 
@@ -88,48 +86,15 @@ typedef enum {KEY_UP,KEY_LEFT,KEY_OK,KEY_RIGHT,KEY_DOWN,
 static uint32_t customKey[KEY_MAX][2];
 static bool isCustomKey = false;
 
-static bool isEncoder0 = true;
-static bool isEncoder1 = true;
-static bool isButton0 = true;
-static bool isButton1 = true;
-static bool isAdcKeyboard = false;
-static bool isAdcBatt = false;
-static esp_adc_cal_characteristics_t characteristics;
-static float adc_value = 0.0f;
-battery_state out_state;
-
 void Screen(typeScreen st);
 void drawScreen();
 static void evtScreen(typelcmd value);
-
-Encoder_t* encoder0 = NULL;
-Encoder_t* encoder1 = NULL;
-Button_t* button0 = NULL;
-Button_t* button1 = NULL;
 
 struct tm* addon_get_dt() { return dt;}
 
 // Deep Sleep Power Save Input. https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/sleep_modes.html
 gpio_num_t deepSleep_io; /** Enter Deep Sleep if pin is set to level defined in P_LEVELPINSLEEP. */
 bool deepSleepLevel; /** Level to enter Deep Sleep / Wakeup if level is the opposite. */
-
-int addon_get_bat_percent()
-{
-	if (isAdcBatt)
-	{
-		if (out_state.percentage > 105) return -1; //
-		if (out_state.percentage > 100) return 100; //
-		return (out_state.percentage);
-	}
-	return -1;
-}
-
-void* addon_get_encoder(int num)
-{
-	if (num == 0) return (void*)encoder0;
-	if (num == 1) return (void*)encoder1;
-	return NULL;
-}
 
 static void ClearBuffer()
 {
@@ -189,12 +154,14 @@ void addon_wake_lcd()
 		evtScreen(stateScreen);
 		itLcdOut = 0;  //0 not activated, 1 sleep requested, 2 in sleep ;
 	}
+
+	ext_gpio_set_lcd(true);
 }
 
 void sleepLcd()
 {
 	itLcdOut = 2;  // in sleep
-	// TODO; disable screen
+	ext_gpio_set_lcd(false);
 }
 
 void addon_lcd_init(uint8_t Type)
@@ -227,7 +194,7 @@ void in_welcome(const char* ip,const char*state,int y,char* Version)
 
 void addon_lcd_welcome(const char* ip,const char*state)
 {
-char Version[20];
+	char Version[20];
 	sprintf(Version,"Version %s R%s\n",RELEASE,REVISION);
 	if (lcd_type == LCD_NONE) return;
 	if ((strlen(ip)==0)&&(strlen(state)==0)) ClearBuffer();
@@ -254,7 +221,6 @@ char Version[20];
  // ----------------------------------------------------------------------------
 // call this every 1 millisecond via timer ISR
 //
-void (*app_service_addon)() = NULL;
 
 IRAM_ATTR  void addon_service(void)
 {
@@ -530,274 +496,51 @@ static void toggletime()
 	if (lcd_type != LCD_NONE) xQueueSend(event_lcd,&evt, 0);
 }
 
-//----------------------------
-// Adc read: keyboard buttons
-//----------------------------
-
-static adc1_channel_t  channel = GPIO_NONE;
-static adc1_channel_t  chanBat = GPIO_NONE;
-static bool inside = false;
-#define DEFAULT_VREF 1100
-void adcInit()
+void buttons_loop(void)
 {
-	gpio_get_adc(&channel,&chanBat);
-	ESP_LOGD(TAG,"ADC Channel: %i, %i",channel,chanBat);
-	if ((channel & chanBat) != GPIO_NONE)
-	{
-		adc1_config_width(ADC_WIDTH_BIT_12);
-		if (channel != GPIO_NONE){isAdcKeyboard =true; adc1_config_channel_atten(channel, ADC_ATTEN_DB_0);}
-		if (chanBat != GPIO_NONE)
-		{
-			isAdcBatt = true;
-			adc1_config_channel_atten(chanBat, ADC_ATTEN_DB_11);
-			esp_adc_cal_value_t val_type = esp_adc_cal_characterize(ADC_UNIT_1, ADC_ATTEN_DB_11, ADC_WIDTH_BIT_12, DEFAULT_VREF, &characteristics);
-			if (val_type == ESP_ADC_CAL_VAL_EFUSE_TP)
-			{
-				ESP_LOGI(TAG,"ADC: Characterized using Two Point Value");
-			}
-			else if (val_type == ESP_ADC_CAL_VAL_EFUSE_VREF)
-			{
-				ESP_LOGI(TAG,"ADC: Characterized using eFuse Vref");
-			}
-			else
-			{
-				ESP_LOGI(TAG,"ADC: Characterized using Default Vref");
-			}
-		}
+	button_event_t *event = buttons_get_event();
+	if (event == NULL)
+		return;
+
+	switch (event->button) {
+	case BTN_TYPE_PLAY:
+		if (event->state == BTN_STATE_CLICKED)
+			startStop();
+		else if (event->state == BTN_STATE_DBLCLICKED)
+			toggletime();
+		break;
+
+	case BTN_TYPE_PREV:
+		evtStation(-1);
+		break;
+
+	case BTN_TYPE_NEXT:
+		evtStation(+1);
+		break;
+
+	case BTN_TYPE_ENC_BTN:
+	/*  TODO: implement it
+		if (event->state == BTN_STATE_CLICKED)
+			switch_fm_radio();
+	*/
+		if (event->state == BTN_STATE_HOLD)
+			addon_deep_sleep_start();
+		break;
+
+	case BTN_TYPE_ENC_LESS:
+		webserver_set_rel_volume(-1);
+		break;
+
+	case BTN_TYPE_ENC_MORE:
+		webserver_set_rel_volume(+1);
+		break;
+
+	case BTN_TYPE_LAST:
+		break;
 	}
+
+	buttons_release_event(event);
 }
-
-void adcBatLoop() {
-if (isAdcBatt)
-{
-    const int sampleCount = 8;
-
-    float adcSample = 0.0f;
-    for (int i = 0; i < sampleCount; ++i)
-    {
-        //adcSample += adc1_to_voltage(ADC1_CHANNEL_0, &characteristics) * 0.001f;
-        adcSample += esp_adc_cal_raw_to_voltage(adc1_get_raw(chanBat), &characteristics) * 0.001f;
-		vTaskDelay(1);
-    }
-    adcSample /= sampleCount;
-
-    if (adc_value == 0.0f)
-    {
-        adc_value = adcSample;
-    }
-    else
-    {
-        adc_value += adcSample;
-        adc_value /= 2.0f;
-    }
-
-//    const float R1 = 100000;
-//    const float R2 = 100000;
-//    const float Vo = adc_value;
-//    const float Vs = (Vo / R2 * (R1 + R2));
-    const float Vs = adc_value * 2.0f;
-
-
-    const float FullVoltage = 4.2f;
-    const float EmptyVoltage = 3.05f;
-
-    out_state.millivolts = (int)(Vs * 1000);
-    out_state.percentage = (int)((Vs - EmptyVoltage) / (FullVoltage - EmptyVoltage) * 100.0f);
-	ESP_LOGD(TAG,"ADC Batt: %d%%, millivolt: %d, Sample: %f, Value: %f ", out_state.percentage, out_state.millivolts ,adcSample, adc_value );
-
-    if (out_state.percentage > 100)
-        out_state.percentage = 100;
-    if (out_state.percentage < 0)
-        out_state.percentage = 0;
-
-
-}
-}
-void adcLoop() {
-	if (isAdcKeyboard)
-	{
-		uint32_t voltage,voltage0,voltage1;
-		bool wasVol = false;
-		voltage0 = (adc1_get_raw(channel)+adc1_get_raw(channel)+adc1_get_raw(channel)+adc1_get_raw(channel))/4;
-		vTaskDelay(1);
-		voltage1 = (adc1_get_raw(channel)+adc1_get_raw(channel)+adc1_get_raw(channel)+adc1_get_raw(channel))/4;
-//		printf ("Volt0: %d, Volt1: %d\n",voltage0,voltage1);
-		voltage = (voltage0+voltage1)*105/(819);
-		if (voltage <  40) return; // no panel
-//		printf("Voltage: %d\n",voltage);
-
-		if (inside&&(voltage0 > 3700))
-		{
-			inside = false;
-			wasVol = false;
-			return;
-		}
-		if (voltage0 > 3700)
-		{
-			wasVol = false;
-		}
-		if ((voltage0 >3700) || (voltage1 >3700)) return; // must be two valid voltage
-
-		if (voltage < 985) ESP_LOGD(TAG,"Voltage: %i",voltage);
-//			printf("VOLTAGE: %d\n",voltage);
-		if ((voltage >400) && (voltage < 590)) // volume +
-		{
-			webserver_set_rel_volume(+5);
-			wasVol = true;
-			ESP_LOGD(TAG,"Volume+ : %i",voltage);
-		}
-		else if ((voltage >730) && (voltage < 830)) // volume -
-		{
-			webserver_set_rel_volume(-5);
-			wasVol = true;
-			ESP_LOGD(TAG,"Volume- : %i",voltage);
-		}
-		else if ((voltage >900) && (voltage < 985)) // station+
-		{
-			if (!wasVol)
-			{
-				evtStation(1);
-				ESP_LOGD(TAG,"station+: %i",voltage);
-			}
-		}
-		else if ((voltage >620) && (voltage < 710)) // station-
-		{
-			if (!wasVol)
-			{
-				evtStation(-1);
-				ESP_LOGD(TAG,"station-: %i",voltage);
-			}
-		}
-		if (!inside)
-		{
-			if  ((voltage >100) && (voltage < 220)) // toggle time/info  old stop
-			{
-				inside = true;
-				toggletime();
-				ESP_LOGD(TAG,"toggle time: %i",voltage);
-			}
-			else if ((voltage >278) && (voltage < 380)) //start stop toggle   old start
-			{
-				inside = true;
-				startStop();
-				ESP_LOGD(TAG,"start stop: %i",voltage);
-			}
-		}
-	}
-}
-
-//-----------------------
-// Compute the Buttons
-//----------------------
- void buttonCompute(Button_t *enc,uint8_t role)
-{
-	int16_t newValue = 0;
-	Button state0;
-	if (role != ECTRL)
-	{
-	state0 = buttons_get(enc,0);
-	if (state0 != Open)
-	{
-		ESP_LOGD(TAG,"Button0: %i",state0);
-		if (state0 == Clicked) startStop();
-		// double click = toggle time
-		if (state0 == DoubleClicked) toggletime();
-		if (state0 == Held)
-		{
-			if (stateScreen!= ((role)?sstation:svolume))
-			{
-				(role)?evtStation(newValue):webserver_set_rel_volume(newValue);
-			}
-		}
-	} else
-	{
-		Button state1 = buttons_get(enc,1);
-		Button state2 = buttons_get(enc,2);
-		newValue=((state1!=Open)?5:0)+((state2!=Open)?-5:0); // sstation take + or - in any value
-		typeScreen estate = snull;
-		if ((isButton0 ^ isButton1)) // one button and not esplay
-		{
-			if (role) estate = sstation; else estate = svolume;
-//			ESP_LOGD(TAG,"Button1:nono: %d   %d    %d",isButton0,isButton1,isEsplay);
-		}
-		if ((state1 != Open)||(state2 != Open))  ESP_LOGD(TAG,"Button1: %i, Button2: %i, newValue: %d, estate: %d, stateScreen: %d",state1,state2,newValue,estate,stateScreen);
-		if ((stateScreen  != estate)&&(newValue != 0))
-		{
-			if(role) webserver_set_rel_volume(newValue);else evtStation(newValue);
-		}
-		if ((stateScreen  == estate)&&(newValue != 0))
-		{
-			if(role) evtStation(newValue); else webserver_set_rel_volume(newValue);
-		}
-	}
-	} else //third control of esplay
-	{
-		Button state1;
-		state0 = buttons_get(enc,0);
-		if (state0 == Clicked) toggletime();
-
-		state0 = buttons_get(enc,1);
-		state1 = buttons_get(enc,2);
-		if (state0 != Open || state1 != Open)
-			addon_wake_lcd();
-	}
-}
-
-//-----------------------
- // Compute the encoder
- //----------------------
-
-void encoderCompute(Encoder_t *enc,bool role)
-{
-	int16_t newValue = - encoder_get_value(enc);
-	if (newValue != 0) ESP_LOGD(TAG,"encoder value: %d, stateScreen: %d",newValue,stateScreen);
-	Button newButton = encoder_get_button(enc);
-
-   	// if an event on encoder switch
-	if (newButton != Open)
-	{
-		if (newButton == Clicked) {startStop();}
-		// double click = toggle time
-		if (newButton == DoubleClicked) { toggletime();}
-		// switch held and rotated then change station
-		if ((newButton == Held)&&(encoder_get_pin_state(enc) == encoder_get_pins_active(enc)))
-		{
-			if (stateScreen!= (role?sstation:svolume))
-				role?evtStation(newValue):webserver_set_rel_volume(newValue);
-		}
-	}	//else
-		// no event on button switch
-	{
-		typeScreen estate = snull;
-		if ((isEncoder0 ^ isEncoder1)) // one button and not esplay
-		{
-			if (role) estate = sstation; else estate = svolume;
-		}
-
-		if ((stateScreen  != estate)&&(newValue != 0))
-		{
-			if(role) webserver_set_rel_volume(newValue);else evtStation(newValue);
-		}
-		if ((stateScreen  == estate)&&(newValue != 0))
-		{
-			if(role) evtStation(newValue); else webserver_set_rel_volume(newValue);
-		}
-	}
-}
-
-void periphLoop()
-{
-// encoder0 = volume control or station when pushed
-// encoder1 = station control or volume when pushed
-// button0 = volume control or station when pushed
-// button1 = station control or volume when pushed
-	if (isButton0) buttonCompute(button0,VCTRL);
-	if (isButton1) buttonCompute(button1,SCTRL);
-	if (isEncoder0) encoderCompute(encoder0,VCTRL);
-	if (isEncoder1) encoderCompute(encoder1,SCTRL);
-}
-
-
 
 // compute custom IR
 bool irCustom(uint32_t evtir, bool repeat)
@@ -940,31 +683,6 @@ event_ir_t evt;
 	}
 }
 
-void initButtonDevices()
-{
-//	struct device_settings *device;
-	gpio_num_t enca0;
-	gpio_num_t encb0;
-	gpio_num_t encbtn0;
-	gpio_num_t enca1;
-	gpio_num_t encb1;
-	gpio_num_t encbtn1;
-	bool abtn0,abtn1;
-	gpio_get_encoders(&enca0, &encb0, &encbtn0,&enca1, &encb1, &encbtn1);
-	if (enca1 == GPIO_NONE) isEncoder1 = false; //no encoder
-	else encoder1 = encoder_init(enca1, encb1, encbtn1,((g_device->options32&T_ENC1)==0)?false:true );
-	if (enca0 == GPIO_NONE) isEncoder0 = false; //no encoder
-	else encoder0 = encoder_init(enca0, encb0, encbtn0,((g_device->options32&T_ENC0)==0)?false:true );
-
-	gpio_get_buttons(&enca0, &encb0, &encbtn0,&enca1, &encb1, &encbtn1);
-	gpio_get_active_buttons(&abtn0, &abtn1);
-	if (enca1 == GPIO_NONE) isButton1 = false; //no buttons
-	else button1 = buttons_init(enca1, encb1, encbtn1,abtn1 );
-	if (enca0 == GPIO_NONE) isButton0 = false; //no buttons
-	else button0 = buttons_init(enca0, encb0, encbtn0,abtn0);
-}
-
-
 // custom ir code init from hardware nvs partition
 #define hardware "hardware"
 void customKeyInit()
@@ -986,21 +704,6 @@ void customKeyInit()
 	close_partition(handle,hardware);
 }
 
-static uint8_t divide = 0;
-// indirect call to service
-IRAM_ATTR void multiService()  // every 1ms
-{
-	if (isEncoder0) encoder_service(encoder0);
-	if (isEncoder1) encoder_service(encoder1);
-//	ServiceAddon();
-	if (divide++ == 10) // only every 10ms
-	{
-		if (isButton0) buttons_service(button0);
-		if (isButton1) buttons_service(button1);
-
-		divide = 0;
-	}
-}
 //--------------------
 // LCD display task
 //--------------------
@@ -1127,10 +830,7 @@ void addon_task(void *pvParams)
 {
 	TaskHandle_t pxCreatedTask;
 	customKeyInit();
-	initButtonDevices();
-	adcInit();
 
-	app_service_addon = &multiService;		; // connect the 1ms interruption
 	futurNum = iface_get_current_station();
 
 	//ir
@@ -1156,8 +856,7 @@ void addon_task(void *pvParams)
 
 	while (1)
 	{
-		adcLoop();  // compute the adc keyboard and battery
-		periphLoop(); // compute the encoder the buttons and joysticks
+		buttons_loop();
 		irLoop();  // compute the ir
 		if (itAskTime) // time to ntp. Don't do that in interrupt.
 		{
@@ -1172,7 +871,6 @@ void addon_task(void *pvParams)
 
 		if (timerScreen >= 3) //  sec timeout transient screen
 		{
-			adcBatLoop() ;  // every 3 sec, check battery
 //			if ((stateScreen != smain)&&(stateScreen != stime)&&(stateScreen != snull))
 //printf("timerScreen: %d, stateScreen: %d, defaultStateScreen: %d\n",timerScreen,stateScreen,defaultStateScreen);
 			timerScreen = 0;

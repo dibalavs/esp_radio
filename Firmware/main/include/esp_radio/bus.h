@@ -11,8 +11,13 @@
 
 #pragma once
 
+#include <i2c_bus.h>
+#include <driver/i2s_types.h>
 #include <esp_err.h>
 
 void bus_init_spi(void);
 void bus_init_i2c(void);
 void bus_init_i2s(void);
+
+i2c_bus_handle_t bus_i2c_get(void);
+i2s_chan_handle_t bus_i2s_get(void);

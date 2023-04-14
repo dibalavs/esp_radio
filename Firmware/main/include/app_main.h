@@ -123,6 +123,5 @@ void app_interrupt_1ms();
 #define interrupts app_interrupt_1ms
 
 char* app_get_ip();
-extern void (*app_service_addon)(void);
 
 #endif /* MAIN_INCLUDE_APP_MAIN_H_ */

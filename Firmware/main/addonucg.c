@@ -854,16 +854,6 @@ static  void drawInfo(unsigned timein)
   ucg_SetColor(&ucg,0,CTTFONT);
   ucg_DrawString(&ucg,4,yy-y,0,strinf);
 
-// Battery
-  int batPercent = addon_get_bat_percent();
-  if (batPercent != -1)
-  {
-	sprintf(strinf,"Batt: %3d%%",batPercent);
-	len = ucg_GetStrWidth(&ucg,strinf);
-	ucg_SetColor(&ucg,1,CBLACK);
-	ucg_SetColor(&ucg,0,250,batPercent*25/10,0);
-	ucg_DrawString(&ucg,x-len-8,yy-y,0,strinf);
-  }
   ucg_SetFontMode(&ucg,UCG_FONT_MODE_TRANSPARENT);
 
   inInfo = timein; //to avoid redisplay

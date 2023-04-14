@@ -23,7 +23,6 @@
 #include "addonu8g2.h"
 #include "app_main.h"
 //#include "rda5807Task.c"
-#include "ClickEncoder.h"
 #include "lwip/sockets.h"
 #include "lwip/dns.h"
 #include "lwip/netdb.h"
@@ -998,53 +997,6 @@ void sysddmm(char* s)
 	sysddmm((char*) "");
 }
 
-// get or set the encoder half resolution. Must be set depending of the hardware
-void syshenc(int nenc,char* s)
-{
-    char *t = strstr(s, parslashquote);
-	Encoder_t *encoder;
-	bool encvalue;
-	encoder = (Encoder_t *)addon_get_encoder(nenc);
-	if (encoder == NULL) {kprintf("Encoder not defined#\n"); return;}
-	uint8_t options32 = g_device->options32;
-	if (nenc == 0) encvalue = options32&T_ENC0;
-	else encvalue = options32&T_ENC1;
-
-	if(t == NULL)
-	{
-		kprintf("##Step for encoder%d is ",nenc);
-		if (encvalue)
-			kprintf("half#\n");
-		else
-			kprintf("normal#\n");
-
-//		kprintf("Current value: %d\n",getHalfStep(encoder) );
-		return;
-	}
-	char *t_end  = strstr(t, parquoteslash);
-    if(t_end == NULL)
-    {
-		kprintf(stritCMDERROR);
-		return;
-    }
-	uint8_t value = atoi(t+2);
-	if (value == 0)
-	{
-		if (nenc ==0) g_device->options32 &= NT_ENC0;
-		else g_device->options32 &= NT_ENC1;
-	}
-	else
-	{
-		if (nenc ==0) g_device->options32 |= T_ENC0;
-		else g_device->options32 |= T_ENC1;
-	}
-	encoder_set_half_step(encoder, value);
-	if (nenc == 0) encvalue = g_device->options32&T_ENC0;
-	else encvalue = g_device->options32&T_ENC1;
-	syshenc(nenc,(char*)"");
-	eeprom_save_device_settings(g_device);
-}
-
 // display or change the rotation lcd mode
 void sysrotat(char* s)
 {
@@ -1501,8 +1453,6 @@ void iface_check_command(int size, char* s)
 		else if(startsWith (  "ddmm",tmp+4)) 	sysddmm(tmp);
 		else if(startsWith (  "host",tmp+4)) 	hostname(tmp);
 		else if(startsWith (  "rotat",tmp+4)) 	sysrotat(tmp);
-		else if(startsWith (  "henc0",tmp+4)) 	syshenc(0,tmp);
-		else if(startsWith (  "henc1",tmp+4)) 	syshenc(1,tmp);
 		else printInfo(tmp);
 	} else
 	{

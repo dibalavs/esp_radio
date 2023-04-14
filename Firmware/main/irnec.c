@@ -1,6 +1,6 @@
 
 /******************************************************************************
- * 
+ *
  * Copyright 2017 karawin (http://www.karawin.fr)
  *
  * Receive and decode nec IR. Send result in a queue
@@ -13,7 +13,6 @@
 #include <string.h>
 #include <stdio.h>
 #include <sys/time.h>
-#include "ClickEncoder.h"
 #include "app_main.h"
 #include "gpio.h"
 #include "webclient.h"
@@ -51,7 +50,7 @@
 static const char* NEC_TAG = "NEC";
 
 
- 
+
  /*
  * @brief Check whether duration is around target_us
  */
@@ -68,10 +67,10 @@ static const char* NEC_TAG = "NEC";
 
 /*
  * @brief Check whether this value represents an NEC header
- */ 
+ */
 static bool nec_header_if(rmt_item32_t* item)
 {
-    ESP_LOGD(NEC_TAG,"Header Duration0: %x Level0: %x, Duration1: %x, Level1: %x",item->duration0,item->level0,item->duration1,item->level1);	
+    ESP_LOGD(NEC_TAG,"Header Duration0: %x Level0: %x, Duration1: %x, Level1: %x",item->duration0,item->level0,item->duration1,item->level1);
 	if((item->level0 == RMT_RX_ACTIVE_LEVEL && item->level1 != RMT_RX_ACTIVE_LEVEL)
         && nec_check_in_range(item->duration0, NEC_HEADER_HIGH_US, NEC_BIT_MARGIN)
         && nec_check_in_range(item->duration1, NEC_HEADER_LOW_US, NEC_BIT_MARGIN)) {
@@ -81,10 +80,10 @@ static bool nec_header_if(rmt_item32_t* item)
 }
 /*
  * @brief Check whether this value represents an NEC repeat
- */ 
+ */
 static bool nec_repeat_if(rmt_item32_t* item)
 {
-    ESP_LOGD(NEC_TAG,"Repeat Duration0: %x Level0: %x, Duration1: %x, Level1: %x",item->duration0,item->level0,item->duration1,item->level1);	
+    ESP_LOGD(NEC_TAG,"Repeat Duration0: %x Level0: %x, Duration1: %x, Level1: %x",item->duration0,item->level0,item->duration1,item->level1);
 	ESP_LOGV(NEC_TAG,"NEC_ITEM_DURATION0(%d)= %d",item->duration0,NEC_ITEM_DURATION(item->duration0));
 	ESP_LOGV(NEC_TAG,"NEC_ITEM_DURATION1(%d)= %d",item->duration1,NEC_ITEM_DURATION(item->duration1));
 	if((item->level0 == RMT_RX_ACTIVE_LEVEL && item->level1 != RMT_RX_ACTIVE_LEVEL)
@@ -98,7 +97,7 @@ static bool nec_repeat_if(rmt_item32_t* item)
 /*
  * @brief Check whether this value represents an NEC data bit 1
  */
- 
+
 static bool nec_bit_one_if(rmt_item32_t* item)
 {
     ESP_LOGD(NEC_TAG,"nec_bit_one_if Duration0: %x Level0: %x, Duration1: %x, Level1: %x",item->duration0,item->level0,item->duration1,item->level1);
@@ -124,7 +123,7 @@ static bool nec_bit_zero_if(rmt_item32_t* item)
     if((item->level0 == RMT_RX_ACTIVE_LEVEL && item->level1 != RMT_RX_ACTIVE_LEVEL)
         && nec_check_in_range(item->duration0, NEC_BIT_ZERO_HIGH_US, NEC_BIT_MARGIN)
         && nec_check_in_range(item->duration1, NEC_BIT_ZERO_LOW_US, NEC_BIT_MARGIN)) {
-		ESP_LOGD(NEC_TAG,"nec_bit_zero_if true");	
+		ESP_LOGD(NEC_TAG,"nec_bit_zero_if true");
         return true;
     }
     return false;
@@ -139,7 +138,7 @@ static int nec_parse_items(rmt_item32_t* item, int item_num, uint16_t* addr, uin
 {
 	ESP_LOGD(NEC_TAG,"RMT item len: %d",item_num);
 //	ESP_LOGD(NEC_TAG,"Duration0: %x, Level0: %x, Duration1: %x, Level1: %x",item->duration0,item->level0,item->duration1,item->level1);
-	
+
 //	ESP_LOG_BUFFER_HEXDUMP(NEC_TAG, item, item_num, ESP_LOG_DEBUG);
     int w_len = item_num;
 /*    if(w_len < NEC_DATA_ITEM_NUM) {
@@ -249,7 +248,7 @@ void rmt_nec_rx_task()
 						if (flagFirstRepeat ==  true)
 							xQueueSend(event_ir,&last_evt, 0);
 						flagFirstRepeat = true;	// not the first one
-						offset += 3;		
+						offset += 3;
 					}
 					else if(res > 0) {
 						offset += res + 1;

@@ -351,15 +351,6 @@ void addonu8g2_draw_ttitle(char* ttitle)
 	// Rssi
 	sprintf(strIp,"%d dBm", iface_get_rssi());
 	u8g2_DrawUTF8(&u8g2,4,yy-(getFontLineSpacing()),strIp);
-
-	// Battery
-	if (addon_get_bat_percent() != -1)
-	{
-		sprintf(strIp,"Batt: %d%%",addon_get_bat_percent());
-		uint16_t len = u8g2_GetUTF8Width(&u8g2,strIp);
-		u8g2_DrawUTF8(&u8g2,x-len-8,yy-(getFontLineSpacing()),strIp);
-	}
-
 }
 //////////////////////////
 void addonu8g2_draw_number(uint8_t mTscreen,char* irStr)
