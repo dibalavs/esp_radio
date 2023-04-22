@@ -1448,7 +1448,7 @@
     (property "Reference" "Q5" (at 82.55 144.78 90)
       (effects (font (size 1.27 1.27)))
     )
-    (property "Value" "Si2302DS" (at 86.36 152.4 90)
+    (property "Value" "BSS138" (at 86.36 152.4 90)
       (effects (font (size 1.27 1.27)))
     )
     (property "Footprint" "Package_TO_SOT_SMD:SOT-23" (at 84.455 151.13 0)
