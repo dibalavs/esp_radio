@@ -34,9 +34,9 @@
         "other_text_thickness": 0.15,
         "other_text_upright": false,
         "pads": {
-          "drill": 3.0,
-          "height": 3.4,
-          "width": 3.4
+          "drill": 1.0,
+          "height": 1.7,
+          "width": 1.7
         },
         "silk_line_width": 0.15,
         "silk_text_italic": false,
@@ -211,10 +211,9 @@
   },
   "erc": {
     "erc_exclusions": [
-      "multiple_net_names|1651000|1231900|b15e9229-2fcb-4ac7-a1cb-3a29180ac86a|062bfb89-e454-4f12-b922-446eaf9d85d1|||",
+      "multiple_net_names|1651000|660400|ff18e4aa-4be4-4f64-aaa6-89db25701461|83e197dd-c0b4-4fb7-9c4e-8ce964654da9|||",
       "multiple_net_names|1651000|711200|7c35ce76-4fa8-44c2-8b24-7a3e70127b59|eb63b0e1-9fc1-4bce-bb9a-f37ff46f56d6|||",
-      "multiple_net_names|1651000|927100|9c69dcc6-167f-46c7-b015-f612421f5324|b35ade59-2520-43a3-a90f-9d8fecefb0c4|||",
-      "multiple_net_names|1651000|927100|9c69dcc6-167f-46c7-b015-f612421f5324|e8c2d492-a3f3-400c-904e-040986d164bd|||"
+      "multiple_net_names|1651000|838200|b15e9229-2fcb-4ac7-a1cb-3a29180ac86a|b2cefde4-94cb-444d-8d63-517b44a0a1b9|||"
     ],
     "meta": {
       "version": 0
@@ -418,7 +417,7 @@
       "pin_to_pin": "error",
       "power_pin_not_driven": "error",
       "similar_labels": "warning",
-      "simulation_model_issue": "error",
+      "simulation_model_issue": "ignore",
       "unannotated": "error",
       "unit_value_mismatch": "error",
       "unresolved_variable": "error",
@@ -518,10 +517,10 @@
     },
     "net_colors": null,
     "netclass_assignments": {
-      "Net-(#FLG02-pwr)": "PowerHi",
       "Net-(D1-K)": "PowerHi",
       "Net-(D2-K)": "PowerHi",
-      "Net-(D3-K)": "PowerHi"
+      "Net-(D3-K)": "PowerHi",
+      "Net-(D4-K)": "PowerHi"
     },
     "netclass_patterns": [
       {
