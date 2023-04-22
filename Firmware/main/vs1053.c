@@ -82,9 +82,6 @@ extern void  LoadUserCodes(void);
 int vsVersion = -1; // the version of the chip
 //	SS_VER is 0 for VS1001, 1 for VS1011, 2 for VS1002, 3 for VS1003, 4 for VS1053 and VS8053, 5 for VS1033, 7 for VS1103, and 6 for VS1063.
 
-gpio_num_t rst;
-gpio_num_t dreq;
-
 static spi_device_handle_t vsspi;  // the evice handle of the vs1053 spi
 static spi_device_handle_t hvsspi;  // the device handle of the vs1053 spi high speed
 
@@ -110,18 +107,6 @@ int getVsVersion() { return vsVersion;}
 
 bool VS1053_HW_init()
 {
-	gpio_num_t xcs;
-	gpio_num_t xdcs;
-
-	gpio_get_vs1053(&xcs,&rst,&xdcs,&dreq);
-
-	// if xcs = 0 the vs1053 is not used
-	if (xcs == GPIO_NONE)
-	{
-		vsVersion = 0;
-		ESP_LOGE(TAG,"VS1053 not used");
-		return false;
-	}
 	uint32_t freq =spi_get_actual_clock(APB_CLK_FREQ, 1400000, 128);
 	ESP_LOGI(TAG,"VS1053 LFreq: %d",freq);
 	spi_device_interface_config_t devcfg={
@@ -134,7 +119,7 @@ bool VS1053_HW_init()
 		.cs_ena_posttrans = 1,
 		.flags = 0,
         .mode = 0,                         //0 = (0-CPOL, 0-CPHA)
-        .spics_io_num = xcs,               //XCS pin
+        .spics_io_num = PIN_NUM_XCS,               //XCS pin
         .queue_size = 1,                          //We want to be able to queue x transactions at a time
         .pre_cb = NULL,
 		.post_cb = NULL
@@ -147,7 +132,7 @@ bool VS1053_HW_init()
 	freq =spi_get_actual_clock(APB_CLK_FREQ, 6100000, 128);
 	ESP_LOGI(TAG,"VS1053 HFreq: %d",freq);
 	devcfg.clock_speed_hz = freq;
-	devcfg.spics_io_num= xdcs;               //XDCS pin
+	devcfg.spics_io_num= PIN_NUM_XDCS;               //XDCS pin
 	devcfg.command_bits = 0;
 	devcfg.address_bits = 0;
 	ESP_ERROR_CHECK(spi_bus_add_device(SPI_NO, &devcfg, &hvsspi));
@@ -158,14 +143,14 @@ bool VS1053_HW_init()
 	gpio_conf.pull_up_en =  GPIO_PULLUP_DISABLE;
 	gpio_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
 	gpio_conf.intr_type = GPIO_INTR_DISABLE;
-	gpio_conf.pin_bit_mask = ((uint64_t)(((uint64_t)1)<<rst));
+	gpio_conf.pin_bit_mask = ((uint64_t)(((uint64_t)1)<<PIN_NUM_RST));
 	ESP_ERROR_CHECK(gpio_config(&gpio_conf));
 
 	gpio_conf.mode = GPIO_MODE_INPUT;
 	gpio_conf.pull_up_en =  GPIO_PULLUP_DISABLE;
 	gpio_conf.pull_down_en = GPIO_PULLDOWN_ENABLE;
 	gpio_conf.intr_type = GPIO_INTR_DISABLE;
-	gpio_conf.pin_bit_mask = ((uint64_t)(((uint64_t)1)<<dreq));
+	gpio_conf.pin_bit_mask = ((uint64_t)(((uint64_t)1)<<PIN_NUM_DREQ));
 	ESP_ERROR_CHECK(gpio_config(&gpio_conf));
 
 	//gpio_set_direction(dreq, GPIO_MODE_INPUT);
@@ -175,16 +160,16 @@ bool VS1053_HW_init()
 
 
 static void VS1053_ControlReset(uint8_t State){
-	gpio_set_level(rst, State);
+	gpio_set_level(PIN_NUM_RST, State);
 }
 
 uint8_t CheckDREQ() {
-	return gpio_get_level(dreq);
+	return gpio_get_level(PIN_NUM_DREQ);
 }
 #define TMAX 4096
 void  WaitDREQ() {
 	uint16_t  time_out = 0;
-	while(gpio_get_level(dreq) == 0 && time_out++ < TMAX)
+	while(gpio_get_level(PIN_NUM_DREQ) == 0 && time_out++ < TMAX)
 	{
 		taskYIELD();
 	}
@@ -199,7 +184,7 @@ void VS1053_spi_write_char(uint8_t *cbyte, uint16_t len)
 	t.tx_buffer = cbyte;
     t.length= len*8;
     //t.rxlength=0;
-	while(gpio_get_level(dreq) == 0 )taskYIELD();
+	while(gpio_get_level(PIN_NUM_DREQ) == 0 )taskYIELD();
 	spi_take_semaphore(hsSPI);
     ret = spi_device_transmit(hvsspi, &t);  //Transmit!
 	if (ret != ESP_OK) ESP_LOGE(TAG,"err: %d, VS1053_spi_write_char(len: %d)",ret,len);
@@ -329,7 +314,7 @@ void VS1053_LowPower(){
 
 // normal chip consumption
 void VS1053_HighPower(){
-   if (vsVersion == 4) // only 1053
+	if (vsVersion == 4) // only 1053
 		VS1053_WriteRegister16(SPI_CLOCKF,0xB800); // SC_MULT = x1, SC_ADD= x1
 	else
 		VS1053_WriteRegister16(SPI_CLOCKF,0xb000);
@@ -349,7 +334,7 @@ void VS1053_GPIO1()
 // First VS10xx configuration after reset
 void VS1053_InitVS()
 {
-   if (vsVersion == 4) // only 1053b
+	if (vsVersion == 4) // only 1053b
 //		VS1053_WriteRegister(SPI_CLOCKF,0x78,0x00); // SC_MULT = x3, SC_ADD= x2
 		VS1053_WriteRegister16(SPI_CLOCKF,0xB800); // SC_MULT = x1, SC_ADD= x1
 //		VS1053_WriteRegister16(SPI_CLOCKF,0x8800); // SC_MULT = x3.5, SC_ADD= x1
@@ -372,6 +357,25 @@ void VS1053_InitVS()
 	}
 }
 
+bool VS1053_CheckPresent(void)
+{
+	VS1053_ControlReset(SET);
+	vTaskDelay(10);
+	VS1053_ControlReset(RESET);
+	vTaskDelay(50);
+	if (CheckDREQ() == 0) vTaskDelay(50);	// wait a bit more
+	//Check DREQ
+	if (CheckDREQ() == 0)
+	{
+		vsVersion = 0;
+		ESP_LOGE(TAG,"NO VS1053 detected");
+		return false;
+	}
+
+	vsVersion = (VS1053_ReadRegister(SPI_STATUSVS) >> 4) & 0x000F;
+
+	return vsVersion == 4;
+}
 
 void VS1053_Start(){
 	VS1053_ControlReset(SET);

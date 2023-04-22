@@ -37,16 +37,14 @@ static void evtClearScreen();
 // second before time display in stop state
 #define DTIDLE  60
 
-
-
 #define isColor (lcd_type&LCD_COLOR)
 const char *stopped = "STOPPED";
 
 char irStr[4];
 QueueHandle_t event_ir = NULL;
 QueueHandle_t event_lcd = NULL;
-u8g2_t u8g2; // a structure which will contain all the data for one display
 ucg_t  ucg;
+u8g2_t u8g2; // a structure which will contain all the data for one display
 static uint8_t lcd_type;
 static TaskHandle_t  pxTaskLcd;
 // list of screen
@@ -170,7 +168,7 @@ void addon_lcd_init(uint8_t Type)
 
 	if (lcd_type == LCD_NONE) return;
 
-	if (lcd_type & LCD_COLOR) // Color one
+	if (isColor) // Color one
 	{
 		addonucg_lcd_init(&lcd_type);
 	} else //B/W lcd
@@ -905,9 +903,6 @@ void addon_task(void *pvParams)
 			if (itAskStime&&(stateScreen != stime)) // time start the time display. Don't do that in interrupt.
 				evtScreen(stime);
 		}
-		// Enter ESP32 Deep Sleep and powerdown peripherals when P_SLEEP GPIO is P_LEVEL_SLEEP
-		if (addon_check_deep_sleep_input())
-			addon_deep_sleep_start();
 
 		vTaskDelay(10);
 	}
@@ -1008,37 +1003,10 @@ void addon_parse(const char *fmt, ...)
 /** Configure Deep Sleep: source and wakeup options. */
 bool addon_deep_sleep_conf(void)
 {
-	/** 1. get the pin number and trigger level from NVS configuration. */
-	gpio_get_pinSleep(&deepSleep_io, &deepSleepLevel);
-
-	if (GPIO_NONE != deepSleep_io) {
-		/** 2. Initialize GPIO. */
-		gpio_config_t gpio_conf;
-		gpio_conf.mode = GPIO_MODE_INPUT;
-		gpio_conf.pull_up_en =  GPIO_PULLUP_ENABLE;
-		gpio_conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
-		gpio_conf.intr_type = GPIO_INTR_DISABLE;
-		gpio_conf.pin_bit_mask = ((uint64_t)(((uint64_t)1)<<deepSleep_io));
-		ESP_ERROR_CHECK(gpio_config(&gpio_conf));
-
-		/** 3. Configure Deep Sleep External wakeup (ext0). */
-		/** Wake up (EXT0) when GPIO deepSleep_io pin level is opposite to deepSleepLevel. */
-		esp_sleep_enable_ext0_wakeup(deepSleep_io, !deepSleepLevel);
-	}
+	/** Configure Deep Sleep External wakeup (ext0). */
+	/** Wake up (EXT0) when GPIO deepSleep_io pin level is opposite to deepSleepLevel. */
+	esp_sleep_enable_ext0_wakeup(PIN_EXT_GPIO_INT, 1);
 	return true;
-}
-
-/** Check Deep Sleep GPIO input. */
-/** If deepSleep_io pin is set to deepSleepLevel, then trigger Deep Sleep Power Saving mode */
-bool addon_check_deep_sleep_input(void) {
-	if (GPIO_NONE != deepSleep_io) {
-		if (deepSleepLevel == gpio_get_level(deepSleep_io))
-			return true;
-		else
-			return false;
-	}
-	else
-		return false;
 }
 
 /** Enter ESP32 Deep Sleep with the configured wakeup options, and powerdown peripherals, */

@@ -147,7 +147,6 @@ A command error display:\n\
 };
 
 uint16_t currentStation = 0;
-static gpio_num_t led_gpio = GPIO_NONE;
 static IRAM_ATTR uint32_t lcd_out = 0xFFFFFFFF;
 static IRAM_ATTR uint32_t lcd_stop = 0xFFFFFFFF;
 
@@ -912,37 +911,6 @@ void syspatch(char* s)
 	kprintf(stritPATCH,(g_device->options & T_PATCH)!= 0?"unloaded":"Loaded");
 }
 
-// the gpio to use for the led indicator
-void sysledgpio(char* s)
-{
-    char *t = strstr(s, parslashquote);
-	if(t == NULL)
-	{
-		kprintf("##Led GPIO is %d#\n",g_device->led_gpio);
-		return;
-	}
-	char *t_end  = strstr(t, parquoteslash);
-	uint8_t value = atoi(t+2);
-    if ((t_end == NULL)||(value >= GPIO_NUM_MAX))
-    {
-		kprintf(stritCMDERROR);
-		return;
-    }
-	iface_set_led_gpio(value);
-	gpio_output_conf(value);
-	eeprom_save_device_settings(g_device);
-	gpio_set_ledgpio(value); // write in nvs if any
-	sysledgpio((char*) "");
-//	led_gpio = GPIO_NONE; // for getLedGpio
-}
-
-void iface_set_led_gpio(uint8_t val) { led_gpio = val;g_device->led_gpio = val;}
-
-IRAM_ATTR uint8_t iface_get_led_gpio()
-{
-	return led_gpio;
-}
-
 // display or change the lcd type
 void syslcd(char* s)
 {
@@ -1087,75 +1055,6 @@ uint32_t iface_get_lcd_stop()
 {
 	return lcd_stop;
 }
-
-// mode of the led indicator. Blink or play/stop
-void sysled(char* s)
-{
-	extern bool ledStatus, ledPolarity;
-    char *t = strstr(s, parslashquote);
-	if(t == NULL)
-	{
-		kprintf("##Led is in %s mode#\n",((g_device->options & T_LED)== 0)?"Blink":"Play");
-		return;
-	}
-	char *t_end  = strstr(t, parquoteslash);
-    if(t_end == NULL)
-    {
-		kprintf(stritCMDERROR);
-		return;
-    }
-	uint8_t value = atoi(t+2);
-	if (value !=0) // play mode
-	{
-	 g_device->options |= T_LED; // set
-	 ledStatus = false;
-	 if (webclient_get_state())
-	 { if (iface_get_led_gpio() != GPIO_NONE) gpio_set_level(iface_get_led_gpio(), ledPolarity ? 0 : 1);}
-	}
-	else  // blink mode
-	{ g_device->options &= NT_LED;  // clear
-		ledStatus =true;} // options:0 = ledStatus true = Blink mode
-
-	eeprom_save_device_settings(g_device);
-	sysled((char*) "");
-}
-
-// mode of the led indicator. polarity 0 or 1
-void sysledpol(char* s)
-{
-    char *t = strstr(s, parslashquote);
-	extern bool ledPolarity;
-	if(t == NULL)
-	{
-		kprintf("##Led polarity is %d#\n",(g_device->options & T_LEDPOL)?1:0);
-		return;
-	}
-	char *t_end  = strstr(t, parquoteslash);
-    if(t_end == NULL)
-    {
-		kprintf(stritCMDERROR);
-		return;
-    }
-	uint8_t value = atoi(t+2);
-	if (value !=0)
-	{
-		g_device->options |= T_LEDPOL; // set
-		ledPolarity = true;
-		if (webclient_get_state())
-		{
-			if (iface_get_led_gpio() != GPIO_NONE) gpio_set_level(iface_get_led_gpio(),ledPolarity ? 0 : 1);
-		}
-	}
-	else
-	{
-		g_device->options &= NT_LEDPOL;
-		ledPolarity =false;
-	} // options:0 = ledPolarity
-
-	eeprom_save_device_settings(g_device);
-	sysledpol((char*) "");
-}
-
 
 // display or change the tzo for ntp
 void tzoffset(char* s)
@@ -1432,9 +1331,6 @@ void iface_check_command(int size, char* s)
 #endif
 
 		else if(startsWith (  "patch",tmp+4)) 	syspatch(tmp);
-		else if(startsWith (  "ledg",tmp+4)) 	sysledgpio(tmp); //ledgpio
-		else if(startsWith (  "ledpol",tmp+4)) 	sysledpol(tmp);
-		else if(startsWith (  "led",tmp+4)) 	sysled(tmp);
 		else if(strcmp(tmp+4, "date") == 0) 	ntp_print_time();
 		else if(strncmp(tmp+4, "vers",4) == 0) 	kprintf("Release: %s, Revision: %s, KaRadio32\n",RELEASE,REVISION);
 		else if(startsWith(   "tzo",tmp+4)) 	tzoffset(tmp);

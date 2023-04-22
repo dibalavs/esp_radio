@@ -120,6 +120,13 @@ uint8_t ma_read_byte(uint8_t address)
   return value;
 }
 
+bool ma_check_present(void)
+{
+    const uint8_t MA_hw_version__a = 127;
+    uint8_t res = ma_read_byte(MA_hw_version__a);
+    return res != (uint8_t)ESP_FAIL;
+}
+
 /*
  * Output audio data to I2S and setup MerusAudio digital power amplifier
  */

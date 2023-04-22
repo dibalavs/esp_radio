@@ -108,7 +108,6 @@ void* addon_get_encoder(int num);
 struct tm* addon_get_dt();
 
 bool addon_deep_sleep_conf(void);
-bool addon_check_deep_sleep_input(void);
 void addon_deep_sleep_start(void);
 
 #endif

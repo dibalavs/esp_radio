@@ -107,8 +107,6 @@ QueueHandle_t event_queue;
 
 //xSemaphoreHandle print_mux;
 static uint16_t FlashOn = 5,FlashOff = 5;
-bool ledStatus; // true: normal blink, false: led on when playing
-bool ledPolarity; // true: normal false: reverse
 bool logTel; // true = log also on telnet
 player_t *player_config;
 static output_mode_t audio_output_mode;
@@ -730,19 +728,7 @@ void start_network(){
 //blinking led and timer isr
 IRAM_ATTR void timerTask(void* p) {
 //	struct device_settings *device;
-	uint32_t cCur;
-	bool stateLed = false;
-	gpio_num_t gpioLed;
 	queue_event_t evt;
-	gpio_get_ledgpio(&gpioLed);
-	iface_set_led_gpio(gpioLed);
-//	int uxHighWaterMark;
-	if (gpioLed != GPIO_NONE)
-	{
-		gpio_output_conf(gpioLed);
-		gpio_set_level(gpioLed, ledPolarity ? 1 : 0);
-	}
-	cCur = FlashOff*10;
 		// queue for events of the sleep / wake and Ms timers
 
 	initTimers();
@@ -773,22 +759,6 @@ IRAM_ATTR void timerTask(void* p) {
 					break;
 			}
 		}
-					if ((ledStatus)&&(ctimeMs >= cCur))
-					{
-						gpioLed = iface_get_led_gpio();
-						if (stateLed)
-						{
-							if (gpioLed != GPIO_NONE) gpio_set_level(gpioLed,ledPolarity?1:0);
-							stateLed = false;
-							cCur = FlashOff*10;
-						} else
-						{
-							if (gpioLed != GPIO_NONE) gpio_set_level(gpioLed,ledPolarity?0:1);
-							stateLed = true;
-							cCur = FlashOn*10;
-						}
-						ctimeMs = 0;
-					}
 
 		vTaskDelay(1);
 	}
@@ -941,20 +911,6 @@ void app_main()
 
 	// Configure Deep Sleep start and wakeup options
 	addon_deep_sleep_conf(); // also called in addon.c
-	// Enter ESP32 Deep Sleep (but not powerdown uninitialized peripherals) when P_SLEEP GPIO is P_LEVEL_SLEEP
-	if (addon_check_deep_sleep_input())
-		esp_deep_sleep_start();
-
-	// led mode
-	if (g_device->options & T_LED)
-		ledStatus = false; // play mode
-	else
-		ledStatus = true; // blink mode
-
-	if (g_device->options & T_LEDPOL)
-		ledPolarity = true;
-	else
-		ledPolarity = false;
 
 	// log on telnet
 	if (g_device->options & T_LOGTEL)
@@ -975,6 +931,11 @@ void app_main()
 	iface_set_ddmm(ddmm?1:0);
 
     init_hardware();
+
+	ESP_LOGI(TAG, "Check if VS1053 present: %s", VS1053_CheckPresent() ? "YES" : "NO");
+	ESP_LOGI(TAG, "Check if MCP23017 present: %s", ext_gpio_check_present() ? "YES" : "NO");
+	ESP_LOGI(TAG, "Check if RDA5807FP: %s", "TODO");
+	ESP_LOGI(TAG, "Check if Merus amplifier present: %s", ma_check_present() ? "YES" : " NO");
 
 	// output mode
 	//I2S, I2S_MERUS, DAC_BUILT_IN, PDM, VS1053

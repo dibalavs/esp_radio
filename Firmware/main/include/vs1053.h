@@ -20,6 +20,7 @@
 //extern int vsVersion;
 int getVsVersion();
 bool 	VS1053_HW_init();
+bool    VS1053_CheckPresent(void);
 void 	VS1053_SineTest();
 void 	VS1053_I2SRATE(uint8_t speed);
 void	VS1053_Start();

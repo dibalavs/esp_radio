@@ -6,6 +6,8 @@
 #ifndef ADDONUCG_H_
 #define ADDONUCG_H_
 
+#include <stdint.h>
+
 void addonucg_setfont(int size);
 void addonucg_playing();
 void addonucg_nameset(char* ici);

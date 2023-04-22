@@ -20,19 +20,6 @@ const char option_space[] = {"option_space"};
 const char gpio_space[] = {"gpio_space"};
 const char label_space[] = {"label_space"};
 
-// init a gpio as output
-void gpio_output_conf(gpio_num_t gpio)
-{
-	gpio_config_t gpio_conf;
-	gpio_conf.pin_bit_mask = ((uint64_t)(((uint64_t)1)<<gpio)) ;
-	gpio_conf.mode = GPIO_MODE_OUTPUT;
-	gpio_conf.pull_up_en =  GPIO_PULLUP_DISABLE;
-	gpio_conf.pull_down_en =  GPIO_PULLDOWN_DISABLE;
-	gpio_conf.intr_type = GPIO_INTR_DISABLE;
-	gpio_config(&gpio_conf);
-	gpio_set_level(gpio,1);
-}
-
 // open and read the gpio hardware setting
 //
 esp_err_t open_partition(const char *partition_label, const char *namespace,nvs_open_mode open_mode,nvs_handle *handle)
@@ -97,29 +84,6 @@ void gpio_get_comment(char** label)
 		nvs_get_str(hardware_handle, "L_COMMENT", *label, &required_size);
 		ESP_LOGV(TAG,"Label: \"%s\"\n Required size: %d",*label,required_size);
 	}
-	close_partition(hardware_handle,hardware);
-}
-
-void gpio_get_vs1053(gpio_num_t * xcs,gpio_num_t *rst,gpio_num_t *xdcs,gpio_num_t *dreq)
-{
-	esp_err_t err;
-	nvs_handle hardware_handle;
-	// init default
-	*xcs = PIN_NUM_XCS;
-	*rst = PIN_NUM_RST;
-	*xdcs = PIN_NUM_XDCS;
-	*dreq = PIN_NUM_DREQ;
-
-	if (open_partition(hardware, gpio_space,NVS_READONLY,&hardware_handle)!= ESP_OK)
-	{
-		ESP_LOGD(TAG,"vs1053");
-		return;
-	}
-	err = nvs_get_u8(hardware_handle, "P_XCS",(uint8_t *) xcs);
-	err |=nvs_get_u8(hardware_handle, "P_RST",(uint8_t *) rst);
-	err |=nvs_get_u8(hardware_handle, "P_XDCS", (uint8_t *)xdcs);
-	err |=nvs_get_u8(hardware_handle, "P_DREQ", (uint8_t *)dreq);
-	if (err != ESP_OK) ESP_LOGD(TAG,"g_get_vs1053 err 0x%x",err);
 	close_partition(hardware_handle,hardware);
 }
 
@@ -300,42 +264,6 @@ void option_get_lcd_out(uint32_t *enca, uint32_t *encb)
 	close_partition(hardware_handle,hardware);
 }
 
-void gpio_get_ledgpio(gpio_num_t *enca)
-{
-	esp_err_t err;
-	nvs_handle hardware_handle;
-	// init default
-	*enca = g_device->led_gpio;
-
-	if (open_partition(hardware, gpio_space,NVS_READONLY,&hardware_handle)!= ESP_OK)
-	{
-		ESP_LOGD(TAG,"ledgpio");
-		return;
-	}
-
-	err = nvs_get_u8(hardware_handle, "P_LED_GPIO",(uint8_t *) enca);
-	if (err != ESP_OK) ESP_LOGD(TAG,"g_get_ledgpio err 0x%x",err);
-
-	close_partition(hardware_handle,hardware);
-}
-
-void gpio_set_ledgpio(gpio_num_t enca)
-{
-	esp_err_t err;
-	nvs_handle hardware_handle;
-
-	if (open_partition(hardware, gpio_space,NVS_READWRITE,&hardware_handle)!= ESP_OK)
-	{
-		ESP_LOGD(TAG,"set_ledgpio");
-		return;
-	}
-
-	err = nvs_set_u8(hardware_handle, "P_LED_GPIO",enca);
-	if (err != ESP_OK) ESP_LOGD(TAG,"gpio_set_ledgpio err 0x%x",err);
-
-	close_partition(hardware_handle,hardware);
-}
-
 void gpio_get_ir_signal(gpio_num_t *ir)
 {
 	esp_err_t err;
@@ -382,28 +310,4 @@ bool gpio_get_ir_key(nvs_handle handle,const char *key, uint32_t *out_value1 , u
 	ESP_LOGV(TAG,"Key: %s, value1: %x, value2: %x, ret: %d",key,*out_value1,*out_value2,ret);
 
 	return ret;
-}
-
-/** Get the GPIO (P_SLEEP) for Deep Sleep power saving mode. */
-/*  Get the level (P_LEVEL_SLEEP) of pin (P_SLEEP) that triggers power saving. */
-void gpio_get_pinSleep(gpio_num_t *pin, bool *aLevel)
-{
-	esp_err_t err;
-	nvs_handle hardware_handle;
-
-	// init defaults from gpio.h
-	*pin = PIN_SLEEP;
-	*aLevel = LEVEL_SLEEP;
-
-	if (open_partition(hardware, gpio_space, NVS_READONLY, &hardware_handle)!= ESP_OK) {
-		ESP_LOGD(TAG,"buttons");
-		return;
-	}
-
-	err = nvs_get_u8(hardware_handle, "P_SLEEP",(uint8_t *) pin);
-	err |= nvs_get_u8(hardware_handle, "P_LEVEL_SLEEP",(uint8_t *) aLevel);
-
-	if (err != ESP_OK) ESP_LOGD(TAG,"gpio_get_pinDeepSleep err 0x%x",err);
-
-	close_partition(hardware_handle,hardware);
 }

@@ -37,8 +37,6 @@ enum clientStatus cstatus;
 //static uint32_t metacount = 0;
 //static uint16_t metasize = 0;
 
-extern bool ledStatus;
-
 SemaphoreHandle_t sConnect, sConnected, sDisconnect, sHeader;
 
 static uint8_t once = 0;
@@ -957,7 +955,6 @@ void webclient_silent_disconnect()
 
 void webclient_disconnect(const char* from)
 {
-	extern bool ledPolarity;
 	kprintf(CLISTOP,from);
 	xSemaphoreGive(sDisconnect);
 	if (get_player_status()!=STOPPED)
@@ -967,10 +964,6 @@ void webclient_disconnect(const char* from)
 		if(!webclient_is_connected())break;
 		vTaskDelay(1);
 	}
-	if ((from[0]!='C') || (from[1]!='_'))
-		if (!ledStatus){
-			if (iface_get_led_gpio() != GPIO_NONE) gpio_set_level(iface_get_led_gpio(), ledPolarity ? 1 : 0);
-		}
 //	esp_wifi_set_ps(WIFI_PS_MAX_MODEM);
 	vTaskDelay(1);
 	// save the volume if needed on stop state
@@ -983,7 +976,6 @@ void webclient_disconnect(const char* from)
 
 void clientReceiveCallback(int sockfd, char *pdata, int len)
 {
-	extern bool ledPolarity;
 	static int metad ;
 	static int rest ;
 	static uint16_t dloop;
@@ -1368,9 +1360,6 @@ ESP_LOGD(TAG,"mt2 len:%d, clen:%d, metad:%d, l:%d, inpdata:%x,  rest:%d",len,cle
 		{
 			kprintf(CLIPLAY,0x0d,0x0a);
 			playing=1;
-			if (!ledStatus){
-			if (iface_get_led_gpio() != GPIO_NONE) gpio_set_level(iface_get_led_gpio(), ledPolarity ? 0 : 1);
-			}
 			webserver_set_volumei(webserver_get_volume());
 		}
 	} // switch
