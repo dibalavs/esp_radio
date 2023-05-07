@@ -48,8 +48,9 @@ Copyright (C) 2017  KaraWin
 #include "lwip/tcp.h"
 #include "lwip/dns.h"
 #include "mdns.h"
+#include <merus.h>
+#include <rda5807.h>
 
-#include <MerusAudio.h>
 #include "app_main.h"
 
 //#include "spiram_fifo.h"
@@ -260,16 +261,16 @@ void app_start_wake(uint32_t delay){
 void initTimers()
 {
 	event_queue = xQueueCreate(10, sizeof(queue_event_t));
-gptimer_config_t timer_config = {
-    .clk_src = GPTIMER_CLK_SRC_APB,
-    .direction = GPTIMER_COUNT_DOWN,
-    .resolution_hz = 10 * 1000 , //  1 tick = 100µs
-};
-gptimer_alarm_config_t  alarm_config = {
-    .reload_count = 5, // counter will reload with 0 on alarm event
-    .alarm_count = 0, // period = 500µs
-    .flags.auto_reload_on_alarm = true, // enable auto-reload
-};
+	gptimer_config_t timer_config = {
+		.clk_src = GPTIMER_CLK_SRC_APB,
+		.direction = GPTIMER_COUNT_DOWN,
+		.resolution_hz = 10 * 1000 , //  1 tick = 100µs
+	};
+	gptimer_alarm_config_t  alarm_config = {
+		.reload_count = 5, // counter will reload with 0 on alarm event
+		.alarm_count = 0, // period = 500µs
+		.flags.auto_reload_on_alarm = true, // enable auto-reload
+	};
 
 	/*Configure timer 1MS*/
 	//////////////////////
@@ -279,6 +280,7 @@ gptimer_alarm_config_t  alarm_config = {
 		.on_alarm = msCallback, // register user callback
 	};
 	ESP_ERROR_CHECK(gptimer_register_event_callbacks(mstimer, &cbs, event_queue));
+	ESP_ERROR_CHECK(gptimer_enable(mstimer));
 	ESP_ERROR_CHECK(gptimer_start(mstimer));
 
 
@@ -331,16 +333,19 @@ uint32_t iface_check_uart(uint32_t speed)
 *******************************************************************************/
 static void init_hardware()
 {
+	bus_init_gpio();
 	bus_init_spi();
 	bus_init_i2c();
-	bus_init_i2s();
+//	bus_init_i2s();
 
 	ext_gpio_init();
 
 	if (VS1053_HW_init()) // init spi
 		VS1053_Start();
 
-	ESP_ERROR_CHECK(init_ma120(0x50));
+	merus_init();
+	rda5807_init(I2C_NO, I2C_ADDR_RDA5807FP, PIN_FM_INT);
+
 
     ESP_LOGI(TAG, "hardware initialized");
 }
@@ -860,6 +865,7 @@ void app_main()
 	TaskHandle_t pxCreatedTask;
 	esp_err_t err;
 
+	esp_log_level_set("*", ESP_LOG_INFO);
 	ESP_LOGI(TAG, "starting app_main()");
     ESP_LOGI(TAG, "RAM left: %u", esp_get_free_heap_size());
 
@@ -922,9 +928,6 @@ void app_main()
 	telnet_init();
 	websocket_init();
 
-	// log level
-	iface_set_log_level(g_device->trace_level);
-
 	//time display
 	uint8_t ddmm;
 	option_get_ddmm(&ddmm);
@@ -934,8 +937,11 @@ void app_main()
 
 	ESP_LOGI(TAG, "Check if VS1053 present: %s", VS1053_CheckPresent() ? "YES" : "NO");
 	ESP_LOGI(TAG, "Check if MCP23017 present: %s", ext_gpio_check_present() ? "YES" : "NO");
-	ESP_LOGI(TAG, "Check if RDA5807FP: %s", "TODO");
-	ESP_LOGI(TAG, "Check if Merus amplifier present: %s", ma_check_present() ? "YES" : " NO");
+	//ESP_LOGI(TAG, "Check if RDA5807FP: %s", rda5807_check_present() ? "YES" : "NO");
+	ESP_LOGI(TAG, "Check if Merus amplifier present: %s", merus_check_present() ? "YES" : " NO");
+
+	// log level
+	iface_set_log_level(g_device->trace_level);
 
 	// output mode
 	//I2S, I2S_MERUS, DAC_BUILT_IN, PDM, VS1053
