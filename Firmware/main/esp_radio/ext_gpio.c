@@ -1,3 +1,4 @@
+#include "esp_intr_alloc.h"
 #include "hal/gpio_types.h"
 
 #include <bus.h>
@@ -135,6 +136,24 @@ void ext_gpio_set_merus_mute(bool enable)
 bool ext_gpio_get_merus_mute(void)
 {
     return IS_BIT_SET(port_b, PIN_EXT_GPIO_MERUS_MUTE);
+}
+
+void ext_gpio_set_merus_chip_select(bool enable)
+{
+    if (enable)
+        SET_BIT(port_b, PIN_EXT_GPIO_MERUS_CS);
+    else
+        CLEAR_BIT(port_b, PIN_EXT_GPIO_MERUS_CS);
+    ESP_ERROR_CHECK(mcp23017_write_io(i2c_device, port_b, MCP23017_GPIOB));
+}
+
+void ext_gpio_set_fm_chip_select(bool enable)
+{
+    if (enable)
+        SET_BIT(port_b, PIN_EXT_GPIO_FM_CS);
+    else
+        CLEAR_BIT(port_b, PIN_EXT_GPIO_FM_CS);
+    ESP_ERROR_CHECK(mcp23017_write_io(i2c_device, port_b, MCP23017_GPIOB));
 }
 
 static void update_a_on_dirty(void)

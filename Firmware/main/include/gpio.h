@@ -15,7 +15,9 @@
 
 // i2c devices addrs
 //------------------
-#define I2C_ADDR_MCP23017 0b00100111
+#define I2C_ADDR_MCP23017  0b00100111
+#define I2C_ADDR_RDA5807FP 0b00100000
+#define I2C_ADDR_MERUS     0b01000000
 
 //-------------------------------//
 // Define Bus pins               //
@@ -66,7 +68,8 @@
 #define PIN_EXT_GPIO_I2S_1      MCP23017_PIN10
 #define PIN_EXT_GPIO_MERUS_EN   MCP23017_PIN11
 #define PIN_EXT_GPIO_MERUS_MUTE MCP23017_PIN12
-
+#define PIN_EXT_GPIO_MERUS_CS   MCP23017_PIN13
+#define PIN_EXT_GPIO_FM_CS      MCP23017_PIN14
 
 // gpio of the vs1053
 //-------------------
@@ -75,6 +78,9 @@
 #define PIN_NUM_XDCS GPIO_NUM_25
 #define PIN_NUM_DREQ GPIO_NUM_34
 // + KSPI pins
+
+// gpio of FM radio interrupt
+#define PIN_FM_INT GPIO_NUM_39
 
 // IR Signal
 //-----------

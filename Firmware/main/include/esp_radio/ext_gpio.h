@@ -41,6 +41,9 @@ bool ext_gpio_get_merus_en(void);
 void ext_gpio_set_merus_mute(bool enable);
 bool ext_gpio_get_merus_mute(void);
 
+void ext_gpio_set_merus_chip_select(bool enable);
+void ext_gpio_set_fm_chip_select(bool enable);
+
 bool ext_gpio_get_enca(void);
 bool ext_gpio_get_encb(void);
 bool ext_gpio_get_enc_button(void);
