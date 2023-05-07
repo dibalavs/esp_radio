@@ -16,7 +16,6 @@ esp_err_t init_ma120(uint8_t vol);
 
 bool ma_check_present(void);
 
-
 #endif /* _MERUSAUDIO_H_  */
 
 

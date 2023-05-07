@@ -20,7 +20,6 @@
 #include "driver/gpio.h"
 #include "gpio.h"
 #include "app_main.h"
-#include "MerusAudio.h"
 #include "audio_player.h"
 #include "audio_renderer.h"
 
