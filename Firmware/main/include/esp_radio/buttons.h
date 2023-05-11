@@ -37,12 +37,19 @@ enum button_state {
 
 typedef struct _button_event_t {
     enum button_type button;
-    enum button_state state;
+
+    union {
+        enum button_state state;
+        uint8_t increment;   // only valid for BTN_TYPE_ENC_LESS/MORE
+    };
 } button_event_t;
 
-void buttons_init();
-void buttons_service(void);
+typedef void buttons_cb_t(void);
 
-button_event_t *buttons_get_event();
+void buttons_init();
+
+void buttons_set_callback(buttons_cb_t *cb);
+
+button_event_t *buttons_get_event(void);
 void buttons_release_event(button_event_t *evt);
 uint8_t buttons_get_encoder_value(void);

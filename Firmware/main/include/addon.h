@@ -94,7 +94,7 @@ void addon_task(void *pvParams);
 void addon_task_lcd(void *pvParams);
 void addon_lcd_init(uint8_t Type);
 //void (*serviceAddon)(void);
-void addon_service(void);
+void addon_service_isr(void);
 void addon_parse(const char *fmt, ...);
 void addon_lcd_welcome(const char* ip,const char*state);
 void addon_set_futur_num(int16_t new);

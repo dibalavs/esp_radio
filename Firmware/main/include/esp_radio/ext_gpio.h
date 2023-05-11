@@ -19,6 +19,8 @@
 
 #include <stdbool.h>
 
+typedef void ext_gpio_callback_t(void);
+
 enum ext_gpio_i2s_state {
     I2S_SWITCH_ESP,
     I2S_SWITCH_VS1053,
@@ -26,6 +28,10 @@ enum ext_gpio_i2s_state {
 };
 
 void ext_gpio_init(void);
+
+void ext_gpio_fetch_int_captured(void);
+
+void ext_gpio_set_int_callback(ext_gpio_callback_t *cb_isr);
 
 bool ext_gpio_check_present(void);
 

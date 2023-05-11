@@ -4,12 +4,25 @@
 #include <ext_gpio.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
+#include <freertos/semphr.h>
 #include <sys/time.h>
+#include <esp_err.h>
 
 #include "app_main.h" // kalloc
+#include "freertos/portmacro.h"
+#include "freertos/projdefs.h"
 // ----------------------------------------------------------------------------
 
 #define EVENT_QUEUE_LEN 30
+
+#define FREERTOS_ERROR_CHECK(x) do {                                    \
+        BaseType_t err_rc_ = (x);                                       \
+        if (unlikely(err_rc_ != pdTRUE)) {                              \
+            _esp_error_check_failed(err_rc_, __FILE__, __LINE__,        \
+                                    __ASSERT_FUNC, #x);                 \
+        }                                                               \
+    } while(0)
+
 
 struct button_event_queue {
     button_event_t event;
@@ -22,82 +35,173 @@ static struct button_event_queue *released_events;
 static unsigned long *button_times; //array of [BTN_TYPE_LAST] elements
 static unsigned char encoder_state = 0;
 static unsigned char encoder_value = 0;
+static unsigned long encoder_ccw_ms = 0;
+static unsigned long encoder_cw_ms = 0;
+
+static SemaphoreHandle_t lock;
+static SemaphoreHandle_t task_notify;
+static TaskHandle_t button_task_handle;
+static buttons_cb_t *buttons_callback;
 
 #define TAG "button"
 
-// Rotary encoder table was taken from:
+// Idea was taken from:
 // https://github.com/brianlow/Rotary/blob/master/Rotary.cpp
 
-#define DIR_NONE 0x0
+// current values:
+// CW:
+// single step turn: '3' -> '1' -> '0'
+// multiple steps turn:  '3' -> '1'; '3' -> '1'; '3' -> '1'; '3' -> '1'
+
+// CCW:
+// single step turn: '1' -> '3' -> '1'
+
 // Clockwise step.
 #define DIR_CW 0x10
 // Counter-clockwise step.
 #define DIR_CCW 0x20
-#define R_START 0x0
 
-#ifdef HALF_STEP
-// Use the half-step state table (emits a code at 00 and 11)
-#define R_CCW_BEGIN 0x1
-#define R_CW_BEGIN 0x2
-#define R_START_M 0x3
-#define R_CW_BEGIN_M 0x4
-#define R_CCW_BEGIN_M 0x5
-static const unsigned char ttable[6][4] = {
-  // R_START (00)
-  {R_START_M,            R_CW_BEGIN,     R_CCW_BEGIN,  R_START},
-  // R_CCW_BEGIN
-  {R_START_M | DIR_CCW, R_START,        R_CCW_BEGIN,  R_START},
-  // R_CW_BEGIN
-  {R_START_M | DIR_CW,  R_CW_BEGIN,     R_START,      R_START},
-  // R_START_M (11)
-  {R_START_M,            R_CCW_BEGIN_M,  R_CW_BEGIN_M, R_START},
-  // R_CW_BEGIN_M
-  {R_START_M,            R_START_M,      R_CW_BEGIN_M, R_START | DIR_CW},
-  // R_CCW_BEGIN_M
-  {R_START_M,            R_CCW_BEGIN_M,  R_START_M,    R_START | DIR_CCW},
+static const unsigned char ttable[4][4] = {
+    // Common start
+    {0, 1, 0, 3},
+
+    // CCW direction states
+    {1, 1, 1, 2},
+    {DIR_CCW, DIR_CCW, DIR_CCW, 0},
+
+    // CW direction states
+    {DIR_CW, 3, 0, 3 | DIR_CW}
 };
-#else
-// Use the full-step state table (emits a code at 00 only)
-#define R_CW_FINAL 0x1
-#define R_CW_BEGIN 0x2
-#define R_CW_NEXT 0x3
-#define R_CCW_BEGIN 0x4
-#define R_CCW_FINAL 0x5
-#define R_CCW_NEXT 0x6
 
-static const unsigned char ttable[7][4] = {
-  // R_START
-  {R_START,    R_CW_BEGIN,  R_CCW_BEGIN, R_START},
-  // R_CW_FINAL
-  {R_CW_NEXT,  R_START,     R_CW_FINAL,  R_START | DIR_CW},
-  // R_CW_BEGIN
-  {R_CW_NEXT,  R_CW_BEGIN,  R_START,     R_START},
-  // R_CW_NEXT
-  {R_CW_NEXT,  R_CW_BEGIN,  R_CW_FINAL,  R_START},
-  // R_CCW_BEGIN
-  {R_CCW_NEXT, R_START,     R_CCW_BEGIN, R_START},
-  // R_CCW_FINAL
-  {R_CCW_NEXT, R_CCW_FINAL, R_START,     R_START | DIR_CCW},
-  // R_CCW_NEXT
-  {R_CCW_NEXT, R_CCW_FINAL, R_CCW_BEGIN, R_START},
-};
-#endif
-
-static void enqueue_event(enum button_type button, enum button_state state)
+IRAM_ATTR static void ext_gpio_int_callback_isr(void)
 {
+    portBASE_TYPE woken = pdFALSE;
+    vTaskNotifyGiveFromISR(button_task_handle, &woken);
+    if (woken == pdTRUE) {
+        portYIELD_FROM_ISR();
+    }
+}
+
+static void enqueue_event(enum button_type button, enum button_state state, uint8_t inc)
+{
+    struct button_event_queue *new_ev;
+
     if (released_events == NULL) {
-        ESP_LOGE(TAG, "Unable to enqueue kbd event. Queue is empty.");
+        ESP_LOGE(TAG, "Unable to enqueue kbd event. Queue full.");
         return;
     }
 
-    struct button_event_queue *new_ev = released_events;
+    FREERTOS_ERROR_CHECK(xSemaphoreTake(lock, portMAX_DELAY));
+    new_ev = released_events;
     released_events = released_events->next;
 
     new_ev->event.button = button;
-    new_ev->event.state = state;
+    if (button == BTN_TYPE_ENC_LESS || button == BTN_TYPE_ENC_MORE)
+        new_ev->event.increment = inc;
+    else
+        new_ev->event.state = state;
 
     new_ev->next = event_queue;
     event_queue = new_ev;
+
+    FREERTOS_ERROR_CHECK(xSemaphoreGive(lock));
+
+    if (buttons_callback)
+        buttons_callback();
+}
+
+static void process_button(enum button_type button, bool is_pressed, unsigned long now_ms)
+{
+    const unsigned long press_time = button_times[button];
+
+    // Pressed
+    if (is_pressed && press_time == 0) {
+        button_times[button] = now_ms;
+        enqueue_event(button, BTN_STATE_PRESSED, 0);
+    }
+
+    // Released
+    if (!is_pressed && press_time != 0) {
+        enqueue_event(button, BTN_STATE_RELEASED, 0);
+        if (press_time - now_ms > BTN_HOLDTIME_MS)
+            enqueue_event(button, BTN_STATE_HOLD, 0);
+        else
+            enqueue_event(button, BTN_STATE_CLICKED, 0);
+        button_times[button] = 0;
+    }
+}
+
+static uint8_t calc_acceleration(unsigned long time_diff_ms)
+{
+    if (time_diff_ms < 30)
+        return 5;
+
+    if (time_diff_ms < 60)
+        return 4;
+
+    if (time_diff_ms < 150)
+        return 3;
+
+    if (time_diff_ms < 300)
+        return 2;
+
+    return 1;
+}
+
+static void process_encoder(uint8_t pins, unsigned long now_ms)
+{
+    int adder = 0;
+
+    encoder_state = ttable[encoder_state & 0xf][pins];
+    if ((encoder_state & (DIR_CW | DIR_CCW)) == 0) {
+        return;
+    }
+
+    if (encoder_state == DIR_CCW || (now_ms - encoder_ccw_ms) < 500) {
+        adder = -calc_acceleration(now_ms - encoder_ccw_ms);
+        enqueue_event(BTN_TYPE_ENC_LESS, BTN_STATE_CLICKED, -adder);
+        encoder_ccw_ms = now_ms;
+    }
+
+    if (encoder_state == DIR_CW || (now_ms - encoder_cw_ms) < 500) {
+        adder = calc_acceleration(now_ms - encoder_cw_ms);
+        enqueue_event(BTN_TYPE_ENC_MORE, BTN_STATE_CLICKED, adder);
+        encoder_cw_ms = now_ms;
+    }
+
+    if (encoder_value + adder > 0 && encoder_value + adder < 255) {
+        encoder_value += adder;
+    }
+}
+
+static void buttons_task(void* p)
+{
+    (void)p;
+    uint32_t thread_notification = 0;
+    unsigned long now_ms;
+
+    while(1)
+    {
+        thread_notification = ulTaskNotifyTake(0, pdMS_TO_TICKS(1000));
+        ext_gpio_fetch_int_captured();
+
+        if (!thread_notification) {
+            encoder_ccw_ms = encoder_cw_ms = encoder_state = 0;
+            continue;
+        }
+
+        now_ms = xTaskGetTickCount() * portTICK_PERIOD_MS;
+
+        // Process rotary encoder
+        const uint8_t pins = (ext_gpio_get_enca() << 1) | ext_gpio_get_encb();
+        process_encoder(pins, now_ms);
+
+        // Process buttons
+        process_button(BTN_TYPE_PREV, ext_gpio_get_button_prev(), now_ms);
+        process_button(BTN_TYPE_PLAY, ext_gpio_get_button_play(), now_ms);
+        process_button(BTN_TYPE_NEXT, ext_gpio_get_button_next(), now_ms);
+        process_button(BTN_TYPE_ENC_BTN, ext_gpio_get_enc_button(), now_ms);
+    }
 }
 
 void buttons_init(void)
@@ -111,70 +215,29 @@ void buttons_init(void)
     released_events = &events[EVENT_QUEUE_LEN - 1];
     button_times = kcalloc(BTN_TYPE_LAST, sizeof(unsigned long));
     assert(button_times);
-    encoder_state = R_START;
+    encoder_state = 0;
     encoder_value = 0;
+    lock = xSemaphoreCreateMutex();
+    assert(lock);
+
+    task_notify = xSemaphoreCreateBinary();
+    assert(task_notify);
+    xSemaphoreTake(task_notify, 0);
+    ext_gpio_set_int_callback(&ext_gpio_int_callback_isr);
+    FREERTOS_ERROR_CHECK(xTaskCreatePinnedToCore(buttons_task, "buttonstask", configMINIMAL_STACK_SIZE + 100, NULL, 9, &button_task_handle, 0));
 }
 
-static void process_button(enum button_type button, bool is_pressed, unsigned long now_ms)
-{
-    const unsigned long tm = button_times[button];
-
-    // Pressed
-    if (button && tm == 0) {
-        button_times[button] = now_ms;
-        enqueue_event(button, BTN_STATE_PRESSED);
-    }
-
-    // Released
-    if (!button && tm != 0) {
-        enqueue_event(button, BTN_STATE_RELEASED);
-        if (tm - now_ms > BTN_HOLDTIME_MS)
-            enqueue_event(button, BTN_STATE_HOLD);
-        else
-            enqueue_event(button, BTN_STATE_CLICKED);
-        button_times[button] = 0;
-    }
-}
-
-// ----------------------------------------------------------------------------
-// call this every 1 millisecond via timer ISR
-//
-IRAM_ATTR void buttons_service(void)
-{
-    const unsigned long now_ms = xTaskGetTickCount() * portTICK_PERIOD_MS;
-
-    // Process buttons
-    process_button(BTN_TYPE_PREV, ext_gpio_get_button_prev(), now_ms);
-    process_button(BTN_TYPE_PLAY, ext_gpio_get_button_play(), now_ms);
-    process_button(BTN_TYPE_NEXT, ext_gpio_get_button_next(), now_ms);
-    process_button(BTN_TYPE_ENC_BTN, ext_gpio_get_enc_button(), now_ms);
-
-    // Process rotary encoder
-    const uint8_t pins = (ext_gpio_get_enca() << 1) | ext_gpio_get_encb();
-    encoder_state = ttable[encoder_state & 0xf][pins];
-    switch (encoder_state & 0x30) {
-    case DIR_CCW:
-        if (encoder_value > 0) {
-            encoder_value--;
-            enqueue_event(BTN_TYPE_ENC_LESS, BTN_STATE_CLICKED);
-        }
-        break;
-    case DIR_CW:
-        if (encoder_value < 255) {
-            encoder_value++;
-            enqueue_event(BTN_TYPE_ENC_MORE, BTN_STATE_CLICKED);
-        }
-        break;
-    }
-}
-
-button_event_t * buttons_get_event()
+button_event_t * buttons_get_event(void)
 {
     if (event_queue == NULL)
         return NULL;
 
-    button_event_t *res = &event_queue->event;
+    button_event_t *res;
+
+    FREERTOS_ERROR_CHECK(xSemaphoreTake(lock, portMAX_DELAY));
+    res = &event_queue->event;
     event_queue = event_queue->next;
+    FREERTOS_ERROR_CHECK(xSemaphoreGive(lock));
 
     return res;
 }
@@ -183,11 +246,19 @@ void buttons_release_event(button_event_t *evt)
 {
     // TODO: check that offset_of(button_event_queue::event) == 0;
     struct button_event_queue *queue = (struct button_event_queue *)evt;
+
+    FREERTOS_ERROR_CHECK(xSemaphoreTake(lock, portMAX_DELAY));
     queue->next = released_events;
     released_events = queue;
+    FREERTOS_ERROR_CHECK(xSemaphoreGive(lock));
 }
 
 uint8_t buttons_get_encoder_value(void)
 {
     return encoder_value;
+}
+
+void buttons_set_callback(buttons_cb_t *cb)
+{
+    buttons_callback = cb;
 }

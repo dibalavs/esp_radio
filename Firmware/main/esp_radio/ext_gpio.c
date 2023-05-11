@@ -11,10 +11,10 @@
 
 static const char *TAG = "ext_gpio";
 
-static bool is_dirty = 0;
 static uint8_t port_b = 0;
 static uint8_t port_a = 0;
 static mcp23017_handle_t i2c_device;
+static ext_gpio_callback_t *gpio_cb_isr;
 
 #define GET_LOW_BIT(pin) (MCP23027_IS_PORT_A(pin) ? MCP23017_PORT_A_BYTE(pin) : MCP23017_PORT_B_BYTE(pin))
 
@@ -22,16 +22,23 @@ static mcp23017_handle_t i2c_device;
 #define CLEAR_BIT(var, bit) (var) = ((var) & ~(GET_LOW_BIT(bit)))
 #define IS_BIT_SET(var, bit) (!!(var & (GET_LOW_BIT(bit))))
 
-static void IRAM_ATTR gpio_isr_handler(void* arg)
+IRAM_ATTR static void gpio_isr_handler(void* arg)
 {
     (void)arg;
-    is_dirty = true;
+
+    if (gpio_cb_isr)
+        gpio_cb_isr();
+}
+
+void ext_gpio_fetch_int_captured(void)
+{
+    port_a = mcp23017_read_intcap(i2c_device, MCP23017_GPIOA);
 }
 
 void ext_gpio_init(void)
 {
     static const gpio_config_t io_conf = {
-        .intr_type = GPIO_INTR_POSEDGE,
+        .intr_type = GPIO_INTR_NEGEDGE,
         .mode = GPIO_MODE_INPUT,
         .pin_bit_mask = (1ULL<<PIN_EXT_GPIO_INT),
         .pull_down_en = 0,
@@ -48,12 +55,21 @@ void ext_gpio_init(void)
         return;
     }
 
+    // Configure PORT A
     ESP_ERROR_CHECK(mcp23017_set_io_dir(i2c_device, 0xff, MCP23017_GPIOA)); // all input
-    ESP_ERROR_CHECK(mcp23017_set_io_dir(i2c_device, 0x00, MCP23017_GPIOB)); // all output
+    ESP_ERROR_CHECK(mcp23017_set_input_polarity(i2c_device, 0x00ff)); // invert logic, because when button pushed, it grounded
     ESP_ERROR_CHECK(mcp23017_interrupt_en(i2c_device, 0x00ff, 0, 0)); // interrups only on GPIOA
-    is_dirty = false;
-    port_a = mcp23017_read_io(i2c_device, MCP23017_GPIOA);
-    port_b = 0;
+    ESP_ERROR_CHECK(mcp23017_set_pullup(i2c_device, 0x00ff)); // Pullup on GPIOA
+
+    // Configure PORT B
+    ESP_ERROR_CHECK(mcp23017_set_io_dir(i2c_device, 0x00, MCP23017_GPIOB)); // all output
+
+    ext_gpio_fetch_int_captured();
+}
+
+void ext_gpio_set_int_callback(ext_gpio_callback_t *cb_isr)
+{
+    gpio_cb_isr = cb_isr;
 }
 
 bool ext_gpio_check_present(void)
@@ -156,46 +172,32 @@ void ext_gpio_set_fm_chip_select(bool enable)
     ESP_ERROR_CHECK(mcp23017_write_io(i2c_device, port_b, MCP23017_GPIOB));
 }
 
-static void update_a_on_dirty(void)
-{
-    if (is_dirty) {
-        port_a = mcp23017_read_io(i2c_device, MCP23017_GPIOA);
-        is_dirty = false;
-    }
-}
-
 bool ext_gpio_get_enca(void)
 {
-    update_a_on_dirty();
     return IS_BIT_SET(port_a, PIN_EXT_GPIO_ENC_A);
 }
 
 bool ext_gpio_get_encb(void)
 {
-    update_a_on_dirty();
     return IS_BIT_SET(port_a, PIN_EXT_GPIO_ENC_B);
 }
 
 bool ext_gpio_get_enc_button(void)
 {
-    update_a_on_dirty();
     return IS_BIT_SET(port_a, PIN_EXT_GPIO_ENC_BTN);
 }
 
 bool ext_gpio_get_button_prev(void)
 {
-    update_a_on_dirty();
     return IS_BIT_SET(port_a, PIN_EXT_GPIO_PREV);
 }
 
 bool ext_gpio_get_button_play(void)
 {
-    update_a_on_dirty();
     return IS_BIT_SET(port_a, PIN_EXT_GPIO_PLAY);
 }
 
 bool ext_gpio_get_button_next(void)
 {
-    update_a_on_dirty();
     return IS_BIT_SET(port_a, PIN_EXT_GPIO_NEXT);
 }

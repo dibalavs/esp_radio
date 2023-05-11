@@ -15,6 +15,7 @@
 #include <driver/i2s_types.h>
 #include <esp_err.h>
 
+void bus_init_gpio(void);
 void bus_init_spi(void);
 void bus_init_i2c(void);
 void bus_init_i2s(void);

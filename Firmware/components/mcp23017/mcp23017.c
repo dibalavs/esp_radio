@@ -145,36 +145,45 @@ esp_err_t mcp23017_read(mcp23017_handle_t dev, uint8_t reg_start_addr,
 
 esp_err_t mcp23017_set_pullup(mcp23017_handle_t dev, uint16_t pins)
 {
-    uint8_t data[] = { MCP23017_PORT_A_BYTE(pins), MCP23017_PORT_B_BYTE(pins) };
-    return mcp23017_write(dev, MCP23017_REG_GPIOA, sizeof(data), data); //set REG_GPIOA(); REG_GPIOB();
+    mcp23017_dev_t *p_device = (mcp23017_dev_t *) dev;
+    esp_err_t ret = ESP_FAIL;
+    ret = i2c_bus_write_byte(p_device->i2c_dev, MCP23017_REG_GPPUA, MCP23017_PORT_A_BYTE(pins));
+    if (ret != ESP_OK)
+        return ret;
+
+    ret = i2c_bus_write_byte(p_device->i2c_dev, MCP23017_REG_GPPUB, MCP23017_PORT_B_BYTE(pins));
+
+    return ret;
+}
+
+esp_err_t mcp23017_set_input_polarity(mcp23017_handle_t dev, uint16_t bits)
+{
+    mcp23017_dev_t *p_device = (mcp23017_dev_t *) dev;
+    esp_err_t ret = ESP_FAIL;
+    ret = i2c_bus_write_byte(p_device->i2c_dev, MCP23017_REG_IPOLA, MCP23017_PORT_A_BYTE(bits));
+    if (ret != ESP_OK)
+        return ret;
+
+    ret = i2c_bus_write_byte(p_device->i2c_dev, MCP23017_REG_IPOLB, MCP23017_PORT_B_BYTE(bits));
+
+    return ret;
 }
 
 esp_err_t mcp23017_interrupt_en(mcp23017_handle_t dev, uint16_t pins,
-                                bool intr_mode, uint16_t defaultValue)
+                                uint16_t intr_mode, uint16_t defaultValue)
 {
     MCP23017_CHECK(dev != NULL, "invalid arg", ESP_ERR_INVALID_ARG)
     mcp23017_dev_t *p_device = (mcp23017_dev_t *) dev;
-
     //write register REG_GPINTENA(pins) REG_GPINTENB(pins) DEFVALA(0) DEFVALB(0) INTCONA(0) INTCONB(0)
     uint8_t data[] = { MCP23017_PORT_A_BYTE(pins), MCP23017_PORT_B_BYTE(pins) };
 
-    if (!intr_mode) {
-        uint8_t data1[] = { 0, 0, 0, 0 };
+    uint8_t data1[] = { MCP23017_PORT_A_BYTE(defaultValue),
+                        MCP23017_PORT_B_BYTE(defaultValue), MCP23017_PORT_A_BYTE(intr_mode),
+                        MCP23017_PORT_B_BYTE(intr_mode) };
 
-        if (mcp23017_write(dev, MCP23017_REG_DEFVALA, sizeof(data1),
-                           data1) == ESP_FAIL) {
-            return ESP_FAIL;
-        }
-    } else {
-        uint8_t data1[] = { MCP23017_PORT_A_BYTE(defaultValue),
-                            MCP23017_PORT_B_BYTE(defaultValue), MCP23017_PORT_A_BYTE(pins),
-                            MCP23017_PORT_B_BYTE(pins)
-                          };
-
-        if (mcp23017_write(dev, MCP23017_REG_DEFVALA, sizeof(data1),
-                           data1) == ESP_FAIL) {
-            return ESP_FAIL;
-        }
+    if (mcp23017_write(dev, MCP23017_REG_DEFVALA, sizeof(data1),
+                        data1) == ESP_FAIL) {
+        return ESP_FAIL;
     }
 
     if (mcp23017_write(dev, MCP23017_REG_GPINTENA, sizeof(data),
@@ -321,6 +330,18 @@ uint8_t mcp23017_read_io(mcp23017_handle_t dev, mcp23017_gpio_port_t gpio)
     uint8_t data = 0;
     i2c_bus_read_byte(p_device->i2c_dev,
                       (gpio == MCP23017_GPIOA) ? MCP23017_REG_GPIOA : MCP23017_REG_GPIOB,
+                      &data);
+    return data;
+}
+
+uint8_t mcp23017_read_intcap(mcp23017_handle_t dev, mcp23017_gpio_port_t gpio)
+{
+    MCP23017_CHECK(dev != NULL, "invalid arg", 0)
+    mcp23017_dev_t *p_device = (mcp23017_dev_t *) dev;
+
+    uint8_t data = 0;
+    i2c_bus_read_byte(p_device->i2c_dev,
+                      (gpio == MCP23017_GPIOA) ? MCP23017_REG_INTCAPA : MCP23017_REG_INTCAPB,
                       &data);
     return data;
 }

@@ -220,7 +220,7 @@ void addon_lcd_welcome(const char* ip,const char*state)
 // call this every 1 millisecond via timer ISR
 //
 
-IRAM_ATTR  void addon_service(void)
+IRAM_ATTR  void addon_service_isr(void)
 {
 	timer1s++;
 	timerScroll++;

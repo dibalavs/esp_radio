@@ -10,6 +10,7 @@
  */
 
 #include <bus.h>
+#include <driver/gpio.h>
 #include <driver/spi_master.h>
 #include <driver/i2c.h>
 #include <i2c_bus.h>
@@ -22,7 +23,7 @@
 
 static const char *TAG = "bus";
 
-#define I2C_MASTER_FREQ_HZ 100000
+#define I2C_MASTER_FREQ_HZ 400000
 #define I2C_MASTER_TX_BUF_DISABLE   0      //  I2C master do not need buffer
 #define I2C_MASTER_RX_BUF_DISABLE   0      //  I2C master do not need buffer
 
@@ -31,6 +32,11 @@ static const char *TAG = "bus";
 
 static i2c_bus_handle_t i2c_bus;
 static i2s_chan_handle_t i2s_tx_chan;
+
+void bus_init_gpio(void)
+{
+    ESP_ERROR_CHECK(gpio_install_isr_service(ESP_INTR_FLAG_IRAM));
+}
 
 void bus_init_spi(void)
 {
@@ -66,32 +72,32 @@ void bus_init_i2c(void)
     assert(i2c_bus);
 }
 
-void bus_init_i2s(void)
-{
-    static const i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NO, I2S_ROLE_MASTER);
-    ESP_ERROR_CHECK(i2s_new_channel(&chan_cfg, &i2s_tx_chan, NULL));
+// void bus_init_i2s(void)
+// {
+//     static const i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NO, I2S_ROLE_MASTER);
+//     ESP_ERROR_CHECK(i2s_new_channel(&chan_cfg, &i2s_tx_chan, NULL));
 
-    static const i2s_std_config_t std_cfg = {
-        .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(44100),
-        .slot_cfg = I2S_STD_MSB_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_32BIT, I2S_SLOT_MODE_STEREO),
-        .gpio_cfg = {
-            .mclk = I2S_GPIO_UNUSED,    // some codecs may require mclk signal, this example doesn't need it
-            .bclk = PIN_I2S_BCLK,
-            .ws   = PIN_I2S_LRCK,
-            .dout = PIN_I2S_DATA,
-            .din  = I2S_GPIO_UNUSED,
-            .invert_flags = {
-                .mclk_inv = false,
-                .bclk_inv = false,
-                .ws_inv   = false,
-            },
-        },
-    };
+//     static const i2s_std_config_t std_cfg = {
+//         .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(44100),
+//         .slot_cfg = I2S_STD_MSB_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_32BIT, I2S_SLOT_MODE_STEREO),
+//         .gpio_cfg = {
+//             .mclk = I2S_GPIO_UNUSED,    // some codecs may require mclk signal, this example doesn't need it
+//             .bclk = PIN_I2S_BCLK,
+//             .ws   = PIN_I2S_LRCK,
+//             .dout = PIN_I2S_DATA,
+//             .din  = I2S_GPIO_UNUSED,
+//             .invert_flags = {
+//                 .mclk_inv = false,
+//                 .bclk_inv = false,
+//                 .ws_inv   = false,
+//             },
+//         },
+//     };
 
-    ESP_LOGI(TAG, "Init I2S bus. (bclk:%d, lrclk:%d, data:%d)", std_cfg.gpio_cfg.bclk, std_cfg.gpio_cfg.ws, std_cfg.gpio_cfg.dout);
-    ESP_ERROR_CHECK(i2s_channel_init_std_mode(i2s_tx_chan, &std_cfg));
-    ESP_ERROR_CHECK(i2s_channel_disable(i2s_tx_chan));
-}
+//     ESP_LOGI(TAG, "Init I2S bus. (bclk:%d, lrclk:%d, data:%d)", std_cfg.gpio_cfg.bclk, std_cfg.gpio_cfg.ws, std_cfg.gpio_cfg.dout);
+//     ESP_ERROR_CHECK(i2s_channel_init_std_mode(i2s_tx_chan, &std_cfg));
+//     ESP_ERROR_CHECK(i2s_channel_disable(i2s_tx_chan));
+// }
 
 i2c_bus_handle_t bus_i2c_get(void)
 {

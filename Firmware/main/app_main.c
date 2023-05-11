@@ -18,6 +18,7 @@ Copyright (C) 2017  KaraWin
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "freertos/portmacro.h"
 #define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
 
 
@@ -161,7 +162,6 @@ static bool msCallback(gptimer_handle_t timer, const gptimer_alarm_event_data_t 
     evt.i1 = 0;
     evt.i2 = 0;
 	xQueueSendFromISR(event_qu, &evt, NULL);
-	buttons_service();
 	return high_task_awoken == pdTRUE;
 }
 
@@ -339,6 +339,7 @@ static void init_hardware()
 //	bus_init_i2s();
 
 	ext_gpio_init();
+	buttons_init();
 
 	if (VS1053_HW_init()) // init spi
 		VS1053_Start();
@@ -731,7 +732,7 @@ void start_network(){
 
 
 //blinking led and timer isr
-IRAM_ATTR void timerTask(void* p) {
+IRAM_ATTR void timer_task(void* p) {
 //	struct device_settings *device;
 	queue_event_t evt;
 		// queue for events of the sleep / wake and Ms timers
@@ -743,7 +744,7 @@ IRAM_ATTR void timerTask(void* p) {
 		// read and treat the timer queue events
 //		int nb = uxQueueMessagesWaiting(event_queue);
 //		if (nb >29) printf(" %d\n",nb);
-		while (xQueueReceive(event_queue, &evt, 0))
+		while (xQueueReceive(event_queue, &evt, portMAX_DELAY))
 		{
 			if (evt.type != TIMER_1MS) printf("evt.type: %d\n",evt.type);
 			switch (evt.type){
@@ -752,7 +753,7 @@ IRAM_ATTR void timerTask(void* p) {
 						if (divide)
 							ctimeMs++;	// for led
 						divide = !divide;
-						addon_service();
+						addon_service_isr();
 					break;
 					case TIMER_SLEEP:
 						webclient_disconnect("Timer"); // stop the player
@@ -986,7 +987,7 @@ void app_main()
 	app_set_ivol( g_device->vol);
 	ESP_LOGI(TAG, "Volume set to %d",g_device->vol);
 
-	xTaskCreatePinnedToCore(timerTask, "timerTask",2100, NULL, PRIO_TIMER, &pxCreatedTask,CPU_TIMER);
+	xTaskCreatePinnedToCore(timer_task, "timerTask",2100, NULL, PRIO_TIMER, &pxCreatedTask,CPU_TIMER);
 	ESP_LOGI(TAG, "%s task: %x","t0",(unsigned int)pxCreatedTask);
 
 	xTaskCreatePinnedToCore(uartInterfaceTask, "uartInterfaceTask", 2500, NULL, PRIO_UART, &pxCreatedTask,CPU_UART);

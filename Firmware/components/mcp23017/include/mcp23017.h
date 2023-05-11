@@ -94,7 +94,7 @@ esp_err_t mcp23017_delete(mcp23017_handle_t *p_dev);
  *
  * @param dev device handle of MCP23017
  * @param pins pin of interrupt
- * @param intr_mode 0: compared against previous, 1: compared against DEFVAL register.
+ * @param intr_mode pins - 0: compared against previous, 1: compared against DEFVAL register.
  * @param defaultValue pins default level
  *
  * @return
@@ -103,7 +103,7 @@ esp_err_t mcp23017_delete(mcp23017_handle_t *p_dev);
  *     - ESP_ERR_INVALID_ARG Parameter error
  */
 esp_err_t mcp23017_interrupt_en(mcp23017_handle_t dev, uint16_t pins,
-        bool intr_mode, uint16_t defaultValue);
+        uint16_t intr_mode, uint16_t defaultValue);
 
 /**
  * @brief delete MCP23017 interrupt pin,
@@ -159,6 +159,19 @@ esp_err_t mcp23017_set_seque_mode(mcp23017_handle_t dev, uint8_t isSeque);
  *     - ESP_ERR_INVALID_ARG Parameter error
  */
 esp_err_t mcp23017_set_pullup(mcp23017_handle_t dev, uint16_t pins);
+
+/**
+ * @brief Set MCP23017 set input pins polarity
+ *
+ * @param dev device handle of MCP23017
+ * @param pins Reflects the logic level on pin <7: 0> 0 - the same polarity 1 - inverted
+ *
+ * @return
+ *     - ESP_OK Success
+ *     - ESP_FAIL Fail
+ *     - ESP_ERR_INVALID_ARG Parameter error
+ */
+esp_err_t mcp23017_set_input_polarity(mcp23017_handle_t dev, uint16_t bits);
 
 /**
  * @brief gets the interrupt capture values for pins with interrupts enabled,
@@ -234,6 +247,17 @@ esp_err_t mcp23017_write_io(mcp23017_handle_t dev, uint8_t value,
  *     - uint8_t value of level
  */
 uint8_t mcp23017_read_io(mcp23017_handle_t dev, mcp23017_gpio_port_t gpio);
+
+/**
+ * @brief read value at interrupt time REG_GPIOA/REG_GPIOB;Reflects the logic level on pin <7: 0>
+ *
+ * @param dev device handle of MCP23017
+ * @param gpio GPIO of mcp23017
+ *
+ * @return
+ *     - uint8_t value of level at time of interrupt
+ */
+uint8_t mcp23017_read_intcap(mcp23017_handle_t dev, mcp23017_gpio_port_t gpio);
 
 /**
  * @brief set Direction of GPIOA;Set the logic level on pin <7: 0>, 0 - output, 1 - input,
