@@ -64,7 +64,7 @@ static unsigned int  reclen = 0;
  * Parameters   : number to send as string
  * Returns      : none
 *******************************************************************************/
-void wsUpgrade(const char* str,int count,int total)
+static void wsUpgrade(const char* str,int count,int total)
 {
 	char answer[50];
 	if (strlen(str)!= 0)
@@ -321,16 +321,18 @@ static void ota_task(void *pvParameter)
 *******************************************************************************/
 void ota_update_firmware(char* fname)
 {
-	if (!taskState)
-	{
-		taskState = true;
-		TaskHandle_t pxCreatedTask;
-		xTaskCreatePinnedToCore(ota_task, "ota_task", 8192, fname, PRIO_OTA, &pxCreatedTask,CPU_OTA);
-		ESP_LOGI(TAG, "ota_task: %x",(unsigned int)pxCreatedTask);
-	} else
-	{
-		ESP_LOGI(TAG, "ota_task: already running. Ignore");
-		wsUpgrade("Update already running. Ignored." , 0,100);
-	}
+	// TODO implement.
+	(void)fname;
+	// if (!taskState)
+	// {
+	// 	taskState = true;
+	// 	TaskHandle_t pxCreatedTask;
+	// 	xTaskCreatePinnedToCore(ota_task, "ota_task", 8192, fname, PRIO_OTA, &pxCreatedTask,CPU_OTA);
+	// 	ESP_LOGI(TAG, "ota_task: %x",(unsigned int)pxCreatedTask);
+	// } else
+	// {
+	// 	ESP_LOGI(TAG, "ota_task: already running. Ignore");
+	// 	wsUpgrade("Update already running. Ignored." , 0,100);
+	// }
 
 }
