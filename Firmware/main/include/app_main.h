@@ -40,6 +40,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "esp_radio/kmalloc.h"
+
 #define TIMER_DIVIDER 16 	//5000000Hz 5MHz
 #define TIMER_DIVIDER1MS TIMER_BASE_CLK/10000 //10000Hz
 #define TIMER_DIVIDER1mS 8 //10000000Hz 10MHz
@@ -106,9 +108,6 @@ output_mode_t app_get_audio_output_mode() ;
 uint8_t app_get_ivol();
 void app_set_ivol( uint8_t vol);
 bool app_big_sram();
-
-void* kmalloc(size_t memorySize);
-void* kcalloc(size_t elementCount, size_t elementSize);
 
 uint64_t app_get_sleep();
 uint64_t app_get_wake();

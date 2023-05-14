@@ -9,20 +9,11 @@
 #include <esp_err.h>
 
 #include "app_main.h" // kalloc
-#include "freertos/portmacro.h"
-#include "freertos/projdefs.h"
+#include "freertos_err.h"
+
 // ----------------------------------------------------------------------------
 
 #define EVENT_QUEUE_LEN 30
-
-#define FREERTOS_ERROR_CHECK(x) do {                                    \
-        BaseType_t err_rc_ = (x);                                       \
-        if (unlikely(err_rc_ != pdTRUE)) {                              \
-            _esp_error_check_failed(err_rc_, __FILE__, __LINE__,        \
-                                    __ASSERT_FUNC, #x);                 \
-        }                                                               \
-    } while(0)
-
 
 struct button_event_queue {
     button_event_t event;
@@ -123,7 +114,7 @@ static void process_button(enum button_type button, bool is_pressed, unsigned lo
     // Released
     if (!is_pressed && press_time != 0) {
         enqueue_event(button, BTN_STATE_RELEASED, 0);
-        if (press_time - now_ms > BTN_HOLDTIME_MS)
+        if (now_ms - press_time > BTN_HOLDTIME_MS)
             enqueue_event(button, BTN_STATE_HOLD, 0);
         else
             enqueue_event(button, BTN_STATE_CLICKED, 0);
@@ -171,6 +162,7 @@ static void process_encoder(uint8_t pins, unsigned long now_ms)
 
     if (encoder_value + adder > 0 && encoder_value + adder < 255) {
         encoder_value += adder;
+ESP_LOGE(TAG, "encoder value: %d", (int)buttons_get_encoder_value());
     }
 }
 

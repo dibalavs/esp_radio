@@ -84,6 +84,8 @@ Copyright (C) 2017  KaraWin
 #include "driver/gptimer.h"
 #include "ext_gpio.h"
 
+#include "debug_task_stats.h"
+
 #include <bus.h>
 
 /* The event group allows multiple bits for each event*/
@@ -347,6 +349,8 @@ static void init_hardware()
 	merus_init();
 	rda5807_init(I2C_NO, I2C_ADDR_RDA5807FP, PIN_FM_INT);
 
+	ext_gpio_set_merus_chip_select(true);
+	ext_gpio_set_i2s(I2S_SWITCH_VS1053);
 
     ESP_LOGI(TAG, "hardware initialized");
 }
@@ -1064,6 +1068,11 @@ void app_main()
 	kprintf("READY. Type help for a list of commands\n");
 	// error log on telnet
 	esp_log_set_vprintf( (vprintf_like_t)lkprintf);
+
+	// Uncomment it to enable printing task stats.
+	// Need configUSE_TRACE_FACILITY and CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS option in menuconfig
+	// debug_task_stat_init();
+
 	ESP_LOGI(TAG, "RAM left %d", esp_get_free_heap_size());
 	//autostart
 	autoPlay();
