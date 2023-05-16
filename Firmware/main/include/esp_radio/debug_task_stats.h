@@ -9,5 +9,7 @@
  *
  */
 
+ #pragma once
+
 // Need configUSE_TRACE_FACILITY and CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS option in menuconfig
 void debug_task_stat_init(void);

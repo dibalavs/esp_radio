@@ -25,6 +25,7 @@ set(COMPONENT_SRCS
 	"esp_radio/debug_task_stats.c"
 	"esp_radio/ext_gpio.c"
 	"esp_radio/merus.c"
+	"esp_radio/network.c"
 )
 
 set(COMPONENT_ADD_INCLUDEDIRS

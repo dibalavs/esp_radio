@@ -41,6 +41,7 @@
 #include <stdint.h>
 
 #include "esp_radio/kmalloc.h"
+#include "esp_radio/network.h"
 
 #define TIMER_DIVIDER 16 	//5000000Hz 5MHz
 #define TIMER_DIVIDER1MS TIMER_BASE_CLK/10000 //10000Hz
@@ -120,7 +121,5 @@ void app_interrupt_1ms();
 
 #define noInterrupts app_no_interrupt_1ms
 #define interrupts app_interrupt_1ms
-
-char* app_get_ip();
 
 #endif /* MAIN_INCLUDE_APP_MAIN_H_ */

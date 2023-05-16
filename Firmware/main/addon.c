@@ -996,7 +996,7 @@ void addon_parse(const char *fmt, ...)
 	    evt.lcmd = lovol;
 		evt.lline = NULL;
    }
-   if (evt.lcmd != -1 && lcd_type !=LCD_NONE) xQueueSend(event_lcd,&evt, 0);
+   if (evt.lcmd != -1 && lcd_type !=LCD_NONE && event_lcd) xQueueSend(event_lcd,&evt, 0);
    free (line);
 }
 

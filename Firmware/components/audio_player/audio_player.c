@@ -150,6 +150,8 @@ void audio_player_destroy()
 */
 void audio_player_start()
 {
+		if (!player_instance)
+			return;
 		if (app_get_audio_output_mode() != VS1053) renderer_start();
 		player_instance->media_stream->eof = false;
 		player_instance->command = CMD_START;
@@ -159,6 +161,9 @@ void audio_player_start()
 
 void audio_player_stop()
 {
+		if (!player_instance)
+			return;
+
 //		spiRamFifoReset();
 		player_instance->decoder_command = CMD_STOP;
 		player_instance->command = CMD_STOP;
