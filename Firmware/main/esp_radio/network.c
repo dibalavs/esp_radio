@@ -47,7 +47,7 @@ static esp_netif_t *net;
 static EventGroupHandle_t wifi_event_group;
 static netword_cb_t *wifi_connected_cb;
 static netword_cb_t *wifi_disconnected_cb;
-
+static bool is_connected = false;
 static char ip_str[20];
 
 static void wifi_event_handler(void *arg, esp_event_base_t event_base,
@@ -65,11 +65,13 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base,
 			ESP_ERROR_CHECK(esp_netif_get_ip_info(net, &ip));
 			sprintf(ip_str, IPSTR, IP2STR(&ip.ip));
 			ESP_LOGI(TAG, "AP set IP address: %s", ip_str);
+			is_connected = true;
 			if (wifi_connected_cb)
 				wifi_connected_cb(is_ap);
 			break;
 		case WIFI_EVENT_AP_STADISCONNECTED:
 			ESP_LOGE(TAG, "AP was disconnected");
+			is_connected = false;
 			if (wifi_disconnected_cb)
 				wifi_disconnected_cb(is_ap);
 			break;
@@ -85,6 +87,7 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base,
 			xEventGroupClearBits(wifi_event_group, CONNECTED_BIT);
 			dis = (wifi_event_sta_disconnected_t *)event_data;
 			ESP_LOGE(TAG, "Wifi Disconnected. reason:%d", (int)dis->reason);
+			is_connected = false;
 			if (wifi_disconnected_cb)
 				wifi_disconnected_cb(is_ap);
 			ESP_ERROR_CHECK(esp_wifi_connect());
@@ -101,6 +104,7 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base,
         got_ip = (ip_event_got_ip_t *)event_data;
         sprintf(ip_str, IPSTR, IP2STR(&got_ip->ip_info.ip));
         ESP_LOGI(TAG, "Wifi connected. got IP address: %s", ip_str);
+		is_connected = true;
         if (wifi_connected_cb)
             wifi_connected_cb(is_ap);
 	}
@@ -197,4 +201,9 @@ const char* app_get_ip()
 void network_wait(void)
 {
 	xEventGroupWaitBits(wifi_event_group, CONNECTED_BIT,false, true, 2000);
+}
+
+bool network_is_connected(void)
+{
+	return is_connected;
 }

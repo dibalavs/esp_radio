@@ -29,4 +29,6 @@ void network_deinit(void);
 
 void network_wait(void);
 
+bool network_is_connected(void);
+
 const char* app_get_ip();

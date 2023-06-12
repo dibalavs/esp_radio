@@ -17,6 +17,7 @@
 #include "webclient.h"
 #include "webserver.h"
 #include "interface.h"
+#include "esp_radio/network.h"
 
 #include "u8g2.h"
 #include "ucg.h"
@@ -858,7 +859,7 @@ void addon_task(void *pvParams)
 	{
 		buttons_loop();
 		irLoop();  // compute the ir
-		if (itAskTime) // time to ntp. Don't do that in interrupt.
+		if (itAskTime && network_is_connected()) // time to ntp. Don't do that in interrupt.
 		{
 			if (ntp_get_time(&dt) )
 			{
