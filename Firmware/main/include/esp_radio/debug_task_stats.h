@@ -11,5 +11,8 @@
 
  #pragma once
 
-// Need configUSE_TRACE_FACILITY and CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS option in menuconfig
+// Need to enable in menuconfig:
+// - configUSE_TRACE_FACILITY
+// - CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS
+// - configTASKLIST_INCLUDE_COREID
 void debug_task_stat_init(void);

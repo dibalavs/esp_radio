@@ -10,12 +10,14 @@
  */
 #include "debug_task_stats.h"
 
+#define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
 #include <stdio.h>
 #include <stdlib.h>
 #include <inttypes.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
-#include "esp_err.h"
+#include <esp_err.h>
+#include <esp_heap_caps.h>
 #include <esp_log.h>
 
 #include "freertos/portmacro.h"
@@ -50,7 +52,13 @@ static void print_real_time_stats(const TaskStatus_t *prev, UBaseType_t prev_num
         return;
     }
 
-    ESP_LOGE(TAG, "| %-18s |  Run Time  | Percentage | Stack usage\n", "Task");
+    uint32_t all = heap_caps_get_free_size(MALLOC_CAP_DEFAULT);
+    uint32_t iram = heap_caps_get_free_size(MALLOC_CAP_INTERNAL);
+    uint32_t psram = heap_caps_get_free_size(MALLOC_CAP_SPIRAM);
+
+    ESP_LOGE(TAG, "");
+    ESP_LOGE(TAG, "Total free memory/ IRAM / PSRAM = %u / %u / %u", all, iram, psram);
+    ESP_LOGE(TAG, "| %-18s | Core |  Run Time  | Percentage | Stack usage\n", "Task");
     for (int c = 0; c < *curr_num; c++) {
         const TaskStatus_t *found = NULL;
 
@@ -65,7 +73,7 @@ static void print_real_time_stats(const TaskStatus_t *prev, UBaseType_t prev_num
             uint32_t task_elapsed_time = curr[c].ulRunTimeCounter - found->ulRunTimeCounter;
             uint32_t percentage_time = (task_elapsed_time * 100UL) / (total_elapsed_time * portNUM_PROCESSORS);
             uint32_t stack = curr[c].usStackHighWaterMark;
-            ESP_LOGE(TAG, "| %-18s | %10u | %9u%% | %8u\n", curr[c].pcTaskName, task_elapsed_time, percentage_time, stack);
+            ESP_LOGE(TAG, "| %-18s |    %d | %10u | %9u%% | %8u\n", curr[c].pcTaskName, (int)curr[c].xCoreID, task_elapsed_time, percentage_time, stack);
         }
     }
 }
