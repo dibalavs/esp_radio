@@ -75,6 +75,7 @@ Copyright (C) 2017  KaraWin
 #include "driver/gptimer.h"
 #include "ext_gpio.h"
 #include "network.h"
+#include "i2s_redirector.h"
 
 #include "debug_task_stats.h"
 
@@ -89,7 +90,7 @@ Copyright (C) 2017  KaraWin
 #define striWATERMARK  "watermark: %d  heap: %d"
 
 void start_network();
-void autoPlay();
+void autoPlay(bool is_ap);
 /* */
 QueueHandle_t event_queue;
 
@@ -315,19 +316,24 @@ static void init_hardware()
     bus_init_gpio();
     bus_init_spi();
     bus_init_i2c();
-//	bus_init_i2s();
+	bus_init_i2s();
 
     ext_gpio_init();
     buttons_init();
 
-    if (VS1053_HW_init()) // init spi
-        VS1053_Start();
+    VS1053_HW_init();
+
+    VS1053_Start();
+    VS1053_I2SRate(0);
+
+    ext_gpio_set_i2s(I2S_SWITCH_VS1053);
 
     merus_init();
-    rda5807_init(I2C_NO, I2C_ADDR_RDA5807FP, PIN_FM_INT);
+    merus_set_volume(0x60);
 
-    ext_gpio_set_merus_chip_select(true);
-    ext_gpio_set_i2s(I2S_SWITCH_VS1053);
+    //rda5807_init(I2C_NO, I2C_ADDR_RDA5807FP, PIN_FM_INT);
+
+    i2s_redirector_init();
 
     ESP_LOGI(TAG, "hardware initialized");
 }
@@ -430,55 +436,64 @@ void uartInterfaceTask(void *pvParameters) {
 
 // In STA mode start a station or start in pause mode.
 // Show ip on AP mode.
-void autoPlay()
+void autoPlay(bool is_ap)
 {
     char apmode[50];
     sprintf(apmode,"at IP %s",app_get_ip());
-    if (g_device->current_ap == APMODE)
-    {
+    if (is_ap) {
         webclient_save_one_header("Configure the AP with the web page",34,METANAME);
         webclient_save_one_header(apmode,strlen(apmode),METAGENRE);
-    } else
-    {
-        webclient_save_one_header(apmode,strlen(apmode),METANAME);
-        if ((audio_output_mode == VS1053) && (getVsVersion() < 3))
-        {
-            webclient_save_one_header("Invalid audio output. VS1053 not found",38,METAGENRE);
-            ESP_LOGE(TAG,"Invalid audio output. VS1053 not found");
-            vTaskDelay(200);
-        }
-
-        iface_set_current_station( g_device->currentstation);
-        if ((g_device->autostart ==1)&&(g_device->currentstation != 0xFFFF))
-        {
-            kprintf("autostart: playing:%d, currentstation:%d\n",g_device->autostart,g_device->currentstation);
-            vTaskDelay(10); // wait a bit
-            webserver_play_station_int(g_device->currentstation);
-        } else webclient_save_one_header("Ready",5,METANAME);
+        return;
     }
+
+    webclient_save_one_header(apmode,strlen(apmode),METANAME);
+    iface_set_current_station(g_device->currentstation);
+
+    if ((g_device->autostart ==1 )&&(g_device->currentstation != 0xFFFF)) {
+        kprintf("autostart: playing:%d, currentstation:%d\n", g_device->autostart, g_device->currentstation);
+        vTaskDelay(10); // wait a bit
+        webserver_play_station_int(g_device->currentstation);
+    } else
+        webclient_save_one_header("Ready",5,METANAME);
 }
 
+static bool is_mdns_init = false;
 static void on_wifi_connected(bool is_ap)
 {
-    ESP_ERROR_CHECK(mdns_init());
-    ESP_LOGI(TAG,"mDNS Hostname: %s",g_device->hostname );
-    ESP_ERROR_CHECK(mdns_hostname_set(g_device->hostname));
-    ESP_ERROR_CHECK(mdns_instance_name_set(g_device->hostname));
-    ESP_ERROR_CHECK(mdns_service_add(NULL, "_http", "_tcp", 80, NULL, 0));
-    ESP_ERROR_CHECK(mdns_service_add(NULL, "_telnet", "_tcp", 23, NULL, 0));
+    static TaskHandle_t task_webclient;
+    static TaskHandle_t task_webserver;
+
+    if (!is_mdns_init) {
+        is_mdns_init = true;
+        ESP_ERROR_CHECK(mdns_init());
+        ESP_LOGI(TAG,"mDNS Hostname: %s",g_device->hostname );
+        ESP_ERROR_CHECK(mdns_hostname_set(g_device->hostname));
+        ESP_ERROR_CHECK(mdns_instance_name_set(g_device->hostname));
+        ESP_ERROR_CHECK(mdns_service_add(NULL, "_http", "_tcp", 80, NULL, 0));
+        ESP_ERROR_CHECK(mdns_service_add(NULL, "_telnet", "_tcp", 23, NULL, 0));
+    }
+
+    if (!task_webclient) {
+        xTaskCreatePinnedToCore(webclient_task, "clientTask", 3700, NULL, PRIO_CLIENT, &task_webclient,CPU_CLIENT);
+        ESP_LOGI(TAG, "%s task: %p","clientTask",(void *)task_webclient);
+    }
+
+    if (!task_webserver) {
+        xTaskCreatePinnedToCore(servers_task, "serversTask", 3100, NULL, PRIO_SERVER, &task_webserver,CPU_SERVER);
+        ESP_LOGI(TAG, "%s task: %p","serversTask",(void *)task_webserver);
+    }
 
     webclient_save_one_header("Wifi Connected.",18,METANAME);
-    if (!is_ap) {
-        autoPlay();
-    }
+    autoPlay(is_ap);
 }
 
 static void on_wifi_disconnected(bool is_ap)
 {
+    if (is_mdns_init)
+        mdns_free();
+    is_mdns_init = false;
     webclient_silent_disconnect();
-    vTaskDelay(100);
     webclient_save_one_header("Wifi Disconnected.",18,METANAME);
-    vTaskDelay(100);
 }
 
 /**
@@ -528,8 +543,7 @@ void app_main()
             g_device = eeprom_get_device_settings();
             g_device->cleared = 0xAABB; //marker init done
             g_device->uartspeed = 115200; // default
-//			g_device->audio_output_mode = I2S; // default
-            option_get_audio_output(&(g_device->audio_output_mode));
+			g_device->audio_output_mode = VS1053; // default
             g_device->trace_level = ESP_LOG_INFO; //default
             g_device->vol = 100; //default
             g_device->led_gpio = GPIO_NONE;
@@ -565,11 +579,6 @@ void app_main()
     iface_set_ddmm(ddmm?1:0);
 
     init_hardware();
-
-    ESP_LOGI(TAG, "Check if VS1053 present: %s", VS1053_CheckPresent() ? "YES" : "NO");
-    ESP_LOGI(TAG, "Check if MCP23017 present: %s", ext_gpio_check_present() ? "YES" : "NO");
-    //ESP_LOGI(TAG, "Check if RDA5807FP: %s", rda5807_check_present() ? "YES" : "NO");
-    ESP_LOGI(TAG, "Check if Merus amplifier present: %s", merus_check_present() ? "YES" : " NO");
 
     // log level
     //iface_set_log_level(g_device->trace_level);
@@ -638,6 +647,8 @@ void app_main()
 //-----------------------------
     /* Force enable AP if 'play' button is pressed during boot. */
     bool is_ap = ext_gpio_get_button_play();
+    ESP_LOGE(TAG, "is_ap: %d, ssid:%s", is_ap, g_device->ssid1);
+
     if (g_device->ssid1[0] == '\0')
         is_ap = true;
 
@@ -653,8 +664,6 @@ void app_main()
         network_init(&ssid, NULL, false);
     }
 
-    network_wait();
-
 //-----------------------------------------------------
 //init softwares
 //-----------------------------------------------------
@@ -662,10 +671,6 @@ void app_main()
     // LCD Display infos
     addon_lcd_welcome(app_get_ip(),"STARTED");
     //start tasks of KaRadio32
-    xTaskCreatePinnedToCore(webclient_task, "clientTask", 3700, NULL, PRIO_CLIENT, &pxCreatedTask,CPU_CLIENT);
-    ESP_LOGI(TAG, "%s task: %x","clientTask",(unsigned int)pxCreatedTask);
-    xTaskCreatePinnedToCore(servers_task, "serversTask", 3100, NULL, PRIO_SERVER, &pxCreatedTask,CPU_SERVER);
-    ESP_LOGI(TAG, "%s task: %x","serversTask",(unsigned int)pxCreatedTask);
     xTaskCreatePinnedToCore (addon_task, "task_addon", 2200, NULL, PRIO_ADDON, &pxCreatedTask,CPU_ADDON);
     ESP_LOGI(TAG, "%s task: %x","task_addon",(unsigned int)pxCreatedTask);
     ESP_LOGI(TAG," Init Done");
@@ -679,9 +684,5 @@ void app_main()
     // Need configUSE_TRACE_FACILITY and CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS option in menuconfig
     // debug_task_stat_init();
 
-    ESP_LOGI(TAG, "RAM left %d", esp_get_free_heap_size());
-    esp_log_level_set("webserver", ESP_LOG_VERBOSE);
-    //autostart
-    autoPlay();
-// All done.
+    // All done.
 }
