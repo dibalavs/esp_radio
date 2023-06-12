@@ -87,22 +87,6 @@ void gpio_get_comment(char** label)
 	close_partition(hardware_handle,hardware);
 }
 
-void option_get_audio_output(output_mode_t *oom)
-{
-	esp_err_t err;
-	nvs_handle hardware_handle;
-	// init default
-	*oom = I2S;
-	if (open_partition(hardware, option_space,NVS_READONLY,&hardware_handle)!= ESP_OK)
-	{
-		ESP_LOGD(TAG,"get_audio");
-		return;
-	}
-	err = nvs_get_u8(hardware_handle, "O_AUDIO",(uint8_t *) oom);
-	if (err != ESP_OK) ESP_LOGD(TAG,"get_audio err 0x%x",err);
-	close_partition(hardware_handle,hardware);
-}
-
 void option_get_lcd_info(uint8_t *enca,uint8_t* rt)
 {
 	esp_err_t err;
