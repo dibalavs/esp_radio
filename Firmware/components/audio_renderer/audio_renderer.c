@@ -122,10 +122,14 @@ static void IRAM_ATTR render_i2s_samples(char *buf, uint32_t buf_len, pcm_format
 	uint32_t* outBuf32;
 	uint64_t* outBuf64;
 
-    // handle changed sample rate
+	renderer_instance->bit_depth = I2S_BITS_PER_SAMPLE_32BIT;
+	renderer_instance->i2s_num = I2S_NUM_0;
+	renderer_instance->sample_rate_modifier = 1.0;
+	renderer_instance->output_mode = I2S;
+	// handle changed sample rate
     if(renderer_instance->sample_rate != buf_desc->sample_rate)
     {
-        ESP_LOGD(TAG, "changing sample rate from %d to %d", renderer_instance->sample_rate, buf_desc->sample_rate);
+        ESP_LOGI(TAG, "changing sample rate from %d to %d", renderer_instance->sample_rate, buf_desc->sample_rate);
         uint32_t rate = buf_desc->sample_rate * renderer_instance->sample_rate_modifier;
         res =  i2s_set_sample_rates(renderer_instance->i2s_num, rate);
 
