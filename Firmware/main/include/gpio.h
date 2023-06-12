@@ -39,10 +39,17 @@
 
 // I2S DAC or PDM output
 //-----------------------
-#define I2S_NO I2S_NUM_0
-#define PIN_I2S_LRCK GPIO_NUM_5 	// or Channel1
-#define PIN_I2S_BCLK GPIO_NUM_19	// or channel2
-#define PIN_I2S_DATA GPIO_NUM_18	//
+#define I2S_OUT_NO I2S_NUM_0
+#define PIN_I2S_OUT_LRCK GPIO_NUM_12 	// or Channel1
+#define PIN_I2S_OUT_BCLK GPIO_NUM_13	// or channel2
+#define PIN_I2S_OUT_DATA GPIO_NUM_14	//
+#define PIN_I2S_OUT_MCLK GPIO_NUM_NC
+
+#define I2S_IN_NO I2S_NUM_1
+#define PIN_I2S_IN_LRCK GPIO_NUM_5 	// or Channel1
+#define PIN_I2S_IN_BCLK GPIO_NUM_19	// or channel2
+#define PIN_I2S_IN_DATA GPIO_NUM_18	//
+#define PIN_I2S_IN_MCLK GPIO_NUM_0	//
 
 // SPI lcd
 //---------
@@ -91,7 +98,6 @@ esp_err_t open_partition(const char *partition_label, const char *namespace,nvs_
 void close_partition(nvs_handle handle,const char *partition_label);
 void gpio_get_label(char** label);
 void gpio_get_comment(char** label);
-void option_get_audio_output(output_mode_t *oom);
 void gpio_get_ir_signal(gpio_num_t *ir);
 bool gpio_get_ir_key(nvs_handle handle,const char *key, uint32_t *out_value1 , uint32_t *out_value2);
 void option_get_lcd_info(uint8_t *enca,uint8_t* rt);
