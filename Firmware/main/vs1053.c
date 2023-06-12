@@ -175,7 +175,7 @@ void  WaitDREQ() {
 	}
 }
 
-void VS1053_spi_write_char(uint8_t *cbyte, uint16_t len)
+void VS1053_spi_write_char(const uint8_t *cbyte, uint16_t len)
 {
 	esp_err_t ret;
     spi_transaction_t t;
@@ -293,15 +293,34 @@ static void VS1053_regtest()
 	//The 1053B should respond with 4. VS1001 = 0, VS1011 = 1, VS1002 = 2, VS1003 = 3, VS1054 = 4
 }
 
+void VS1053_I2SMclockEn(void)
+{
+	VS1053_WriteRegister16(SPI_WRAMADDR, 0xc040); //address of GPIO_ODATA is 0xC017
+	VS1053_WriteRegister16(SPI_WRAM, 0x0008);
+}
+
 void VS1053_I2SRate(uint8_t speed){ // 0 = 48kHz, 1 = 96kHz, 2 = 128kHz
-    if (speed > 2) speed = 0;
+	if (speed > 2) speed = 0;
 	if (vsVersion != 4) return;
 	VS1053_WriteRegister16(SPI_WRAMADDR, 0xc040); //address of GPIO_ODATA is 0xC017
 	VS1053_WriteRegister16(SPI_WRAM, 0x0008|speed); //
 	VS1053_WriteRegister16(SPI_WRAMADDR, 0xc040); //address of GPIO_ODATA is 0xC017
-	VS1053_WriteRegister16(SPI_WRAM, 0x000C|speed); //
+	VS1053_WriteRegister16(SPI_WRAM, 0x000C|speed); // Use Mclock; enable I2S; set speed
 	ESP_LOGI(TAG,"I2S Speed: %d",speed);
 }
+
+void VS1053_I2SDisable(void)
+{
+	VS1053_WriteRegister16(SPI_WRAMADDR, 0xc040); //address of GPIO_ODATA is 0xC017
+	VS1053_WriteRegister16(SPI_WRAM, 0x0008|0); //
+}
+
+void VS1053_SineTest(void)
+{
+	static const uint8_t enable_sin[] = {0x45, 0x78, 0x69, 0x74, 0, 0, 0, 0};
+	VS1053_spi_write_char(enable_sin, sizeof(enable_sin));
+}
+
 void VS1053_DisableAnalog(){
 	// disable analog output
 	VS1053_WriteRegister16(SPI_VOL,0xFFFF);
@@ -353,7 +372,7 @@ void VS1053_InitVS()
 	{
 		VS1053_WriteRegister16(SPI_WRAMADDR, 0xc017);
 		VS1053_WriteRegister16(SPI_WRAM, 0x00F0);
-		VS1053_I2SRate(g_device->i2sspeed);
+		VS1053_I2SMclockEn();
 	}
 }
 
@@ -425,6 +444,7 @@ void VS1053_Start(){
 	}
 
 	VS1053_InitVS();
+	VS1053_I2SRate(g_device->i2sspeed);
 	// disable analog output
 	VS1053_WriteRegister16(SPI_VOL,0xFFFF);
 	VS1053_DisableAnalog();
