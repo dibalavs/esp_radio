@@ -14,16 +14,19 @@
 #include <driver/spi_master.h>
 #include <driver/i2c.h>
 #include <i2c_bus.h>
-#include <driver/i2s_std.h>
+#include "driver/i2s.h"
+//#include <driver/i2s_std.h>
 #include <esp_chip_info.h>
 #include <esp_log.h>
 
 #include "../gpio.h"
+#include "driver/i2s_types_legacy.h"
 #include "esp_err.h"
+#include "hal/i2c_types.h"
 
 static const char *TAG = "bus";
 
-#define I2C_MASTER_FREQ_HZ 400000
+#define I2C_MASTER_FREQ_HZ 100000
 #define I2C_MASTER_TX_BUF_DISABLE   0      //  I2C master do not need buffer
 #define I2C_MASTER_RX_BUF_DISABLE   0      //  I2C master do not need buffer
 
@@ -68,8 +71,11 @@ void bus_init_i2c(void)
     };
 
     ESP_LOGI(TAG, "Init I2C bus. (sda:%d, scl:%d)", conf.sda_io_num, conf.scl_io_num);
-    i2c_bus = i2c_bus_create(I2C_NO, &conf);
-    assert(i2c_bus);
+    ESP_ERROR_CHECK(i2c_param_config(I2C_NO, &conf));
+    ESP_ERROR_CHECK(i2c_driver_install(I2C_NO, I2C_MODE_MASTER, 10, 10, 0));
+
+    //i2c_bus = i2c_bus_create(I2C_NO, &conf);
+    //assert(i2c_bus);
 }
 
 // void bus_init_i2s(void)
@@ -98,6 +104,63 @@ void bus_init_i2c(void)
 //     ESP_ERROR_CHECK(i2s_channel_init_std_mode(i2s_tx_chan, &std_cfg));
 //     ESP_ERROR_CHECK(i2s_channel_disable(i2s_tx_chan));
 // }
+
+void  bus_init_i2s(/*renderer_config_t *config*/)
+{
+    const i2s_config_t i2s_out_config = {
+        .mode = I2S_MODE_MASTER | I2S_MODE_TX,          // Only TX
+        .sample_rate = 48000,
+        .bits_per_sample = I2S_BITS_PER_SAMPLE_32BIT,
+        .bits_per_chan = I2S_BITS_PER_CHAN_32BIT,
+        .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,   // 2-channels
+        .communication_format = I2S_COMM_FORMAT_STAND_I2S, // I2S_COMM_FORMAT_STAND_MSB,
+        .mclk_multiple = I2S_MCLK_MULTIPLE_256,
+        .dma_desc_num = 12,                            // number of buffers, 128 max.  16
+        .dma_frame_num = 512,                          // size of each buffer 128
+        .intr_alloc_flags = 0 ,        // default
+        .tx_desc_auto_clear = true,
+        .use_apll = 1,
+        .fixed_mclk = 0,	// avoiding I2S bug
+    };
+
+	const i2s_pin_config_t pin_out_config = {
+        .bck_io_num = PIN_I2S_OUT_BCLK,
+        .ws_io_num = PIN_I2S_OUT_LRCK,
+        .data_out_num = PIN_I2S_OUT_DATA,
+        .data_in_num = I2S_PIN_NO_CHANGE,
+        .mck_io_num = PIN_I2S_OUT_MCLK
+	};
+
+    ESP_ERROR_CHECK(i2s_driver_install(I2S_OUT_NO, &i2s_out_config, 0, NULL));
+    ESP_ERROR_CHECK(i2s_set_pin(I2S_OUT_NO, &pin_out_config));
+
+    const i2s_config_t i2s_in_config = {
+        .mode = I2S_MODE_SLAVE | I2S_MODE_RX,          // Only TX
+        .sample_rate = 48000,
+        .bits_per_sample = I2S_BITS_PER_SAMPLE_16BIT,
+        .bits_per_chan = I2S_BITS_PER_CHAN_16BIT,
+        .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,   // 2-channels
+        .communication_format = I2S_COMM_FORMAT_STAND_I2S, // I2S_COMM_FORMAT_STAND_MSB,
+        .mclk_multiple = I2S_MCLK_MULTIPLE_256,
+        .dma_desc_num = 12,                            // number of buffers, 128 max.  16
+        .dma_frame_num = 512,                          // size of each buffer 128
+        .intr_alloc_flags = 0 ,        // default
+        .tx_desc_auto_clear = true,
+        .use_apll = 0,
+        .fixed_mclk = 0,	// avoiding I2S bug
+    };
+
+	const i2s_pin_config_t pin_in_config = {
+        .bck_io_num = PIN_I2S_IN_BCLK,
+        .ws_io_num = PIN_I2S_IN_LRCK,
+        .data_out_num = I2S_PIN_NO_CHANGE,
+        .data_in_num = PIN_I2S_IN_DATA,
+        .mck_io_num = PIN_I2S_IN_MCLK
+	};
+
+    ESP_ERROR_CHECK(i2s_driver_install(I2S_IN_NO, &i2s_in_config, 0, NULL));
+    ESP_ERROR_CHECK(i2s_set_pin(I2S_IN_NO, &pin_in_config));
+}
 
 i2c_bus_handle_t bus_i2c_get(void)
 {
