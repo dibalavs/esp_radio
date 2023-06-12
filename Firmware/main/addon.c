@@ -509,11 +509,13 @@ void buttons_loop(void)
 		break;
 
 	case BTN_TYPE_PREV:
-		evtStation(-1);
+		if (event->state == BTN_STATE_CLICKED)
+			evtStation(-1);
 		break;
 
 	case BTN_TYPE_NEXT:
-		evtStation(+1);
+		if (event->state == BTN_STATE_CLICKED)
+			evtStation(+1);
 		break;
 
 	case BTN_TYPE_ENC_BTN:
