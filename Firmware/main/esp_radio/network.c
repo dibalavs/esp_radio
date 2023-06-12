@@ -112,12 +112,21 @@ void network_set_cb(netword_cb_t *on_connected, netword_cb_t *on_disconnected)
 	wifi_disconnected_cb = on_disconnected;
 }
 
+// private function.
+void adc_power_acquire(void);
+
 void network_init(const wifi_ssid_t *cfg_sta, const wifi_ssid_t *cfg_ap, bool is_ap)
 {
 	wifi_mode_t mode;
 	wifi_interface_t iface;
 
     ESP_LOGI(TAG, "Starting wifi");
+
+	// hack to remove interrupt glitches on GPIO36.
+	// see:
+	// - https://github.com/espressif/esp-idf/issues/4585
+	// - https://github.com/espressif/esp-idf/commit/d890a516a1097f0a07788e203fdb1a82bb83520e
+	adc_power_acquire();
 
     if (!cfg_sta || cfg_sta->ssid[0] == '\0')
         is_ap = true;

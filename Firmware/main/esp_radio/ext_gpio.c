@@ -1,6 +1,7 @@
 #include "esp_intr_alloc.h"
 #include "hal/gpio_types.h"
 
+#define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
 #include <bus.h>
 #include <driver/gpio.h>
 #include <esp_err.h>
@@ -64,7 +65,11 @@ void ext_gpio_init(void)
     // Configure PORT B
     ESP_ERROR_CHECK(mcp23017_set_io_dir(i2c_device, 0x00, MCP23017_GPIOB)); // all output
 
-    ext_gpio_fetch_int_captured();
+    port_a = mcp23017_read_io(i2c_device, MCP23017_GPIOA);
+    //mcp23017_write_io(i2c_device, 0xff, MCP23017_GPIOB);
+
+    ext_gpio_set_merus_en(true);
+    ext_gpio_set_merus_mute(false);
 }
 
 void ext_gpio_set_int_callback(ext_gpio_callback_t *cb_isr)
@@ -129,29 +134,29 @@ enum ext_gpio_i2s_state ext_gpio_get_i2s(void)
 void ext_gpio_set_merus_en(bool enable)
 {
     if (enable)
-        SET_BIT(port_b, PIN_EXT_GPIO_MERUS_EN);
-    else
         CLEAR_BIT(port_b, PIN_EXT_GPIO_MERUS_EN);
+    else
+        SET_BIT(port_b, PIN_EXT_GPIO_MERUS_EN);
     ESP_ERROR_CHECK(mcp23017_write_io(i2c_device, port_b, MCP23017_GPIOB));
 }
 
 bool ext_gpio_get_merus_en(void)
 {
-    return IS_BIT_SET(port_b, PIN_EXT_GPIO_MERUS_EN);
+    return !IS_BIT_SET(port_b, PIN_EXT_GPIO_MERUS_EN);
 }
 
 void ext_gpio_set_merus_mute(bool enable)
 {
     if (enable)
-        SET_BIT(port_b, PIN_EXT_GPIO_MERUS_MUTE);
-    else
         CLEAR_BIT(port_b, PIN_EXT_GPIO_MERUS_MUTE);
+    else
+        SET_BIT(port_b, PIN_EXT_GPIO_MERUS_MUTE);
     ESP_ERROR_CHECK(mcp23017_write_io(i2c_device, port_b, MCP23017_GPIOB));
 }
 
 bool ext_gpio_get_merus_mute(void)
 {
-    return IS_BIT_SET(port_b, PIN_EXT_GPIO_MERUS_MUTE);
+    return !IS_BIT_SET(port_b, PIN_EXT_GPIO_MERUS_MUTE);
 }
 
 void ext_gpio_set_merus_chip_select(bool enable)

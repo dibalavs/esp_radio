@@ -1,5 +1,6 @@
 #include "buttons.h"
 
+#define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
 #include <esp_log.h>
 #include <ext_gpio.h>
 #include <freertos/FreeRTOS.h>
@@ -174,7 +175,7 @@ static void buttons_task(void* p)
 
     while(1)
     {
-        thread_notification = ulTaskNotifyTake(0, pdMS_TO_TICKS(1000));
+        thread_notification = ulTaskNotifyTake(0, pdMS_TO_TICKS(2000));
         ext_gpio_fetch_int_captured();
 
         if (!thread_notification) {
