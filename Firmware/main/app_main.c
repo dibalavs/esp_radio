@@ -97,10 +97,6 @@ QueueHandle_t event_queue;
 //xSemaphoreHandle print_mux;
 bool logTel; // true = log also on telnet
 player_t *player_config;
-static output_mode_t audio_output_mode;
-static uint8_t clientIvol = 0;
-// 4MB sram?
-static bool bigRam = false;
 // timeout to save volume in flash
 //static uint32_t ctimeVol = 0;
 static uint32_t ctimeMs = 0;
@@ -113,25 +109,6 @@ gptimer_handle_t waketimer = NULL;
 IRAM_ATTR void app_no_interrupt_1ms() {}
 // enable 1MS timer interrupt
 IRAM_ATTR void app_interrupt_1ms() {}
-
-IRAM_ATTR uint8_t app_get_ivol() {return clientIvol;}
-IRAM_ATTR void app_set_ivol( uint8_t vol) {clientIvol = vol;}; //ctimeVol = 0;}
-IRAM_ATTR output_mode_t app_get_audio_output_mode() { return audio_output_mode;}
-
-//
-bool app_big_sram() { return bigRam;}
-void* kmalloc(size_t memorySize)
-{
-    if (bigRam) return heap_caps_malloc(memorySize, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
-    else return heap_caps_malloc(memorySize, MALLOC_CAP_INTERNAL  | MALLOC_CAP_8BIT);
-
-}
-void* kcalloc(size_t elementCount, size_t elementSize)
-{
-    if (bigRam) return heap_caps_calloc(elementCount,elementSize, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
-    else return heap_caps_calloc(elementCount,elementSize, MALLOC_CAP_INTERNAL  | MALLOC_CAP_8BIT);
-
-}
 
 static bool msCallback(gptimer_handle_t timer, const gptimer_alarm_event_data_t *edata, void *user_ctx)
 {
@@ -523,8 +500,6 @@ void app_main()
     }
     ESP_ERROR_CHECK( err );
 
-    // Check if we are in large Sram config
-    if (xPortGetFreeHeapSize() > 0x80000) bigRam = true;
     //init hardware
     eeprom_partitions_init();
     ESP_LOGI(TAG, "Partition init done...");
@@ -585,8 +560,8 @@ void app_main()
 
     // output mode
     //I2S, I2S_MERUS, DAC_BUILT_IN, PDM, VS1053
-    audio_output_mode = g_device->audio_output_mode;
-    ESP_LOGI(TAG, "audio_output_mode %d\nOne of I2S=0, I2S_MERUS, DAC_BUILT_IN, PDM, VS1053, SPDIF",audio_output_mode);
+    app_state_set_audio_output_mode(g_device->audio_output_mode);
+    ESP_LOGI(TAG, "audio_output_mode %d\nOne of I2S=0, I2S_MERUS, DAC_BUILT_IN, PDM, VS1053, SPDIF",app_state_get_audio_output_mode());
 
     //uart speed
     uspeed = g_device->uartspeed;
@@ -622,7 +597,7 @@ void app_main()
     addon_lcd_welcome("","STARTING");
 
     // volume
-    app_set_ivol( g_device->vol);
+    app_state_set_ivol( g_device->vol);
     ESP_LOGI(TAG, "Volume set to %d",g_device->vol);
 
     xTaskCreatePinnedToCore(timer_task, "timerTask",2100, NULL, PRIO_TIMER, &pxCreatedTask,CPU_TIMER);
@@ -675,7 +650,7 @@ void app_main()
     ESP_LOGI(TAG, "%s task: %x","task_addon",(unsigned int)pxCreatedTask);
     ESP_LOGI(TAG," Init Done");
 
-    app_set_ivol( g_device->vol);
+    app_state_set_ivol( g_device->vol);
     kprintf("READY. Type help for a list of commands\n");
     // error log on telnet
     esp_log_set_vprintf( (vprintf_like_t)lkprintf);

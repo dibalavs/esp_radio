@@ -20,11 +20,13 @@ set(COMPONENT_SRCS
 	"webclient.c"
 	"webserver.c"
 	"websocket.c"
+	"esp_radio/app_state.c"
 	"esp_radio/bus.c"
 	"esp_radio/buttons.c"
 	"esp_radio/debug_task_stats.c"
 	"esp_radio/ext_gpio.c"
 	"esp_radio/i2s_redirector.c"
+	"esp_radio/kmalloc.c"
 	"esp_radio/merus.c"
 	"esp_radio/network.c"
 )

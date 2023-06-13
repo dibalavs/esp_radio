@@ -11,7 +11,10 @@
 
 #pragma once
 
-#include <stdint.h>
+#include <stdbool.h>
+#include <stddef.h>
 
 void* kmalloc(size_t size);
 void* kcalloc(size_t nmemb, size_t size);
+
+bool app_big_sram(void);

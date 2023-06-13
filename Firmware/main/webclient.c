@@ -104,7 +104,7 @@ void ramSinit()
 	test_https();
 	if (https && !app_big_sram())
 	{
-		if (app_get_audio_output_mode() == VS1053)
+		if (app_state_get_audio_output_mode() == VS1053)
 		{
 			if (getSPIRAMSIZE() == HTTPSVSRAM*1024) return; // no need
 			setSPIRAMSIZE(HTTPSVSRAM*1024);
@@ -125,7 +125,7 @@ void ramSinit()
 		}
 		else
 		{
-			if (app_get_audio_output_mode() == VS1053)
+			if (app_state_get_audio_output_mode() == VS1053)
 			{
 				if (getSPIRAMSIZE() == SMALLRAM*1024) return; // no need
 				setSPIRAMSIZE(SMALLRAM*1024);		// more free heap
@@ -967,9 +967,9 @@ void webclient_disconnect(const char* from)
 //	esp_wifi_set_ps(WIFI_PS_MAX_MODEM);
 	vTaskDelay(1);
 	// save the volume if needed on stop state
-	if (g_device->vol != app_get_ivol())
+	if (g_device->vol != app_state_get_ivol())
 	{
-		g_device->vol = app_get_ivol();
+		g_device->vol = app_state_get_ivol();
 		eeprom_save_device_settings_volume(g_device);
 	}
 }
@@ -1429,7 +1429,7 @@ void webclient_task(void *pvParams) {
 		xSemaphoreGive(sConnected);
 		if(xSemaphoreTake(sConnect, portMAX_DELAY))
 		{
-			if (app_get_audio_output_mode() == VS1053)  VS1053_HighPower();
+			if (app_state_get_audio_output_mode() == VS1053)  VS1053_HighPower();
 			xSemaphoreTake(sDisconnect, 0);
 			sockfd = socket(AF_INET, SOCK_STREAM, 0);
 			ESP_LOGD(TAG,"Socket: %d", sockfd);
@@ -1629,9 +1629,9 @@ void webclient_task(void *pvParams) {
 				if (get_player_status() != STOPPED)
 					audio_player_stop();
 				player_config->media_stream->eof = true;
-				if (app_get_audio_output_mode() == VS1053) VS1053_flush_cancel();
+				if (app_state_get_audio_output_mode() == VS1053) VS1053_flush_cancel();
 				playing = 0;
-				if (app_get_audio_output_mode() == VS1053) VS1053_LowPower();
+				if (app_state_get_audio_output_mode() == VS1053) VS1053_LowPower();
 				strcpy(userAgent,g_device->ua);
 			}
 

@@ -227,45 +227,45 @@ void webserver_set_volumei(int16_t vol) {
 	vol += clientOvol;
 	if (vol > 254) vol = 254;
 	if (vol <0) vol = 1;
-	if (app_get_audio_output_mode() == VS1053) VS1053_SetVolume(vol);
+	if (app_state_get_audio_output_mode() == VS1053) VS1053_SetVolume(vol);
 	if (vol <3) vol--;
 	renderer_volume(vol+2); // max 256
 }
 void webserver_set_volume(char* vol) {
 	int16_t uvol = atoi(vol);
-	app_set_ivol(uvol);
+	app_state_set_ivol(uvol);
 	uvol += clientOvol;
 	if (uvol > 254) uvol = 254;
 	if (uvol <0) uvol = 1;
 	if(vol!= NULL) {
-		if (app_get_audio_output_mode() == VS1053) VS1053_SetVolume(uvol);
+		if (app_state_get_audio_output_mode() == VS1053) VS1053_SetVolume(uvol);
 		if (uvol <3) uvol--;
 		renderer_volume(uvol+2); // max 256
-		kprintf("##CLI.VOL#: %d\n",app_get_ivol());
+		kprintf("##CLI.VOL#: %d\n",app_state_get_ivol());
 	}
 }
 // set the current volume with its offset
 static void setOffsetVolume(void) {
-	int16_t uvol = app_get_ivol();
+	int16_t uvol = app_state_get_ivol();
 	uvol += clientOvol;
 	if (uvol > 254) uvol = 254;
 	if (uvol <=0) uvol = 1;
 	ESP_LOGV(TAG,"setOffsetVol: %d",clientOvol);
-	kprintf("##CLI.VOL#: %d\n",app_get_ivol());
+	kprintf("##CLI.VOL#: %d\n",app_state_get_ivol());
 	webserver_set_volumei(uvol);
 }
 
 
 
 uint16_t webserver_get_volume() {
-	return (app_get_ivol());
+	return (app_state_get_ivol());
 }
 
 // Set the volume with increment vol
 void webserver_set_rel_volume(int8_t vol) {
 	char Vol[5];
 	int16_t rvol;
-	rvol = app_get_ivol()+vol;
+	rvol = app_state_get_ivol()+vol;
 	if (rvol <0) rvol = 0;
 	if (rvol > 254) rvol = 254;
 	sprintf(Vol,"%d",rvol);
@@ -481,7 +481,7 @@ static void handlePOST(char* name, char* data, int data_size, int conn) {
 			if(getSParameterFromResponse(bass,6,"bass=", data, data_size)) {
 				if (g_device->bass != atoi(bass))
 				{
-					if (app_get_audio_output_mode() == VS1053)
+					if (app_state_get_audio_output_mode() == VS1053)
 					{
 						VS1053_SetBass(atoi(bass));
 						changed = true;
@@ -492,7 +492,7 @@ static void handlePOST(char* name, char* data, int data_size, int conn) {
 			if(getSParameterFromResponse(treble,6,"treble=", data, data_size)) {
 				if (g_device->treble != atoi(treble))
 				{
-					if (app_get_audio_output_mode() == VS1053)
+					if (app_state_get_audio_output_mode() == VS1053)
 					{
 						VS1053_SetTreble(atoi(treble));
 						changed = true;
@@ -503,7 +503,7 @@ static void handlePOST(char* name, char* data, int data_size, int conn) {
 			if(getSParameterFromResponse(bassfreq,6,"bassfreq=", data, data_size)) {
 				if (g_device->freqbass != atoi(bassfreq))
 				{
-					if (app_get_audio_output_mode() == VS1053)
+					if (app_state_get_audio_output_mode() == VS1053)
 					{
 						VS1053_SetBassFreq(atoi(bassfreq));
 						changed = true;
@@ -514,7 +514,7 @@ static void handlePOST(char* name, char* data, int data_size, int conn) {
 			if(getSParameterFromResponse(treblefreq,6,"treblefreq=", data, data_size)) {
 				if (g_device->freqtreble != atoi(treblefreq))
 				{
-					if (app_get_audio_output_mode() == VS1053)
+					if (app_state_get_audio_output_mode() == VS1053)
 					{
 						VS1053_SetTrebleFreq(atoi(treblefreq));
 						changed = true;
@@ -525,7 +525,7 @@ static void handlePOST(char* name, char* data, int data_size, int conn) {
 			if(getSParameterFromResponse(spacial,6,"spacial=", data, data_size)) {
 				if (g_device->spacial != atoi(spacial))
 				{
-						if (app_get_audio_output_mode() == VS1053)
+						if (app_state_get_audio_output_mode() == VS1053)
 						{
 							VS1053_SetSpatial(atoi(spacial));
 							changed = true;
@@ -705,11 +705,11 @@ static void handlePOST(char* name, char* data, int data_size, int conn) {
 		ESP_LOGV(TAG,"icy vol");
 		char currentSt[7]; sprintf(currentSt,"%d",iface_get_current_station());
 		char vol[5]; sprintf(vol,"%d",(webserver_get_volume() ));
-		char treble[5]; sprintf(treble,"%d",(app_get_audio_output_mode() == VS1053)?VS1053_GetTreble():0);
-		char bass[5]; sprintf(bass,"%d",(app_get_audio_output_mode() == VS1053)?VS1053_GetBass():0);
-		char tfreq[5]; sprintf(tfreq,"%d",(app_get_audio_output_mode() == VS1053)?VS1053_GetTrebleFreq():0);
-		char bfreq[5]; sprintf(bfreq,"%d",(app_get_audio_output_mode() == VS1053)?VS1053_GetBassFreq():0);
-		char spac[5]; sprintf(spac,"%d",(app_get_audio_output_mode() == VS1053)?VS1053_GetSpatial():0);
+		char treble[5]; sprintf(treble,"%d",(app_state_get_audio_output_mode() == VS1053)?VS1053_GetTreble():0);
+		char bass[5]; sprintf(bass,"%d",(app_state_get_audio_output_mode() == VS1053)?VS1053_GetBass():0);
+		char tfreq[5]; sprintf(tfreq,"%d",(app_state_get_audio_output_mode() == VS1053)?VS1053_GetTrebleFreq():0);
+		char bfreq[5]; sprintf(bfreq,"%d",(app_state_get_audio_output_mode() == VS1053)?VS1053_GetBassFreq():0);
+		char spac[5]; sprintf(spac,"%d",(app_state_get_audio_output_mode() == VS1053)?VS1053_GetSpatial():0);
 
 		struct icyHeader *header = webclient_get_header();
 		ESP_LOGV(TAG,"icy start header %x",(int)header);

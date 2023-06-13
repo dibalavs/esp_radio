@@ -42,6 +42,7 @@
 
 #include "esp_radio/kmalloc.h"
 #include "esp_radio/network.h"
+#include "esp_radio/app_state.h"
 
 #define TIMER_DIVIDER 16 	//5000000Hz 5MHz
 #define TIMER_DIVIDER1MS TIMER_BASE_CLK/10000 //10000Hz
@@ -92,23 +93,6 @@
 #define CPU_OTA			0
 
 #define TEMPO_SAVE_VOL	10000
-
-typedef enum {
-    I2S, I2S_MERUS, DAC_BUILT_IN, PDM, VS1053, SPDIF, BTOOTH
-} output_mode_t;
-
-
-typedef struct {
-    int type;               /*!< event type */
-    int i1;                 /*!< TIMER_xxx timer group */
-    int i2;                 /*!< TIMER_xxx timer number */
-} queue_event_t;
-
-output_mode_t app_get_audio_output_mode() ;
-
-uint8_t app_get_ivol();
-void app_set_ivol( uint8_t vol);
-bool app_big_sram();
 
 uint64_t app_get_sleep();
 uint64_t app_get_wake();
