@@ -2,6 +2,8 @@
  * Copyright 2016 karawin (http://www.karawin.fr)
 */
 
+#include "action_manager.h"
+#include "app_state.h"
 #define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
 
 #include <string.h>
@@ -63,8 +65,9 @@ static void *inmalloc(size_t n)
 static void infree(void *p)
 {
 	if (p != NULL)
-	{	free(p);
-		ESP_LOGV(TAG,"server free of %x,  Heap size: %d",(int)p,xPortGetFreeHeapSize( ));
+	{
+		ESP_LOGV(TAG,"server free of %p,  Heap size: %d", p, xPortGetFreeHeapSize( ));
+		free(p);
 	}
 }
 
@@ -222,28 +225,6 @@ static void clientSetOvol(int8_t ovol)
 	vTaskDelay(1);
 }
 
-// set the volume with vol,  add offset
-void webserver_set_volumei(int16_t vol) {
-	vol += clientOvol;
-	if (vol > 254) vol = 254;
-	if (vol <0) vol = 1;
-	if (app_state_get_audio_output_mode() == VS1053) VS1053_SetVolume(vol);
-	if (vol <3) vol--;
-	renderer_volume(vol+2); // max 256
-}
-void webserver_set_volume(char* vol) {
-	int16_t uvol = atoi(vol);
-	app_state_set_ivol(uvol);
-	uvol += clientOvol;
-	if (uvol > 254) uvol = 254;
-	if (uvol <0) uvol = 1;
-	if(vol!= NULL) {
-		if (app_state_get_audio_output_mode() == VS1053) VS1053_SetVolume(uvol);
-		if (uvol <3) uvol--;
-		renderer_volume(uvol+2); // max 256
-		kprintf("##CLI.VOL#: %d\n",app_state_get_ivol());
-	}
-}
 // set the current volume with its offset
 static void setOffsetVolume(void) {
 	int16_t uvol = app_state_get_ivol();
@@ -252,27 +233,8 @@ static void setOffsetVolume(void) {
 	if (uvol <=0) uvol = 1;
 	ESP_LOGV(TAG,"setOffsetVol: %d",clientOvol);
 	kprintf("##CLI.VOL#: %d\n",app_state_get_ivol());
-	webserver_set_volumei(uvol);
+	action_set_volume(uvol);
 }
-
-
-
-uint16_t webserver_get_volume() {
-	return (app_state_get_ivol());
-}
-
-// Set the volume with increment vol
-void webserver_set_rel_volume(int8_t vol) {
-	char Vol[5];
-	int16_t rvol;
-	rvol = app_state_get_ivol()+vol;
-	if (rvol <0) rvol = 0;
-	if (rvol > 254) rvol = 254;
-	sprintf(Vol,"%d",rvol);
-	webserver_set_volume(Vol);
-	webclient_ws_vol(Vol);
-}
-
 
 // send the rssi
 static void rssi(int socket) {
@@ -332,7 +294,7 @@ void webserver_play_station_int(int sid) {
 	char answer[24];
 	si = eeprom_get_station(sid);
 
-	if(si != NULL &&si->domain && si->file) {
+	if(si != NULL) {
 			vTaskDelay(1);
 			webclient_silent_disconnect();
 			ESP_LOGV(TAG,"playstationInt: %d, new station: %s",sid,si->name);
@@ -458,17 +420,13 @@ static void handlePOST(char* name, char* data, int data_size, int conn) {
 			char param[4];
 			int vol;
 			if(getSParameterFromResponse(param,4,"vol=", data, data_size)) {
-				if(param == NULL) { return; }
 				vol = atoi(param);
-				if(vol < 0 || vol > 254) { return; }
-				ESP_LOGD(TAG,"/sounvol vol: %s num:%d", param, vol);
-				webserver_set_volume(param); // setVolume waits for a string
-				webclient_ws_vol(param);
-				respOk(conn,NULL);
+				if (vol >= 0 && vol <= 254) {
+					action_set_volume(vol);
+					respOk(conn,NULL);
+				}
 				return;
 			}
-
-
 		}
 	} else if(strcmp(name, "/sound") == 0) {
 		if(data_size > 0) {
@@ -704,7 +662,7 @@ static void handlePOST(char* name, char* data, int data_size, int conn) {
 	{
 		ESP_LOGV(TAG,"icy vol");
 		char currentSt[7]; sprintf(currentSt,"%d",iface_get_current_station());
-		char vol[5]; sprintf(vol,"%d",(webserver_get_volume() ));
+		char vol[5]; sprintf(vol,"%d",(app_state_get_ivol()));
 		char treble[5]; sprintf(treble,"%d",(app_state_get_audio_output_mode() == VS1053)?VS1053_GetTreble():0);
 		char bass[5]; sprintf(bass,"%d",(app_state_get_audio_output_mode() == VS1053)?VS1053_GetBass():0);
 		char tfreq[5]; sprintf(tfreq,"%d",(app_state_get_audio_output_mode() == VS1053)?VS1053_GetTrebleFreq():0);
@@ -881,7 +839,7 @@ static void handlePOST(char* name, char* data, int data_size, int conn) {
 				infree(aip2);infree(amsk2);infree(agw2);
 			}
 
-			if ((g_device->ua!= NULL)&&(strlen(g_device->ua)==0))
+			if (strlen(g_device->ua)==0)
 			{
 				if (aua==NULL) {aua= inmalloc(12); strcpy(aua,"Karadio32/2.2");}
 			}
@@ -1033,19 +991,19 @@ static bool httpServerHandleConnection(int conn, char* buf, uint16_t buflen) {
 				param = strstr(c,"uart") ;
 				if (param != NULL) {uart_set_baudrate(0, 115200);} //UART_SetBaudrate(0, 115200);}
 // volume command
-				param = getParameterFromResponse("volume=", c, strlen(c)) ;
-				if ((param != NULL)&&(atoi(param)>=0)&&(atoi(param)<=254))
-				{
-					webserver_set_volume(param);
-					webclient_ws_vol(param);
+				param = getParameterFromResponse("volume=", c, strlen(c));
+				if (param != NULL) {
+					const int ivol = atoi(param);
+					if (ivol >=0 && ivol <= 254)
+						action_set_volume(ivol);
+					infree(param);
 				}
-				infree(param);
 // volume+ command
 				param = strstr(c,"volume+") ;
-				if (param != NULL) {webserver_set_rel_volume(5);}
+				if (param != NULL) {action_increase_volume(5);}
 // volume- command
 				param = strstr(c,"volume-") ;
-				if (param != NULL) {webserver_set_rel_volume(-5);}
+				if (param != NULL) {action_increase_volume(-5);}
 // play command
 				param = getParameterFromResponse("play=", c, strlen(c)) ;
 				if (param != NULL) {playStation(param);infree(param);}
@@ -1151,78 +1109,75 @@ void webserver_client_task(void *pvParams) {
  //   char *buf = (char *)inmalloc(reclen);
 	bool result = true;
 
-	if (buf != NULL)
-	{
-		memset(buf,0,DRECLEN);
-		if (setsockopt (client_sock, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof(timeout)) < 0)
-			printf(strsSOCKET,"setsockopt",errno);
+	memset(buf,0,DRECLEN);
+	if (setsockopt (client_sock, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof(timeout)) < 0)
+		printf(strsSOCKET,"setsockopt",errno);
 
-		while (((recbytes = read(client_sock , buf, RECLEN)) != 0))
-		{ // For now we assume max. RECLEN bytes for request
-			if (recbytes < 0) {
+	while (((recbytes = read(client_sock , buf, RECLEN)) != 0))
+	{ // For now we assume max. RECLEN bytes for request
+		if (recbytes < 0) {
+			break;
+			if (errno != EAGAIN )
+			{
+				printf(strsSOCKET,"client_sock",errno);
+				vTaskDelay(10);
 				break;
-				if (errno != EAGAIN )
+			} else {printf(strsSOCKET,tryagain,errno);break;}
+		}
+		char* bend = NULL;
+		do {
+			bend = strstr(buf, "\r\n\r\n");
+			if (bend != NULL)
+			{
+				bend += 4;
+				if (strstr(buf,"POST") ) //rest of post?
 				{
-					printf(strsSOCKET,"client_sock",errno);
-					vTaskDelay(10);
-					break;
-				} else {printf(strsSOCKET,tryagain,errno);break;}
-			}
-			char* bend = NULL;
-			do {
-				bend = strstr(buf, "\r\n\r\n");
-				if (bend != NULL)
-				{
-					bend += 4;
-					if (strstr(buf,"POST") ) //rest of post?
+					uint16_t cl = atoi(strstr(buf, "Content-Length: ")+16);
+					vTaskDelay(1);
+					if ((bend - buf +cl)> recbytes)
 					{
-						uint16_t cl = atoi(strstr(buf, "Content-Length: ")+16);
-						vTaskDelay(1);
-						if ((bend - buf +cl)> recbytes)
+	//printf ("Server: try receive more:%d bytes. , must be %d\n", recbytes,bend - buf +cl);
+						while(((recb = read(client_sock , buf+recbytes, cl))==0)||(errno == EAGAIN))
 						{
-//printf ("Server: try receive more:%d bytes. , must be %d\n", recbytes,bend - buf +cl);
-							while(((recb = read(client_sock , buf+recbytes, cl))==0)||(errno == EAGAIN))
-							{
-								vTaskDelay(1);
-								if ((recb < 0)&&(errno != EAGAIN)) {
-									ESP_LOGE(TAG,"read fails 0  errno:%d",errno);
-									respKo(client_sock);
-									break;
-								} else recb = 0;
-							}
-//							printf ("Server: received more for end now: %d bytes\n", recbytes+recb);
-							buf[recbytes+recb] = 0;
-							recbytes += recb;
+							vTaskDelay(1);
+							if ((recb < 0)&&(errno != EAGAIN)) {
+								ESP_LOGE(TAG,"read fails 0  errno:%d",errno);
+								respKo(client_sock);
+								break;
+							} else recb = 0;
 						}
+//							printf ("Server: received more for end now: %d bytes\n", recbytes+recb);
+						buf[recbytes+recb] = 0;
+						recbytes += recb;
 					}
 				}
-				else {
+			}
+			else {
 
 //					printf ("Server: try receive more for end:%d bytes\n", recbytes);
-					while(((recb= read(client_sock , buf+recbytes, DRECLEN-recbytes))==0)||(errno == EAGAIN))
-					{
-						vTaskDelay(1);
+				while(((recb= read(client_sock , buf+recbytes, DRECLEN-recbytes))==0)||(errno == EAGAIN))
+				{
+					vTaskDelay(1);
 //						printf ("Server: received more for end now: %d bytes\n", recbytes+recb);
-						if ((recb < 0)&&(errno != EAGAIN)) {
-							ESP_LOGE(TAG,"read fails 1  errno:%d",errno);
-							respKo(client_sock);
-							break;
-						} else recb = 0;
-					}
-					recbytes += recb;
-				} //until "\r\n\r\n"
-			} while (bend == NULL);
-			if (bend != NULL)
-				result = httpServerHandleConnection(client_sock, buf, recbytes);
-			memset(buf,0,DRECLEN);
-			if (!result)
-			{
-				break; // only a websocket created. exit without closing the socket
-			}
-			vTaskDelay(1);
+					if ((recb < 0)&&(errno != EAGAIN)) {
+						ESP_LOGE(TAG,"read fails 1  errno:%d",errno);
+						respKo(client_sock);
+						break;
+					} else recb = 0;
+				}
+				recbytes += recb;
+			} //until "\r\n\r\n"
+		} while (bend == NULL);
+		if (bend != NULL)
+			result = httpServerHandleConnection(client_sock, buf, recbytes);
+		memset(buf,0,DRECLEN);
+		if (!result)
+		{
+			break; // only a websocket created. exit without closing the socket
 		}
+		vTaskDelay(1);
+	}
 //		infree(buf);
-	} else  printf(strsMALLOC1,"buf");
 	if (result)
 	{
 		int err;

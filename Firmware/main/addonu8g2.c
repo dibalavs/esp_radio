@@ -4,6 +4,7 @@
  *
 *******************************************************************************/
 
+#include "app_state.h"
 #define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
 #include <stddef.h>
 #include <string.h>
@@ -160,8 +161,6 @@ char* addonu8g2_get_name_num()
 	return nameNum;
 }
 
-void addonu8g2_set_volume(uint16_t vol){ volume = vol;}
-
 static uint8_t getFontLineSpacing()
 {
 	return (u8g2_GetAscent(&u8g2) - u8g2_GetDescent(&u8g2));
@@ -236,7 +235,7 @@ static void screenBottomU8g2()
 {
 //VOLUME
     u8g2_DrawFrame(&u8g2,0,yy-3,x-1,3);
-    u8g2_DrawHLine(&u8g2,0,yy-2,((uint16_t)(x*volume)/255));
+    u8g2_DrawHLine(&u8g2,0,yy-2,((uint16_t)(x*app_state_get_ivol()/255)));
 //TIME
 	if (yy != 32) // not enough room
 	{
@@ -394,7 +393,7 @@ void addonu8g2_draw_volume(uint8_t mTscreen)
   char vlstr[] = {"Volume"};
   char aVolume[4];
 //  volume = atoi(aVolume);
-  sprintf(aVolume,"%d",volume);
+  sprintf(aVolume,"%d",app_state_get_ivol());
 
   u8g2_ClearBuffer(&u8g2);
   u8g2_FirstPage(&u8g2);
@@ -460,7 +459,7 @@ void addonu8g2_icy4(char* ici)
 {
 	char newstation[BUFLEN];
 	 //move the STATION2 to STATION1S
-	 if ((station!= NULL)&& (lline[STATION2] != NULL))
+	 if (lline[STATION2] != NULL)
 	 {  strcpy(newstation,lline[STATION1]);strcat(newstation," - ");  strcat(newstation,lline[STATION2]);
 		strcpy(lline[STATION1],newstation);
 		markDrawResetU8g2(STATION1);

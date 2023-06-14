@@ -1,6 +1,8 @@
 /*
  * Copyright 2016 karawin (http://www.karawin.fr)
 */
+#include "action_manager.h"
+#include "app_state.h"
 #define TAG "Webclient"
 #define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
 
@@ -616,14 +618,11 @@ void webclient_ws_station_prev()
 }
 
 // websocket: broadcast volume to all client
-void webclient_ws_vol(char* vol)
+void webclient_ws_vol(uint8_t vol)
 {
 	char answer[21];
-	if (vol != NULL)
-	{
-		sprintf(answer,"{\"wsvol\":\"%s\"}",vol);
-		websocket_broadcast(answer, strlen(answer));
-	}
+	sprintf(answer,"{\"wsvol\":\"%u\"}",(unsigned)vol);
+	websocket_broadcast(answer, strlen(answer));
 }
 // websocket: broadcast monitor url
 void webclient_ws_monitor()
@@ -1063,9 +1062,9 @@ void clientReceiveCallback(int sockfd, char *pdata, int len)
 						icyfound = 	clientParseHeader(pdata);
 						if(header.members.single.metaint > 0)
 							metad = header.members.single.metaint;
-						ESP_LOGD(TAG,"t1: 0x%x, cstatus: %d, icyfound: %d  metad:%d Metaint:%d\n", (int) t1,cstatus, icyfound,metad,  (header.members.single.metaint));
+						ESP_LOGD(TAG,"t1: %p, cstatus: %d, icyfound: %d  metad:%d Metaint:%d\n", (void *)t1, cstatus, icyfound,metad,  (header.members.single.metaint));
 						cstatus = C_DATA;	// a stream found
-						webserver_set_volumei(1);
+						action_set_volume(1);
 /////////////////////////////////////////////////////////////////////////////////////////////////
 						player_config->media_stream->eof = false;
 						audio_player_start();
@@ -1360,7 +1359,7 @@ ESP_LOGD(TAG,"mt2 len:%d, clen:%d, metad:%d, l:%d, inpdata:%x,  rest:%d",len,cle
 		{
 			kprintf(CLIPLAY,0x0d,0x0a);
 			playing=1;
-			webserver_set_volumei(webserver_get_volume());
+			action_increase_volume(0); // Just force send volume event.
 		}
 	} // switch
 }
@@ -1602,7 +1601,7 @@ void webclient_task(void *pvParams) {
 						if ((!playing )&& (spiRamFifoFill())) {
 							playing=1;
 							vTaskDelay(1);
-							webserver_set_volumei(webserver_get_volume());
+							action_increase_volume(0); // Force volume event.
 							kprintf(CLIPLAY,0x0d,0x0a);
 							while (spiRamFifoFill()) vTaskDelay(200);
 //							vTaskDelay(100);

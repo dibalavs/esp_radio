@@ -61,7 +61,7 @@ void merus_set_volume(uint8_t volume)
 {
     ext_gpio_set_merus_chip_select(true);
     ESP_ERROR_CHECK(i2s_stop(I2S_OUT_NO));
-    set_MA_vol_db_master(volume);
+    set_MA_vol_db_master(255 - volume);
     ESP_ERROR_CHECK(i2s_start(I2S_OUT_NO));
     ext_gpio_set_merus_chip_select(false);
 }

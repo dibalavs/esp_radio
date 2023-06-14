@@ -361,24 +361,21 @@ int websocket_read(int conn)
 {
 	char buf[MAXDATA];
 	int32_t recbytes = 0;
-	if (buf != NULL)
-	{
-		recbytes = read(conn , buf, MAXDATA);
-		if (recbytes < 0) {
-			if ((errno != EAGAIN )&&(errno != 0 ))
-			{
-				if ((errno != 104 /*ECONNRESET*/ )&&(errno != 113 /*EHOSTUNREACH*/ ))
-				{
-					printf (strwSOCKET,"read", errno);
-					websocket_client_disconnect(conn, 500,NULL,0);
-				}
-				return recbytes;
-			}
-		}
-		if (recbytes > 0)
+	recbytes = read(conn , buf, MAXDATA);
+	if (recbytes < 0) {
+		if ((errno != EAGAIN )&&(errno != 0 ))
 		{
-			websocket_parse_data(conn, buf, recbytes);
+			if ((errno != 104 /*ECONNRESET*/ )&&(errno != 113 /*EHOSTUNREACH*/ ))
+			{
+				printf (strwSOCKET,"read", errno);
+				websocket_client_disconnect(conn, 500,NULL,0);
+			}
+			return recbytes;
 		}
+	}
+	if (recbytes > 0)
+	{
+		websocket_parse_data(conn, buf, recbytes);
 	}
 	return recbytes;
 }

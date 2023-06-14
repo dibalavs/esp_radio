@@ -78,7 +78,7 @@ void webclient_disconnect(const char* from);
 void webclient_silent_disconnect();
 bool webclient_save_one_header(const char* t, uint16_t len, uint8_t header_num);
 void webclient_task(void *pvParams);
-void webclient_ws_vol(char* vol);
+void webclient_ws_vol(uint8_t vol);
 void webclient_ws_monitor();
 void webclient_ws_station_next();
 void webclient_ws_station_prev();

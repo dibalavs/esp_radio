@@ -5,6 +5,7 @@
 *******************************************************************************/
 
 
+#include "app_state.h"
 #define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
 #define TAG "Interface"
 #include "interface.h"
@@ -29,6 +30,8 @@
 
 #include "esp_system.h"
 #include "mdns.h"
+
+#include "esp_radio/action_manager.h"
 
 #include "esp_wifi.h"
 #include "esp_netif.h"
@@ -151,7 +154,6 @@ static IRAM_ATTR uint32_t lcd_out = 0xFFFFFFFF;
 static IRAM_ATTR uint32_t lcd_stop = 0xFFFFFFFF;
 
 static esp_log_level_t s_log_default_level = ESP_LOG_NONE;
-extern void webclient_ws_vol(char* vol);
 extern void playStation(char* id);
 void iface_client_vol(char *s);
 
@@ -190,20 +192,6 @@ void iface_set_rotat(uint8_t dm)
 {
 	if (dm == 0) rotat = 0;
 	else rotat = 1;
-}
-
-void setVolumePlus()
-{
-	webserver_set_rel_volume(10);
-}
-void setVolumeMinus()
-{
-	webserver_set_rel_volume(-10);
-}
-void setVolumew(char* vol)
-{
-	webserver_set_volume(vol);
-	webclient_ws_vol(vol);
 }
 
 uint16_t iface_get_current_station()
@@ -711,7 +699,7 @@ char* iface_web_info()
 	{
 		if (resp != NULL)
 		{
-			sprintf(resp,"vol: %d\nnum: %d\nstn: %s\ntit: %s\nsts: %d\n",webserver_get_volume(),currentStation,si->name,webclient_get_meta(),webclient_get_state());
+			sprintf(resp,"vol: %d\nnum: %d\nstn: %s\ntit: %s\nsts: %d\n",app_state_get_ivol(),currentStation,si->name,webclient_get_meta(),webclient_get_state());
 		}
 		free(si);
 	}
@@ -795,7 +783,7 @@ void iface_client_vol(char *s)
 	if(t == 0)
 	{
 		// no argument, return the current volume
-		kprintf("%sVOL#: %d\n",msgcli,webserver_get_volume());
+		kprintf("%sVOL#: %d\n",msgcli,app_state_get_ivol());
 		return;
 	}
 	char *t_end  = strstr(t, parquoteslash)-2;
@@ -811,11 +799,9 @@ void iface_client_vol(char *s)
         uint8_t tmp;
         for(tmp=0; tmp<(t_end-t+1); tmp++) vol[tmp] = 0;
         strncpy(vol, t+2, (t_end-t));
-		if ((atoi(vol)>=0)&&(atoi(vol)<=254))
-		{
-			setVolumew(vol);
-//			if (RDA5807M_detection()) RDA5807M_setVolume(atoi(vol)/16);
-		}
+		int ivol = atoi(vol);
+		if (ivol >= 0 && ivol <= 254)
+			action_set_volume(ivol);
 		free(vol);
     }
 }
@@ -1303,8 +1289,8 @@ void iface_check_command(int size, char* s)
 		else if(strcmp(tmp+4, "next") == 0) 	webclient_ws_station_next();
 		else if(strncmp(tmp+4,"previous",4) == 0) webclient_ws_station_prev();
 		else if(startsWith (  "play",tmp+4)) 	clientPlay(tmp);
-		else if(strcmp(tmp+4, "vol+") == 0) 	setVolumePlus();
-		else if(strcmp(tmp+4, "vol-") == 0) 	setVolumeMinus();
+		else if(strcmp(tmp+4, "vol+") == 0) 	action_increase_volume(+10);
+		else if(strcmp(tmp+4, "vol-") == 0) 	action_increase_volume(-10);
 		else if(strcmp(tmp+4, "info") == 0) 	clientInfo();
 		else if(startsWith (  "vol",tmp+4)) 	iface_client_vol(tmp);
 		else if(startsWith (  "edit",tmp+4)) 	clientEdit(tmp);
@@ -1314,7 +1300,7 @@ void iface_check_command(int size, char* s)
 	} else
 	if(startsWith ("sys.", tmp))
 	{
-			 if(startsWith (  "i2s",tmp+4)) 	sysI2S(tmp);
+		if(startsWith (  "i2s",tmp+4)) 	sysI2S(tmp);
 //		else if(strcmp(tmp+4, "adc") == 0) 		readAdc();
 		else if(startsWith (  "uart",tmp+4)) 	sysUart(tmp);
 		else if(strcmp(tmp+4, "erase") == 0) 	eeprom_erase_all();

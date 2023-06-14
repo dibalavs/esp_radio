@@ -20,6 +20,7 @@ set(COMPONENT_SRCS
 	"webclient.c"
 	"webserver.c"
 	"websocket.c"
+	"esp_radio/action_manager.c"
 	"esp_radio/app_state.c"
 	"esp_radio/bus.c"
 	"esp_radio/buttons.c"

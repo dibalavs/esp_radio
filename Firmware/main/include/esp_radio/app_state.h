@@ -27,4 +27,5 @@ output_mode_t app_state_get_audio_output_mode(void);
 void app_state_set_audio_output_mode(output_mode_t mode);
 
 uint8_t app_state_get_ivol(void);
-void app_state_set_ivol(uint8_t vol);
+void app_state_set_ivol(int vol);
+void app_state_set_ivol_addent(uint8_t vol);

@@ -90,6 +90,7 @@ typedef struct {
 #define ECTRL	2
 
 extern QueueHandle_t event_ir;
+extern QueueHandle_t event_lcd;
 void addon_task(void *pvParams);
 void addon_task_lcd(void *pvParams);
 void addon_lcd_init(uint8_t Type);

@@ -10,13 +10,12 @@
   uint16_t z ;		// an internal offset for y
 
   struct tm *dt;
-  uint16_t volume;
 
   char station[BUFLEN]; //received station
   char title[BUFLEN];	// received title
   char nameset[BUFLEN]; // the local name of the station
 
-  char* lline[LINES] ; // array of ptr of n lines 
+  char* lline[LINES] ; // array of ptr of n lines
   uint8_t  iline[LINES] ; //array of index for scrolling
   uint8_t  tline[LINES] ;
   uint8_t  mline[LINES] ; // mark to display

@@ -4,6 +4,7 @@
  *
 *******************************************************************************/
 
+#include "app_state.h"
 #define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
 #include <stddef.h>
 #include <string.h>
@@ -340,8 +341,6 @@ char* addonucg_get_name_num_ucg()
 	return nameNum;
 }
 
-void addonucg_set_volume(uint16_t vol){ volume = vol;}
-
 ////////////////////////////////////////
 // Clear all buffers and indexes
 void clearAllUcg()
@@ -632,13 +631,13 @@ void draw(int i)
 		  {
 			ucg_DrawFrame(&ucg,0,yy-10,x/3,8);
 			ucg_SetColori(&ucg,255,0,0);
-			ucg_DrawBox(&ucg,1,yy-9,((uint16_t)(x/3*volume)/255),6);
+			ucg_DrawBox(&ucg,1,yy-9,((uint16_t)(x/3*app_state_get_ivol())/255),6);
 		  }
 		  else
 		  {
 			ucg_DrawFrame(&ucg,0,yy-10,x/2,8);
 			ucg_SetColori(&ucg,255,0,0);
-			ucg_DrawBox(&ucg,1,yy-9,((uint16_t)(x/2*volume)/255),6);
+			ucg_DrawBox(&ucg,1,yy-9,((uint16_t)(x/2*app_state_get_ivol())/255),6);
 		  }
 		}
         break;
@@ -807,7 +806,7 @@ void addonucg_draw_volume(uint8_t mTscreen)
   char vlstr[] = {"Volume"};
 //  volume = atoi(aVolume);
   char aVolume[4];
-  sprintf(aVolume,"%d",volume);
+  sprintf(aVolume,"%d",(int)app_state_get_ivol());
     switch (mTscreen){
       case 1:
 		ucg_ClearScreen(&ucg);
@@ -976,7 +975,7 @@ void addonucg_icy4(char* ici)
 {
 	char newstation[BUFLEN];
 	 //move the STATION2 to STATION1S
-	 if ((station!= NULL)&& (lline[STATION2] != NULL))
+	 if (lline[STATION2] != NULL)
 	 {  strcpy(newstation,lline[STATION1]);strcat(newstation," - ");  strcat(newstation,lline[STATION2]);
 		strcpy(lline[STATION1],newstation);
 		markDrawResetUcg(STATION1);

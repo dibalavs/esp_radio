@@ -4,6 +4,7 @@
  *
 *******************************************************************************/
 
+#include "app_state.h"
 #define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
 #include <stddef.h>
 #include <string.h>
@@ -17,6 +18,7 @@
 #include "webclient.h"
 #include "webserver.h"
 #include "interface.h"
+#include "esp_radio/action_manager.h"
 #include "esp_radio/network.h"
 
 #include "u8g2.h"
@@ -56,7 +58,6 @@ static typeScreen defaultStateScreen = smain;
 static uint8_t mTscreen = MTNEW; // 0 dont display, 1 display full, 2 display variable part
 
 static bool playable = true;
-static uint16_t volume;
 static int16_t futurNum = 0; // the number of the wanted station
 
 static unsigned timerScreen = 0;
@@ -529,11 +530,11 @@ void buttons_loop(void)
 		break;
 
 	case BTN_TYPE_ENC_LESS:
-		webserver_set_rel_volume(-1);
+		action_increase_volume(-1);
 		break;
 
 	case BTN_TYPE_ENC_MORE:
-		webserver_set_rel_volume(+1);
+		action_increase_volume(+1);
 		break;
 
 	case BTN_TYPE_LAST:
@@ -556,9 +557,9 @@ bool irCustom(uint32_t evtir, bool repeat)
 		switch (i)
 		{
 			case KEY_UP: evtStation(+1);  break;
-			case KEY_LEFT: webserver_set_rel_volume(-5);  break;
+			case KEY_LEFT: action_increase_volume(-5);  break;
 			case KEY_OK: if (!repeat ) stationOk();   break;
-			case KEY_RIGHT: webserver_set_rel_volume(+5);   break;
+			case KEY_RIGHT: action_increase_volume(+5);   break;
 			case KEY_DOWN: evtStation(-1);  break;
 			case KEY_0: if (!repeat ) nbStation('0');   break;
 			case KEY_1: if (!repeat ) nbStation('1');  break;
@@ -610,7 +611,7 @@ event_ir_t evt;
 		case 0xDF2041:
 		case 0xFF0044:
 		case 0xF70842:
-		case 0xF70815: /*(" LEFT");*/  webserver_set_rel_volume(-5);
+		case 0xF70815: /*(" LEFT");*/  action_increase_volume(-5);
 		break;
 		case 0xDF204A:
 		case 0xFF0040:
@@ -620,7 +621,7 @@ event_ir_t evt;
 		case 0xDF2003:
 		case 0xFF0043:
 		case 0xF70841:
-		case 0xF70814: /*(" RIGHT");*/ webserver_set_rel_volume(+5);
+		case 0xF70814: /*(" RIGHT");*/ action_increase_volume(+5);
 		break;
 		case 0xDF204D:
 		case 0xDF2009:
@@ -777,7 +778,6 @@ void addon_task_lcd(void *pvParams)
 					// ignore it if the next is a lvol
 					if(xQueuePeek(event_lcd, &evt1, 0))
 						if (evt1.lcmd == lvol) break;
-					isColor?addonucg_set_volume(volume):addonu8g2_set_volume(volume);
 					if (dvolume)
 					{	Screen(svolume);
 						addon_wake_lcd();
@@ -988,9 +988,8 @@ void addon_parse(const char *fmt, ...)
    {
 	   if (*(ici+6) != 'x') // ignore help display.
 	   {
-		volume = atoi(ici+6);
- 		evt.lcmd = lvol;
-		evt.lline = NULL;//atoi(ici+6);
+		action_set_volume(atoi(ici + 6));
+ 		evt.lcmd = -1;
 	   }
    } else
   //////Volume offset    ##CLI.OVOLSET#:

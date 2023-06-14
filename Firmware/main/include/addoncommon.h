@@ -14,13 +14,12 @@ extern   uint16_t x ;		//Width
 extern   uint16_t z ;		// an internal offset for y
 
 extern   struct tm *dt;
-extern   uint16_t volume;
 
 extern   char station[BUFLEN]; //received station
 extern   char title[BUFLEN];	// received title
 extern   char nameset[BUFLEN]; // the local name of the station
 
-extern   char* lline[LINES] ; // array of ptr of n lines 
+extern   char* lline[LINES] ; // array of ptr of n lines
 extern   uint8_t  iline[LINES] ; //array of index for scrolling
 extern   uint8_t  tline[LINES] ;
 extern   uint8_t  mline[LINES] ; // mark to display
