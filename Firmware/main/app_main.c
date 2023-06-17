@@ -18,6 +18,8 @@ Copyright (C) 2017  KaraWin
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "action_manager.h"
+#include "app_state.h"
 #include "freertos/portmacro.h"
 #define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
 
@@ -340,7 +342,7 @@ IRAM_ATTR void timer_task(void* p) {
                         addon_service_isr();
                     break;
                     case TIMER_SLEEP:
-                        webclient_disconnect("Timer"); // stop the player
+                        action_webstation_stop(); // stop the player
                     break;
                     case TIMER_WAKE:
                         webclient_connect(); // start the player
@@ -424,12 +426,12 @@ void autoPlay(bool is_ap)
     }
 
     webclient_save_one_header(apmode,strlen(apmode),METANAME);
-    iface_set_current_station(g_device->currentstation);
+    app_state_set_curr_webstation(g_device->currentstation);
 
     if ((g_device->autostart ==1 )&&(g_device->currentstation != 0xFFFF)) {
         kprintf("autostart: playing:%d, currentstation:%d\n", g_device->autostart, g_device->currentstation);
         vTaskDelay(10); // wait a bit
-        webserver_play_station_int(g_device->currentstation);
+        action_webstation_set(g_device->currentstation);
     } else
         webclient_save_one_header("Ready",5,METANAME);
 }
@@ -568,11 +570,6 @@ void app_main()
     uspeed = iface_check_uart(uspeed);
     uart_set_baudrate(UART_NUM_0, uspeed);
     ESP_LOGI(TAG, "Set baudrate at %d",uspeed);
-    if (g_device->uartspeed != uspeed)
-    {
-        g_device->uartspeed = uspeed;
-        eeprom_save_device_settings(g_device);
-    }
 
     // Version infos
     ESP_LOGI(TAG, "\n");

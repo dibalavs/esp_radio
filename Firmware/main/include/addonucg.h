@@ -15,7 +15,6 @@ void addonucg_status(const char* label);
 void addonucg_icy0(char* ici);
 void addonucg_icy4(char* ici);
 void addonucg_meta(char* ici);
-char* addonucg_get_name_num_ucg();
 void addonucg_scroll();
 void addonucg_draw_frame(uint8_t mTscreen);
 void addonucg_draw_ttitle(char* ttitle);

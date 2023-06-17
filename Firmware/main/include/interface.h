@@ -28,8 +28,6 @@ void iface_set_log_level(esp_log_level_t level);
 void iface_wifi_connect_mem();
 char* iface_web_info();
 char* iface_web_list(int id);
-uint16_t iface_get_current_station();
-void iface_set_current_station( uint16_t vol);
 void iface_client_vol(char *s);
 uint32_t iface_get_lcd_out();
 uint32_t iface_get_lcd_stop();

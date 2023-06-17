@@ -288,52 +288,6 @@ void webserver_websocket_handle(int socket, wsopcode_t opcode, uint8_t * payload
 	else if (strstr((char*)payload,"wsrssi")!= NULL){rssi(socket);}
 }
 
-
-void webserver_play_station_int(int sid) {
-	struct shoutcast_info* si;
-	char answer[24];
-	si = eeprom_get_station(sid);
-
-	if(si != NULL) {
-			vTaskDelay(1);
-			webclient_silent_disconnect();
-			ESP_LOGV(TAG,"playstationInt: %d, new station: %s",sid,si->name);
-			webclient_set_name(si->name,sid);
-			webclient_set_url(si->domain);
-			webclient_set_path(si->file);
-			webclient_set_port(si->port);
-			clientSetOvol(si->ovol);
-
-//printf("Name: %s, url: %s, path: %s\n",	si->name,	si->domain, si->file);
-
-			webclient_connect();
-			setOffsetVolume();
-			for (int i = 0;i<100;i++)
-			{
-				if (webclient_is_connected()) break;
-				vTaskDelay(1);
-			}
-	}
-	infree(si);
-	sprintf(answer,"{\"wsstation\":\"%d\"}",sid);
-	websocket_broadcast(answer, strlen(answer));
-	ESP_LOGI(TAG,"playstationInt: %d, g_device: %d",sid,g_device->currentstation);
-	if (g_device->currentstation != sid)
-	{
-		g_device->currentstation = sid;
-		iface_set_current_station( sid);
-		eeprom_save_device_settings(g_device);
-	}
-}
-
-void playStation(char* id) {
-	int uid = atoi(id) ;
-	ESP_LOGV(TAG,"playstation: %d",uid);
-	if (uid < 255)
-		iface_set_current_station (atoi(id)) ;
-	webserver_play_station_int(iface_get_current_station());
-}
-
 // https://circuits4you.com/2019/03/21/esp8266-url-encode-decode-example/
 unsigned char h2int(char c) {
     if (c >= '0' && c <='9'){
@@ -388,7 +342,7 @@ static void handlePOST(char* name, char* data, int data_size, int conn) {
 			char port[10];
 			tst &=getSParameterFromResponse(port,10,"port=", data, data_size);
 			if(tst) {
-				webclient_disconnect("Post instPlay");
+				action_webstation_stop();
 				for (int i = 0;i<100;i++)
 				{
 					if(!webclient_is_connected())break;
@@ -610,7 +564,7 @@ static void handlePOST(char* name, char* data, int data_size, int conn) {
 		if(data_size > 4) {
 			char * id = data+3;
 			data[data_size-1] = 0;
-				playStation(id);
+			action_webstation_set(atoi(id));
 		}
 	} else if(strcmp(name, "/auto") == 0) {
 		if(data_size > 4) {
@@ -643,15 +597,7 @@ static void handlePOST(char* name, char* data, int data_size, int conn) {
 		return;
 
 	} else if(strcmp(name, "/stop") == 0) {
-		if (webclient_is_connected())
-		{
-			webclient_disconnect("Post Stop");
-			for (int i = 0;i<100;i++)
-			{
-				if (!webclient_is_connected()) break;
-				vTaskDelay(4);
-			}
-		}
+		action_webstation_stop();
 	} else if(strcmp(name, "/upgrade") == 0) {
 #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 4, 0)
 		ota_update_firmware((char*)"KaRadio32_4");  // start the OTA
@@ -661,7 +607,7 @@ static void handlePOST(char* name, char* data, int data_size, int conn) {
 	} else if(strcmp(name, "/icy") == 0)
 	{
 		ESP_LOGV(TAG,"icy vol");
-		char currentSt[7]; sprintf(currentSt,"%d",iface_get_current_station());
+		char currentSt[7]; sprintf(currentSt,"%d",app_state_get_curr_webstation());
 		char vol[5]; sprintf(vol,"%d",(app_state_get_ivol()));
 		char treble[5]; sprintf(treble,"%d",(app_state_get_audio_output_mode() == VS1053)?VS1053_GetTreble():0);
 		char bass[5]; sprintf(bass,"%d",(app_state_get_audio_output_mode() == VS1053)?VS1053_GetBass():0);
@@ -1006,23 +952,23 @@ static bool httpServerHandleConnection(int conn, char* buf, uint16_t buflen) {
 				if (param != NULL) {action_increase_volume(-5);}
 // play command
 				param = getParameterFromResponse("play=", c, strlen(c)) ;
-				if (param != NULL) {playStation(param);infree(param);}
+				if (param != NULL) {action_webstation_set(atoi(param));infree(param);}
 // start command
 				param = strstr(c,"start") ;
-				if (param != NULL) {webserver_play_station_int(iface_get_current_station());}
+				if (param != NULL) {action_webstation_switch(0);}
 // stop command
 				param = strstr(c,"stop") ;
-				if (param != NULL) {webclient_disconnect("Web stop");}
+				if (param != NULL) {action_webstation_stop();}
 // next command
 				param = strstr(c,"next") ;
-				if (param != NULL) {webclient_ws_station_next();}
+				if (param != NULL) {action_webstation_switch(+1);}
 // prev command
 				param = strstr(c,"prev") ;
-				if (param != NULL) {webclient_ws_station_prev();}
+				if (param != NULL) {action_webstation_switch(+1);}
 // instantplay command
 				param = getParameterFromComment("instant=", c, strlen(c)) ;
 				if (param != NULL) {
-					webclient_disconnect("Web Instant");
+					action_webstation_stop();
 					pathParse(param);
 					webclient_parse_playlist(param);
 					infree(param);

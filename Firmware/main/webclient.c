@@ -582,41 +582,6 @@ static void clientSaveMetadata(char* s,int len)
 	incfree(tt,"");
 }
 
-// websocket: next station
-void webclient_ws_station_next()
-{
-	struct shoutcast_info* si =NULL;
-	do {
-		if (si != NULL) incfree(si,"wsstationN");
-		iface_set_current_station(iface_get_current_station()+1);
-		if (iface_get_current_station() >= 255)
-			iface_set_current_station(0);
-		si = eeprom_get_station(iface_get_current_station());
-	}
-	while (si == NULL || ((si != NULL)&&(strcmp(si->domain,"")==0)) || ((si != NULL)&&(strcmp( si->file,"")== 0)));
-
-	webserver_play_station_int(iface_get_current_station());
-	incfree(si,"wsstation");
-}
-// websocket: previous station
-void webclient_ws_station_prev()
-{
-	struct shoutcast_info* si = NULL;
-	do {
-		if (si != NULL) incfree(si,"wsstationP");
-		if (iface_get_current_station() >0)
-		{
-			iface_set_current_station(iface_get_current_station()-1);
-			si = eeprom_get_station(iface_get_current_station());
-		}
-		else return;
-	}
-	while (si == NULL || ((si != NULL)&&(strcmp(si->domain,"")==0)) || ((si != NULL)&&(strcmp( si->file,"")== 0)));
-
-	webserver_play_station_int	(iface_get_current_station());
-	incfree(si,"wsstation");
-}
-
 // websocket: broadcast volume to all client
 void webclient_ws_vol(uint8_t vol)
 {
@@ -683,7 +648,7 @@ static void wsHeaders()
 {
 //remove	uint8_t header_num;
 	char currentSt[6];
-	sprintf(currentSt,"%d",iface_get_current_station());
+	sprintf(currentSt,"%d",app_state_get_curr_webstation());
 	char* not2;
 	not2 = header.members.single.notice2;
 	if (not2 ==NULL) not2=header.members.single.audioinfo;
@@ -778,6 +743,12 @@ bool webclient_save_one_header(const char* t, uint16_t len, uint8_t header_num)
 	return true;
 }
 
+static void webclient_disconnect(const char* from)
+{
+	(void)from;
+	action_webstation_stop();
+}
+
 
 bool clientParseHeader(char* s)
 {
@@ -807,7 +778,7 @@ bool clientParseHeader(char* s)
 		if (strstr(t, "audio/ogg")) contentType = KAUDIO_OGG;
 
 		if(contentType == KMIME_UNKNOWN) {
-			ESP_LOGD(TAG, "unknown contentType: %s", t);
+			ESP_LOGE(TAG, "unknown contentType: %s", t);
 			webclient_save_one_header("unknown contentType",19,METANAME);
 			wsHeaders(); // update all server
 			vTaskDelay(10);
@@ -858,7 +829,7 @@ bool clientParseHeader(char* s)
 
 void webclient_set_name(const char* name,uint16_t index)
 {
-	kprintf("##CLI.NAMESET#: %d %s\n",index,name);
+	kprintf("##CLI.NAMESET#: %d %s\n",index, name);
 }
 
 // remove http(s)://
@@ -952,27 +923,6 @@ void webclient_silent_disconnect()
 
 }
 
-void webclient_disconnect(const char* from)
-{
-	kprintf(CLISTOP,from);
-	xSemaphoreGive(sDisconnect);
-	if (get_player_status()!=STOPPED)
-		audio_player_stop();
-	for (int i = 0;i<100;i++)
-	{
-		if(!webclient_is_connected())break;
-		vTaskDelay(1);
-	}
-//	esp_wifi_set_ps(WIFI_PS_MAX_MODEM);
-	vTaskDelay(1);
-	// save the volume if needed on stop state
-	if (g_device->vol != app_state_get_ivol())
-	{
-		g_device->vol = app_state_get_ivol();
-		eeprom_save_device_settings_volume(g_device);
-	}
-}
-
 void clientReceiveCallback(int sockfd, char *pdata, int len)
 {
 	static int metad ;
@@ -1064,7 +1014,6 @@ void clientReceiveCallback(int sockfd, char *pdata, int len)
 							metad = header.members.single.metaint;
 						ESP_LOGD(TAG,"t1: %p, cstatus: %d, icyfound: %d  metad:%d Metaint:%d\n", (void *)t1, cstatus, icyfound,metad,  (header.members.single.metaint));
 						cstatus = C_DATA;	// a stream found
-						action_set_volume(1);
 /////////////////////////////////////////////////////////////////////////////////////////////////
 						player_config->media_stream->eof = false;
 						audio_player_start();

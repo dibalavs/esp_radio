@@ -34,6 +34,8 @@
 #include "soc/timer_group_struct.h"
 #include "soc/timer_group_reg.h"
 
+#include "esp_radio/action_manager.h"
+
 #include "lwip/sockets.h"
 #include "lwip/dns.h"
 #include "lwip/netdb.h"
@@ -145,7 +147,7 @@ static void ota_task(void *pvParameter)
 	struct sockaddr_in dest;
 	char* name = (char*)pvParameter; // name of the bin file to load
     unsigned int cnt =0;
-	webclient_disconnect("OTA");
+	action_webstation_stop();
 
 	//esp32: found a partition to flash
     esp_err_t err;

@@ -11,31 +11,36 @@
 
 #include "esp_radio/app_state.h"
 
+#include <esp_debug_helpers.h>
+
+#include <assert.h>
 #include <esp_attr.h>
+#include <limits.h>
 
 static output_mode_t audio_output_mode;
-static uint8_t clientIvol = 0;
-static uint8_t clientIvolAddent = 0;
+static uint8_t ivol = 0;
+static int8_t ivol_addent = 0;
+static unsigned webstation_no = UINT_MAX;
+static unsigned fmstation_no = UINT_MAX;
 
 IRAM_ATTR uint8_t app_state_get_ivol(void)
 {
-    return clientIvol;
+    return ivol;
 }
 
-IRAM_ATTR void app_state_set_ivol(int vol)
+IRAM_ATTR void app_state_set_ivol(uint8_t vol)
 {
-    vol += clientIvolAddent;
-
-    if (vol > 254)
-        vol = 254;
-    else if (vol < 0)
-        vol = 0;
-    clientIvol = vol;
+    ivol = vol;
 };
 
-void app_state_set_ivol_addent(uint8_t vol)
+void app_state_set_ivol_addent(int8_t vol)
 {
-    clientIvolAddent = vol;
+    ivol_addent = vol;
+}
+
+int8_t app_state_get_ivol_addent(void)
+{
+    return ivol_addent;
 }
 
 IRAM_ATTR output_mode_t app_state_get_audio_output_mode(void)
@@ -46,4 +51,24 @@ IRAM_ATTR output_mode_t app_state_get_audio_output_mode(void)
 void app_state_set_audio_output_mode(output_mode_t mode)
 {
     audio_output_mode = mode;
+}
+
+void app_state_set_curr_webstation(unsigned sta_no)
+{
+    webstation_no = sta_no;
+}
+
+unsigned app_state_get_curr_webstation(void)
+{
+    return webstation_no;
+}
+
+void app_state_set_curr_fmstation(unsigned sta_no)
+{
+    fmstation_no = sta_no;
+}
+
+unsigned app_state_get_curr_fmstation(void)
+{
+    return fmstation_no;
 }

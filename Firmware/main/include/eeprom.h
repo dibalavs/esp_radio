@@ -118,9 +118,6 @@ void eeprom_save_device_settings_volume(struct device_settings *settings);
 struct device_settings* eeprom_get_device_settings();
 struct device_settings* eeprom_get_device_settings_silent();
 
-extern void* kmalloc(size_t memorySize);
-extern void* kcalloc(size_t elementCount, size_t elementSize);
-
 // Protect: html page is password protected.
 void setProtect(bool);
 bool getProtect();

@@ -5,6 +5,7 @@
 *******************************************************************************/
 
 #include "app_state.h"
+#include <limits.h>
 #define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
 #include <stddef.h>
 #include <string.h>
@@ -152,15 +153,6 @@ void addonu8g2_setfont(sizefont size)
 	}
 }
 
-
-
-
-////////////////////////////////////////
-char* addonu8g2_get_name_num()
-{
-	return nameNum;
-}
-
 static uint8_t getFontLineSpacing()
 {
 	return (u8g2_GetAscent(&u8g2) - u8g2_GetDescent(&u8g2));
@@ -213,7 +205,11 @@ unsigned len ;
 		   if ((lline[i] != NULL))
 		   {
 				len = u8g2_GetUTF8Width(&u8g2,lline[i]+iline[i]);
-				if (i == 0)	 len += u8g2_GetUTF8Width(&u8g2,nameNum);
+				if (i == 0)	{
+					char sta_num[10];
+					snprintf(sta_num, sizeof(sta_num), "%d", app_state_get_curr_webstation());
+					len += u8g2_GetUTF8Width(&u8g2, sta_num);
+				}
 				if (len >= x)
 				{
 					iline[i]++;
@@ -314,11 +310,13 @@ void addonu8g2_draw_frame(uint8_t mTscreen)
 				if (i == 0)
 				{
 //					printf("DRAW: len= %d,STR= %s\n",u8g2_GetUTF8Width(&u8g2,lline[i]+iline[i]),lline[i]+iline[i]);
-					if (nameNum[0] ==0)  u8g2_DrawUTF8(&u8g2,1,0,lline[i]+iline[i]);
-					else
-					{
-						u8g2_DrawUTF8(&u8g2,1,0,nameNum);
-						u8g2_DrawUTF8(&u8g2,u8g2_GetUTF8Width(&u8g2,nameNum)-1,0,lline[i]+iline[i]);
+					if (app_state_get_curr_webstation() == UINT_MAX)
+						u8g2_DrawUTF8(&u8g2,1,0,lline[i]+iline[i]);
+					else {
+						char sta_num[10];
+						snprintf(sta_num, sizeof(sta_num), "%d", app_state_get_curr_webstation());
+						u8g2_DrawUTF8(&u8g2,1 , 0, sta_num);
+						u8g2_DrawUTF8(&u8g2,u8g2_GetUTF8Width(&u8g2, sta_num)-1,0,lline[i]+iline[i]);
 					}
 				}
 				else u8g2_DrawUTF8(&u8g2,0,zz+z,lline[i]+iline[i]);
@@ -492,12 +490,9 @@ void addonu8g2_nameset(char* ici)
     if (ici != NULL)
     {
        clearAllU8g2();
-       strncpy(nameNum,nameset,ici-nameset+1);
-       nameNum[ici - nameset+1] = 0;
-	   addon_set_futur_num(atoi(nameNum));
     }
 	char nameseti[BUFLEN];
-	strcpy(nameseti,nameset+strlen(nameNum));
+	strcpy(nameseti,nameset);
     strcpy(nameset,nameseti);
     lline[STATIONNAME] = nameset;
 }

@@ -149,12 +149,10 @@ A command error display:\n\
 ##CMD_ERROR#\n\r"\
 };
 
-uint16_t currentStation = 0;
 static IRAM_ATTR uint32_t lcd_out = 0xFFFFFFFF;
 static IRAM_ATTR uint32_t lcd_stop = 0xFFFFFFFF;
 
 static esp_log_level_t s_log_default_level = ESP_LOG_NONE;
-extern void playStation(char* id);
 void iface_client_vol(char *s);
 
 #define MAX_WIFI_STATIONS 50
@@ -192,15 +190,6 @@ void iface_set_rotat(uint8_t dm)
 {
 	if (dm == 0) rotat = 0;
 	else rotat = 1;
-}
-
-uint16_t iface_get_current_station()
-{
-	return currentStation;
-}
-void iface_set_current_station( uint16_t cst)
-{
-	currentStation = cst;
 }
 
 unsigned short adcdiv;
@@ -520,7 +509,7 @@ void clientPlay(char *s)
         uint8_t tmp;
         for(tmp=0; tmp<(t_end-t+1); tmp++) id[tmp] = 0;
         strncpy(id, t+2, (t_end-t));
-		playStation(id);
+		action_webstation_set(atoi(id));
         free(id);
     }
 }
@@ -678,11 +667,12 @@ void clientInfo()
 {
 	struct shoutcast_info* si;
 	kprintf("##CLI.INFO#\n");
-	si = eeprom_get_station(currentStation);
+	unsigned sta_no = app_state_get_curr_webstation();
+	si = eeprom_get_station(sta_no);
 	if (si != NULL)
 	{
 		ntp_print_time();
-		webclient_set_name(si->name,currentStation);
+		webclient_set_name(si->name,sta_no);
 		webclient_print_headers();
 		iface_client_vol((char*)"");
 		webclient_print_state();
@@ -693,13 +683,14 @@ void clientInfo()
 char* iface_web_info()
 {
 	struct shoutcast_info* si;
-	si = eeprom_get_station(currentStation);
+	unsigned sta_no = app_state_get_curr_webstation();
+	si = eeprom_get_station(sta_no);
 	char* resp = kmalloc(1024);
 	if (si != NULL)
 	{
 		if (resp != NULL)
 		{
-			sprintf(resp,"vol: %d\nnum: %d\nstn: %s\ntit: %s\nsts: %d\n",app_state_get_ivol(),currentStation,si->name,webclient_get_meta(),webclient_get_state());
+			sprintf(resp,"vol: %d\nnum: %d\nstn: %s\ntit: %s\nsts: %d\n",app_state_get_ivol(),sta_no,si->name,webclient_get_meta(),webclient_get_state());
 		}
 		free(si);
 	}
@@ -1282,12 +1273,12 @@ void iface_check_command(int size, char* s)
 		if     (startsWith (  "url", tmp+4)) 	clientParseUrl(tmp);
 		else if(startsWith (  "path", tmp+4))	clientParsePath(tmp);
 		else if(startsWith (  "port", tmp+4)) 	clientParsePort(tmp);
-		else if(strcmp(tmp+4, "instant") == 0) {webclient_disconnect("cli instantplay");webclient_connect_once();}
-		else if(strcmp(tmp+4, "start") == 0) 	clientPlay((char*)"(\"255\")"); // outside value to play the current station
-		else if(strcmp(tmp+4, "stop") == 0) 	webclient_disconnect("cli stop");
+		else if(strcmp(tmp+4, "instant") == 0) {action_webstation_stop(); webclient_connect_once();}
+		else if(strcmp(tmp+4, "start") == 0) 	action_webstation_switch(0); // outside value to play the current station
+		else if(strcmp(tmp+4, "stop") == 0) 	action_webstation_stop();
 		else if(startsWith (  "list", tmp+4)) 	clientList(tmp);
-		else if(strcmp(tmp+4, "next") == 0) 	webclient_ws_station_next();
-		else if(strncmp(tmp+4,"previous",4) == 0) webclient_ws_station_prev();
+		else if(strcmp(tmp+4, "next") == 0) 	action_webstation_switch(+1);
+		else if(strncmp(tmp+4,"previous",4) == 0) action_webstation_switch(-1);
 		else if(startsWith (  "play",tmp+4)) 	clientPlay(tmp);
 		else if(strcmp(tmp+4, "vol+") == 0) 	action_increase_volume(+10);
 		else if(strcmp(tmp+4, "vol-") == 0) 	action_increase_volume(-10);

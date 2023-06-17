@@ -58,7 +58,6 @@ static typeScreen defaultStateScreen = smain;
 static uint8_t mTscreen = MTNEW; // 0 dont display, 1 display full, 2 display variable part
 
 static bool playable = true;
-static int16_t futurNum = 0; // the number of the wanted station
 
 static unsigned timerScreen = 0;
 static unsigned timerScroll = 0;
@@ -75,7 +74,6 @@ static uint8_t itLcdOut = 0;
 //static bool itAskSsecond = false; // start the time display
 static bool state = false; // start stop on Ok key
 
-static int16_t currentValue = 0;
 static bool dvolume = true; // display volume screen
 
 // custom ir code init from hardware nvs
@@ -90,7 +88,7 @@ void Screen(typeScreen st);
 void drawScreen();
 static void evtScreen(typelcmd value);
 
-struct tm* addon_get_dt() { return dt;}
+struct tm* addon_get_dt() { return dt; }
 
 // Deep Sleep Power Save Input. https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/sleep_modes.html
 gpio_num_t deepSleep_io; /** Enter Deep Sleep if pin is set to level defined in P_LEVELPINSLEEP. */
@@ -247,17 +245,6 @@ IRAM_ATTR  void addon_service_isr(void)
 }
 
 ////////////////////////////////////////
-// futurNum
-void addon_set_futur_num(int16_t new)
-{
-	futurNum = new;
-}
-int16_t addon_get_futur_num()
-{
-	return futurNum;
-}
-
-////////////////////////////////////////
 // scroll each line
 void scroll()
 {
@@ -328,8 +315,11 @@ void drawStation()
  //ClearBuffer();
 
   do {
-	si = eeprom_get_station(futurNum);
-	sprintf(sNum,"%d",futurNum);
+	int sta_no = app_state_get_curr_webstation();
+	si = eeprom_get_station(sta_no);
+	if (!si)
+		break;
+	sprintf(sNum,"%d", sta_no);
 	ddot = si->name;
 	ptl = ddot;
 	while ( *ptl == 0x20){ddot++;ptl++;}
@@ -337,14 +327,6 @@ void drawStation()
 	{
 		playable = false;
 		free(si);
-		if (currentValue < 0) {
-			futurNum--;
-			if (futurNum <0) futurNum = 254;
-		}
-		else {
-			futurNum++;
-			if (futurNum > 254) futurNum = 0;
-		}
 	}
 	else
 		playable = true;
@@ -408,46 +390,20 @@ void drawScreen()
   }
 }
 
-
-void stopStation()
-{
-//    irStr[0] = 0;
-	webclient_disconnect("addon stop");
-}
-void startStation()
-{
- //   irStr[0] = 0;
-    webserver_play_station_int(futurNum); ;
-}
 void startStop()
 {
 	ESP_LOGD(TAG,"START/STOP State: %d",state);
-    state?stopStation():startStation();
+    state?action_webstation_stop():action_webstation_switch(0);
 }
+
 void stationOk()
 {
 	ESP_LOGD(TAG,"STATION OK");
-       if (strlen(irStr) >0)
-	   {
-		  futurNum = atoi(irStr);
-          webserver_play_station_int(futurNum);
-	   }
-        else
-        {
-            startStop();
-        }
-        irStr[0] = 0;
-}
-void changeStation(int16_t value)
-{
-	currentValue = value;
-	ESP_LOGD(TAG,"changeStation val: %d, futurnum: %d",value,futurNum);
-	if (value > 0) futurNum++;
-	if (futurNum > 254) futurNum = 0;
-	else if (value < 0) futurNum--;
-	if (futurNum <0) futurNum = 254;
-	ESP_LOGD(TAG,"futurnum: %d",futurNum);
-	//else if (value != 0) mTscreen = MTREFRESH;
+	if (strlen(irStr) > 0)
+		action_webstation_set(atoi(irStr));
+	else
+		startStop();
+	irStr[0] = 0;
 }
 // IR
 // a number of station in progress...
@@ -479,14 +435,6 @@ static void evtScreen(typelcmd value)
 
 }
 
-static void evtStation(int16_t value)
-{ // value +1 or -1
-	event_lcd_t evt;
-	evt.lcmd = estation;
-	evt.lline = (char*)((uint32_t)value);
-	if (lcd_type != LCD_NONE) xQueueSend(event_lcd,&evt, 0);
-}
-
 // toggle main / time
 static void toggletime()
 {
@@ -512,12 +460,12 @@ void buttons_loop(void)
 
 	case BTN_TYPE_PREV:
 		if (event->state == BTN_STATE_CLICKED)
-			evtStation(-1);
+			action_webstation_switch(-1);
 		break;
 
 	case BTN_TYPE_NEXT:
 		if (event->state == BTN_STATE_CLICKED)
-			evtStation(+1);
+			action_webstation_switch(+1);
 		break;
 
 	case BTN_TYPE_ENC_BTN:
@@ -556,11 +504,11 @@ bool irCustom(uint32_t evtir, bool repeat)
 	{
 		switch (i)
 		{
-			case KEY_UP: evtStation(+1);  break;
+			case KEY_UP: action_webstation_switch(+1);  break;
 			case KEY_LEFT: action_increase_volume(-5);  break;
 			case KEY_OK: if (!repeat ) stationOk();   break;
 			case KEY_RIGHT: action_increase_volume(+5);   break;
-			case KEY_DOWN: evtStation(-1);  break;
+			case KEY_DOWN: action_webstation_switch(-1);  break;
 			case KEY_0: if (!repeat ) nbStation('0');   break;
 			case KEY_1: if (!repeat ) nbStation('1');  break;
 			case KEY_2: if (!repeat ) nbStation('2');  break;
@@ -571,8 +519,8 @@ bool irCustom(uint32_t evtir, bool repeat)
 			case KEY_7: if (!repeat ) nbStation('7');  break;
 			case KEY_8: if (!repeat ) nbStation('8');  break;
 			case KEY_9: if (!repeat ) nbStation('9');  break;
-			case KEY_STAR: if (!repeat ) webserver_play_station_int(futurNum);  break;
-			case KEY_DIESE: if (!repeat )  stopStation();  break;
+			case KEY_STAR: if (!repeat ) action_webstation_switch(0);  break;
+			case KEY_DIESE: if (!repeat ) action_webstation_stop();  break;
 			case KEY_INFO: if (!repeat ) toggletime();  break;
 			default: ;
 		}
@@ -605,7 +553,7 @@ event_ir_t evt;
 		case 0xDF2047:
 		case 0xDF2002:
 		case 0xFF0046:
-		case 0xF70812:  /*(" UP");*/  evtStation(+1);
+		case 0xF70812:  /*(" UP");*/  action_webstation_switch(+1);
 		break;
 		case 0xDF2049:
 		case 0xDF2041:
@@ -626,7 +574,7 @@ event_ir_t evt;
 		case 0xDF204D:
 		case 0xDF2009:
 		case 0xFF0015:
-		case 0xF70813: /*(" DOWN");*/ evtStation(-1);
+		case 0xF70813: /*(" DOWN");*/ action_webstation_switch(-1);
 		break;
 		case 0xDF2000:
 		case 0xFF0016:
@@ -666,7 +614,7 @@ event_ir_t evt;
 		break;
 		case 0xDF2045:
 		case 0xFF0042:
-		case 0xF70817: /*(" *");*/   if (!evt.repeat_flag ) webserver_play_station_int(futurNum);
+		case 0xF70817: /*(" *");*/   if (!evt.repeat_flag ) action_webstation_switch(0);
 		break;
 		case 0xDF201B:
 		case 0xFF0052:
@@ -674,7 +622,7 @@ event_ir_t evt;
 		break;
 		case 0xDF205B:
 		case 0xFF004A:
-		case 0xF7081D: /*(" #");*/ if (!evt.repeat_flag )  stopStation();
+		case 0xF7081D: /*(" #");*/ if (!evt.repeat_flag )  action_webstation_stop();
 		break;
 		case 0xDF2007: /*(" Info")*/ if (!evt.repeat_flag ) toggletime();
 		break;
@@ -791,7 +739,6 @@ void addon_task_lcd(void *pvParams)
 					if(xQueuePeek(event_lcd, &evt1, 0))
 						if (evt1.lcmd == estation) {evt.lline = NULL;break;}
 					ESP_LOGD(TAG,"estation val: %d",(uint32_t)evt.lline);
-					changeStation((uint32_t)evt.lline);
 					Screen(sstation);
 					addon_wake_lcd();
 					evt.lline = NULL;	// just a number
@@ -832,8 +779,6 @@ void addon_task(void *pvParams)
 	TaskHandle_t pxCreatedTask;
 	customKeyInit();
 
-	futurNum = iface_get_current_station();
-
 	//ir
 	// queue for events of the IR nec rx
 	event_ir = xQueueCreate(5, sizeof(event_ir_t));
@@ -872,6 +817,7 @@ void addon_task(void *pvParams)
 
 		if (timerScreen >= 3) //  sec timeout transient screen
 		{
+			int sta_no = 0;
 //			if ((stateScreen != smain)&&(stateScreen != stime)&&(stateScreen != snull))
 //printf("timerScreen: %d, stateScreen: %d, defaultStateScreen: %d\n",timerScreen,stateScreen,defaultStateScreen);
 			timerScreen = 0;
@@ -880,19 +826,16 @@ void addon_task(void *pvParams)
 				// Play the changed station on return to main screen
 				// if a number is entered, play it.
 				if (strlen(irStr) >0){
-					futurNum = atoi (irStr);
-					if (futurNum>254) futurNum = 0;
+					sta_no = atoi (irStr);
 					playable = true;
 					// clear the number
 					irStr[0] = 0;
+					if (playable && (sta_no != app_state_get_curr_webstation()))
+					{
+						action_webstation_set(sta_no);
+					}
 				}
-				if ((strlen(isColor?addonucg_get_name_num_ucg():addonu8g2_get_name_num()) != 0 )
-					&& playable
-					&& ( futurNum!= atoi(  isColor?addonucg_get_name_num_ucg():addonu8g2_get_name_num()  )))
-				{
-					webserver_play_station_int(futurNum);
-					vTaskDelay(2);
-				}
+
 				if (!itAskStime)
 				{
 					if ((defaultStateScreen == stime) && (stateScreen != smain))evtScreen(smain);
@@ -964,8 +907,9 @@ void addon_parse(const char *fmt, ...)
    if (((ici=strstr(line,"STOPPED")) != NULL)&&(strstr(line,"C_HDER") == NULL)&&(strstr(line,"C_PLIST") == NULL))
    {
 		state = false;
- 		evt.lcmd = lstop;
+ 		evt.lcmd = -1;
 		evt.lline = NULL;
+		action_webstation_stop();
    }
    else
  //////Nameset    ##CLI.NAMESET#:

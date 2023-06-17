@@ -13,13 +13,15 @@
 
 #include <stdint.h>
 
-void action_webstation_playpause(void);
+void action_webstation_stop(void);
 void action_webstation_switch(int delta);
 void action_webstation_set(unsigned station_no);
+unsigned action_webstation_get(void);
 
-void action_fmstation_playpause(void);
+void action_fmstation_stop(void);
 void action_fmstation_switch(int delta);
 void action_fmstation_set(unsigned station_no);
+unsigned action_fmstation_get(void);
 
 void action_increase_volume(int delta);
 void action_set_volume(uint8_t value);

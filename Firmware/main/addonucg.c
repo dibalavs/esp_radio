@@ -5,6 +5,7 @@
 *******************************************************************************/
 
 #include "app_state.h"
+#include <limits.h>
 #define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
 #include <stddef.h>
 #include <string.h>
@@ -334,13 +335,6 @@ void addonucg_setfont(sizefont size)
 
 }
 
-
-////////////////////////////////////////
-char* addonucg_get_name_num_ucg()
-{
-	return nameNum;
-}
-
 ////////////////////////////////////////
 // Clear all buffers and indexes
 void clearAllUcg()
@@ -547,15 +541,19 @@ void markDrawResetUcg(int i)
 // scroll each line
 void addonucg_scroll()
 {
-int16_t len;
-addonucg_setfont(text);
+	int16_t len;
+	addonucg_setfont(text);
+
+	char sta_num[10];
+	snprintf(sta_num, sizeof(sta_num), "%d", app_state_get_curr_webstation());
+
 	for (int i = 0;i < LINES;i++)
 	{
 		if (lline[i] != NULL)
 		{
 			if (tline[i]>0)
 			{
-				len = (i==0)? ucg_GetStrWidth(&ucg,nameNum)+ucg_GetStrWidth(&ucg,lline[i]):ucg_GetStrWidth(&ucg,lline[i]);
+				len = (i==0)? ucg_GetStrWidth(&ucg, sta_num)+ucg_GetStrWidth(&ucg,lline[i]):ucg_GetStrWidth(&ucg,lline[i]);
 				if ((tline[i] == 4) && (len >= x))
 				{
 					iline[i]= 0;
@@ -565,7 +563,7 @@ addonucg_setfont(text);
 			}
 			else
 			{
-				len = (i==0)? ucg_GetStrWidth(&ucg,nameNum)+ucg_GetStrWidth(&ucg,lline[i]+iline[i]):ucg_GetStrWidth(&ucg,lline[i]+iline[i]);
+				len = (i==0)? ucg_GetStrWidth(&ucg, sta_num)+ucg_GetStrWidth(&ucg,lline[i]+iline[i]):ucg_GetStrWidth(&ucg,lline[i]+iline[i]);
 				if (len > x)
 				{
 					len = iline[i];
@@ -615,11 +613,13 @@ void draw(int i)
         ucg_SetColori(&ucg,0,0,0);
 		if (lline[i] != NULL)
 		{
-			if (nameNum[0] ==0)  ucg_DrawString(&ucg,1,1,0,lline[i]+iline[i]);
+			if (app_state_get_curr_webstation() == UINT_MAX)  ucg_DrawString(&ucg,1,1,0,lline[i]+iline[i]);
 			else
 			{
-			ucg_DrawString(&ucg,1,1,0,nameNum);
-			ucg_DrawString(&ucg,ucg_GetStrWidth(&ucg,nameNum)-2,1,0,lline[i]+iline[i]);
+				char sta_num[10];
+				snprintf(sta_num, sizeof(sta_num), "%d", app_state_get_curr_webstation());
+				ucg_DrawString(&ucg, 1, 1, 0, sta_num);
+				ucg_DrawString(&ucg, ucg_GetStrWidth(&ucg, sta_num)-2,1,0,lline[i]+iline[i]);
 			}
 		}
         break;
@@ -1014,12 +1014,9 @@ void addonucg_nameset(char* ici)
     if (ici != NULL)
     {
        clearAllUcg();
-       strncpy(nameNum,nameset,ici-nameset+1);
-       nameNum[ici - nameset+1] = 0;
-	   addon_set_futur_num(atoi(nameNum));
     }
 	char nameseti[BUFLEN];
-	strcpy(nameseti,nameset+strlen(nameNum));
+	strcpy(nameseti,nameset);
     strcpy(nameset,nameseti);
 	charset = Latin;
 	removeUtf8(nameset);

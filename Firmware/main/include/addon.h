@@ -98,8 +98,6 @@ void addon_lcd_init(uint8_t Type);
 void addon_service_isr(void);
 void addon_parse(const char *fmt, ...);
 void addon_lcd_welcome(const char* ip,const char*state);
-void addon_set_futur_num(int16_t new);
-int16_t addon_get_futur_num();
 void addon_dt();
 void addon_wake_lcd();
 uint16_t addon_get_width();

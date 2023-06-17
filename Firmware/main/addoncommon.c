@@ -21,7 +21,6 @@
   uint8_t  mline[LINES] ; // mark to display
 
 
-  char nameNum[5] ; // the number of the current station
   char genre[BUFLEN/2]; // the local name of the station
 
 

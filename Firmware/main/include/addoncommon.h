@@ -24,7 +24,5 @@ extern   uint8_t  iline[LINES] ; //array of index for scrolling
 extern   uint8_t  tline[LINES] ;
 extern   uint8_t  mline[LINES] ; // mark to display
 
-
-extern   char nameNum[5] ; // the number of the current station
 extern   char genre[BUFLEN/2]; // the local name of the station
 #endif

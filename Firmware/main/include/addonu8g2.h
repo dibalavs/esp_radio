@@ -13,7 +13,6 @@ void addonu8g2_status(const char* label);
 void addonu8g2_icy0(char* ici);
 void addonu8g2_icy4(char* ici);
 void addonu8g2_meta(char* ici);
-char* addonu8g2_get_name_num();
 void addonu8g2_scroll();
 void addonu8g2_draw_frame(uint8_t mTscreen);
 void addonu8g2_draw_ttitle(char* ttitle);

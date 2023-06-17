@@ -6,6 +6,7 @@
  */
 
 #include <stdlib.h>
+#include "action_manager.h"
 #include "freertos/FreeRTOS.h"
 
 #include "audio_player.h"
@@ -59,7 +60,7 @@ static int start_decoder_task(player_t *player)
 			{
 				ESP_LOGE(TAG, "aac not supported on WROOM cpu");
 				spiRamFifoReset();
-				webclient_disconnect("no AAC");
+				action_webstation_stop();
 				return -1;
 			}
 
@@ -92,6 +93,8 @@ static int start_decoder_task(player_t *player)
 
 static int t;
 
+void merus_get_status(void);
+
 /* Writes bytes into the FIFO queue, starts decoder task if necessary. */
 int audio_stream_consumer(const char *recv_buf, ssize_t bytes_read)
 {
@@ -118,7 +121,7 @@ int audio_stream_consumer(const char *recv_buf, ssize_t bytes_read)
 			if (start_decoder_task(player_instance) != 0) {
 				ESP_LOGE(TAG, "Decoder task failed");
 				audio_player_stop();
-				webclient_disconnect("decoder failed");
+				action_webstation_stop();
 				return -1;
 			}
 		}
@@ -129,6 +132,7 @@ int audio_stream_consumer(const char *recv_buf, ssize_t bytes_read)
 		uint8_t fill_level = (bytes_in_buf * 100) / spiRamFifoLen();
 
 		ESP_LOGI(TAG, "Buffer fill %u%%, %d // %d bytes", fill_level, bytes_in_buf,spiRamFifoLen());
+		//merus_get_status(); // Uncomment, to see status of MA12070p
 	}
 	t = (t+1) & 255;
 
