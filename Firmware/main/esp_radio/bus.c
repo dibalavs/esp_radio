@@ -119,7 +119,7 @@ void  bus_init_i2s(/*renderer_config_t *config*/)
         .dma_frame_num = 512,                          // size of each buffer 128
         .intr_alloc_flags = 0 ,        // default
         .tx_desc_auto_clear = true,
-        .use_apll = 1,
+        .use_apll = 0,
         .fixed_mclk = 0,	// avoiding I2S bug
     };
 

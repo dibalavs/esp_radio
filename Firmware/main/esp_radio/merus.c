@@ -65,3 +65,34 @@ void merus_set_volume(uint8_t volume)
     ESP_ERROR_CHECK(i2s_start(I2S_OUT_NO));
     ext_gpio_set_merus_chip_select(false);
 }
+
+void merus_get_status(void)
+{
+    int mute0 = 0;
+    int mute1 = 0;
+    int system_mute = 0;
+    int err = 0;
+    int err_acc = 0;
+    int audio_proc_mute = 0;
+    int lim_mon = 0;
+    int lim_clip = 0;
+    ESP_ERROR_CHECK(i2s_stop(I2S_OUT_NO));
+    ext_gpio_set_merus_chip_select(true);
+    set_MA_eh_clear(0);             // clear errors
+    set_MA_eh_clear(1);
+    set_MA_eh_clear(0);
+
+    mute0 = get_MA_dcu_mon0__mute();
+    mute1 = get_MA_dcu_mon1__mute();
+    err_acc = get_MA_error_acc();
+    err = get_MA_error();
+    system_mute = get_MA_system_mute();
+    audio_proc_mute = get_MA_audio_proc_mute();
+    lim_mon = get_MA_audio_proc_limiter_mon();
+    lim_clip = get_MA_audio_proc_clip_mon();
+    ext_gpio_set_merus_chip_select(false);
+    ESP_ERROR_CHECK(i2s_start(I2S_OUT_NO));
+
+    ESP_LOGI(TAG, "sys_mute:0x%x, audio_proc_mute:0x%x, audio_proc_lim_mon:0x%x, audio_proc_clip:0x%x, mute0:0x%x, mute1:0x%x, error:0x%x, error_acc:0x%x",
+        system_mute, audio_proc_mute, lim_mon, lim_clip, mute0, mute1, err, err_acc);
+}

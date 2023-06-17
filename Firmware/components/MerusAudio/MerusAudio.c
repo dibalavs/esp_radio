@@ -146,7 +146,7 @@ esp_err_t init_ma120(void)
     uint8_t res = ma_read_byte(MA_hw_version__a);
     printf("Hardware version: 0x%02x\n",res);
 
-    return set_MA_vol_db_master(0xff);
+    set_MA_vol_db_master(0xff);
     set_MA_vol_db_ch0(0);
     set_MA_vol_db_ch1(0);
     set_MA_vol_db_ch2(0);
@@ -154,7 +154,8 @@ esp_err_t init_ma120(void)
     set_MA_audio_proc_enable(1);
     set_MA_audio_proc_limiterEnable(1);
     set_MA_audio_proc_mute(0);      // (0) - disable mute
-    set_MA_i2s_format(0b000);       // 16bit (0b100) left justified; 0b000 - i2s standard
+    set_MA_system_mute(0);
+    set_MA_i2s_format(0b001);       // 16bit (0b001) left justified; 0b000 - i2s standard
     set_MA_i2s_rightfirst(0);       // left first (0)
     set_MA_i2s_framesize(0b00);     // 64 SCK period per WS period (0b00)
 
