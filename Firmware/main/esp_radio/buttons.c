@@ -42,11 +42,12 @@ static buttons_cb_t *buttons_callback;
 
 // current values:
 // CW:
-// single step turn: '3' -> '1' -> '0'
-// multiple steps turn:  '3' -> '1'; '3' -> '1'; '3' -> '1'; '3' -> '1'
+// single step turn:    '0' -> '3' -> '1' -> '0'
+// multiple steps turn: '0' -> '3' -> '0'
 
 // CCW:
-// single step turn: '1' -> '3' -> '1'
+// single step turn:    '0' -> '1' -> '3' -> '0'
+// multiple steps turn: '0' -> '1' -> '0'
 
 // Clockwise step.
 #define DIR_CW 0x10
@@ -58,11 +59,13 @@ static const unsigned char ttable[4][4] = {
     {0, 1, 0, 3},
 
     // CCW direction states
-    {1, 1, 1, 2},
-    {DIR_CCW, DIR_CCW, DIR_CCW, 0},
+    {DIR_CCW, 1, 1, 1},
+
+    // Unused state.
+    {0, 0, 0, 0},
 
     // CW direction states
-    {DIR_CW, 3, 0, 3 | DIR_CW}
+    {DIR_CW, 3, 0, 3}
 };
 
 IRAM_ATTR static void ext_gpio_int_callback_isr(void)
@@ -149,13 +152,12 @@ static void process_encoder(uint8_t pins, unsigned long now_ms)
         return;
     }
 
-    if (encoder_state == DIR_CCW || (now_ms - encoder_ccw_ms) < 500) {
+    if (encoder_state == DIR_CCW ) {
         adder = -calc_acceleration(now_ms - encoder_ccw_ms);
         enqueue_event(BTN_TYPE_ENC_LESS, BTN_STATE_CLICKED, -adder);
         encoder_ccw_ms = now_ms;
     }
-
-    if (encoder_state == DIR_CW || (now_ms - encoder_cw_ms) < 500) {
+    else if (encoder_state == DIR_CW) {
         adder = calc_acceleration(now_ms - encoder_cw_ms);
         enqueue_event(BTN_TYPE_ENC_MORE, BTN_STATE_CLICKED, adder);
         encoder_cw_ms = now_ms;
@@ -163,37 +165,37 @@ static void process_encoder(uint8_t pins, unsigned long now_ms)
 
     if (encoder_value + adder > 0 && encoder_value + adder < 255) {
         encoder_value += adder;
-ESP_LOGE(TAG, "encoder value: %d", (int)buttons_get_encoder_value());
     }
 }
 
 static void buttons_task(void* p)
 {
     (void)p;
-    uint32_t thread_notification = 0;
     unsigned long now_ms;
+    TickType_t delay = portMAX_DELAY;
 
     while(1)
     {
-        thread_notification = ulTaskNotifyTake(0, pdMS_TO_TICKS(2000));
+        ulTaskNotifyTake(0, delay);
         ext_gpio_fetch_int_captured();
-
-        if (!thread_notification) {
-            encoder_ccw_ms = encoder_cw_ms = encoder_state = 0;
-            continue;
-        }
 
         now_ms = xTaskGetTickCount() * portTICK_PERIOD_MS;
 
         // Process rotary encoder
-        const uint8_t pins = (ext_gpio_get_enca() << 1) | ext_gpio_get_encb();
-        process_encoder(pins, now_ms);
+        const uint8_t enc_pins = (ext_gpio_get_enca() << 1) | ext_gpio_get_encb();
+        process_encoder(enc_pins, now_ms);
+
+        // For checking encoder, we need to poll encoder pins changes as fast as we can,
+        // because interrupts can be lost.
+        delay = enc_pins ? 0 : portMAX_DELAY;
 
         // Process buttons
-        process_button(BTN_TYPE_PREV, ext_gpio_get_button_prev(), now_ms);
-        process_button(BTN_TYPE_PLAY, ext_gpio_get_button_play(), now_ms);
-        process_button(BTN_TYPE_NEXT, ext_gpio_get_button_next(), now_ms);
-        process_button(BTN_TYPE_ENC_BTN, ext_gpio_get_enc_button(), now_ms);
+        if (!enc_pins) {
+            process_button(BTN_TYPE_PREV, ext_gpio_get_button_prev(), now_ms);
+            process_button(BTN_TYPE_PLAY, ext_gpio_get_button_play(), now_ms);
+            process_button(BTN_TYPE_NEXT, ext_gpio_get_button_next(), now_ms);
+            process_button(BTN_TYPE_ENC_BTN, ext_gpio_get_enc_button(), now_ms);
+        }
     }
 }
 

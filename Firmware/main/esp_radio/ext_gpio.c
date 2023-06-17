@@ -33,13 +33,14 @@ IRAM_ATTR static void gpio_isr_handler(void* arg)
 
 void ext_gpio_fetch_int_captured(void)
 {
-    port_a = mcp23017_read_intcap(i2c_device, MCP23017_GPIOA);
+    //port_a = mcp23017_read_intcap(i2c_device, MCP23017_GPIOA);
+    port_a = mcp23017_read_io(i2c_device, MCP23017_GPIOA);
 }
 
 void ext_gpio_init(void)
 {
     static const gpio_config_t io_conf = {
-        .intr_type = GPIO_INTR_NEGEDGE,
+        .intr_type = GPIO_INTR_POSEDGE,
         .mode = GPIO_MODE_INPUT,
         .pin_bit_mask = (1ULL<<PIN_EXT_GPIO_INT),
         .pull_down_en = 0,
@@ -59,6 +60,7 @@ void ext_gpio_init(void)
     // Configure PORT A
     ESP_ERROR_CHECK(mcp23017_set_io_dir(i2c_device, 0xff, MCP23017_GPIOA)); // all input
     ESP_ERROR_CHECK(mcp23017_set_input_polarity(i2c_device, 0x00ff)); // invert logic, because when button pushed, it grounded
+    ESP_ERROR_CHECK(mcp23017_set_interrupt_polarity(i2c_device, MCP23017_GPIOA, 1));
     ESP_ERROR_CHECK(mcp23017_interrupt_en(i2c_device, 0x00ff, 0, 0)); // interrups only on GPIOA
     ESP_ERROR_CHECK(mcp23017_set_pullup(i2c_device, 0x00ff)); // Pullup on GPIOA
 
@@ -68,7 +70,7 @@ void ext_gpio_init(void)
     port_a = mcp23017_read_io(i2c_device, MCP23017_GPIOA);
     //mcp23017_write_io(i2c_device, 0xff, MCP23017_GPIOB);
 
-    ext_gpio_set_merus_en(true);
+    ext_gpio_set_merus_en(false);
     ext_gpio_set_merus_mute(false);
 }
 

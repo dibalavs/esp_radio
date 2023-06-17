@@ -446,50 +446,52 @@ static void toggletime()
 
 void buttons_loop(void)
 {
-	button_event_t *event = buttons_get_event();
-	if (event == NULL)
-		return;
+	while (true) {
+		button_event_t *event = buttons_get_event();
+		if (event == NULL)
+			return;
 
-	switch (event->button) {
-	case BTN_TYPE_PLAY:
-		if (event->state == BTN_STATE_CLICKED)
-			startStop();
-		else if (event->state == BTN_STATE_DBLCLICKED)
-			toggletime();
-		break;
+		switch (event->button) {
+		case BTN_TYPE_PLAY:
+			if (event->state == BTN_STATE_CLICKED)
+				startStop();
+			else if (event->state == BTN_STATE_DBLCLICKED)
+				toggletime();
+			break;
 
-	case BTN_TYPE_PREV:
-		if (event->state == BTN_STATE_CLICKED)
-			action_webstation_switch(-1);
-		break;
+		case BTN_TYPE_PREV:
+			if (event->state == BTN_STATE_CLICKED)
+				action_webstation_switch(-1);
+			break;
 
-	case BTN_TYPE_NEXT:
-		if (event->state == BTN_STATE_CLICKED)
-			action_webstation_switch(+1);
-		break;
+		case BTN_TYPE_NEXT:
+			if (event->state == BTN_STATE_CLICKED)
+				action_webstation_switch(+1);
+			break;
 
-	case BTN_TYPE_ENC_BTN:
-	/*  TODO: implement it
-		if (event->state == BTN_STATE_CLICKED)
-			switch_fm_radio();
-	*/
-		if (event->state == BTN_STATE_HOLD)
-			addon_deep_sleep_start();
-		break;
+		case BTN_TYPE_ENC_BTN:
+		/*  TODO: implement it
+			if (event->state == BTN_STATE_CLICKED)
+				switch_fm_radio();
+		*/
+			if (event->state == BTN_STATE_HOLD)
+				addon_deep_sleep_start();
+			break;
 
-	case BTN_TYPE_ENC_LESS:
-		action_increase_volume(-1);
-		break;
+		case BTN_TYPE_ENC_LESS:
+			action_increase_volume(-1);
+			break;
 
-	case BTN_TYPE_ENC_MORE:
-		action_increase_volume(+1);
-		break;
+		case BTN_TYPE_ENC_MORE:
+			action_increase_volume(+1);
+			break;
 
-	case BTN_TYPE_LAST:
-		break;
+		case BTN_TYPE_LAST:
+			break;
+		}
+
+		buttons_release_event(event);
 	}
-
-	buttons_release_event(event);
 }
 
 // compute custom IR
