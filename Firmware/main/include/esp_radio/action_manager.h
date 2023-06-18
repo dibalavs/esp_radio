@@ -12,12 +12,15 @@
 #pragma once
 
 #include <stdint.h>
+#include <stdbool.h>
 
+bool action_webstation_is_running(void);
 void action_webstation_stop(void);
 void action_webstation_switch(int delta);
 void action_webstation_set(unsigned station_no);
 unsigned action_webstation_get(void);
 
+bool action_fmstation_is_running(void);
 void action_fmstation_stop(void);
 void action_fmstation_switch(int delta);
 void action_fmstation_set(unsigned station_no);

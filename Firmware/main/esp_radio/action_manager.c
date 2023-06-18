@@ -33,8 +33,18 @@
 
 static const char *TAG = "action";
 
+static bool webstation_is_running;
+static bool fmstation_is_running;
+
+bool action_webstation_is_running(void)
+{
+    return webstation_is_running;
+}
+
 void action_webstation_stop(void)
 {
+    webstation_is_running = false;
+
 	xSemaphoreGive(sDisconnect);
     event_lcd_t evt;
     evt.lcmd = lstop;
@@ -80,6 +90,8 @@ void action_webstation_set(unsigned station_no)
     if (si == NULL)
         return;
 
+    webstation_is_running = true;
+
     ESP_LOGI(TAG,"Webstation set: %d, Name: %s", station_no, si->name);
     webclient_set_name(si->name, station_no);
     webclient_set_url(si->domain);
@@ -100,9 +112,14 @@ void action_webstation_set(unsigned station_no)
 	}
 }
 
+bool action_fmstation_is_running(void)
+{
+    return fmstation_is_running;
+}
+
 void action_fmstation_stop(void)
 {
-
+    fmstation_is_running = false;
 }
 
 void action_fmstation_switch(int delta)
@@ -112,7 +129,7 @@ void action_fmstation_switch(int delta)
 
 void action_fmstation_set(unsigned station_no)
 {
-
+    fmstation_is_running = true;
 }
 
 void action_set_volume(uint8_t value)

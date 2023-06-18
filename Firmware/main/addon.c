@@ -72,8 +72,6 @@ static bool itAskTime = true; // update time with ntp if true
 static bool itAskStime = false; // start the time display
 static uint8_t itLcdOut = 0;
 //static bool itAskSsecond = false; // start the time display
-static bool state = false; // start stop on Ok key
-
 static bool dvolume = true; // display volume screen
 
 // custom ir code init from hardware nvs
@@ -144,13 +142,14 @@ uint16_t addon_get_height()
 
 void addon_wake_lcd()
 {
-	if ((iface_get_lcd_stop() != 0) && (!state))  timerLcdOut = iface_get_lcd_stop(); // rearm the tempo
+	if ((iface_get_lcd_stop() != 0) && (!action_fmstation_is_running()))
+		timerLcdOut = iface_get_lcd_stop(); // rearm the tempo
 	else timerLcdOut = iface_get_lcd_out(); // rearm the tempo
 	if (itLcdOut==2)
 	{
 		mTscreen= MTNEW;
 		evtScreen(stateScreen);
-		itLcdOut = 0;  //0 not activated, 1 sleep requested, 2 in sleep ;
+		itLcdOut = 0;  //0 not activated, 1 sleep requested, 2 in sleep;
 	}
 
 	ext_gpio_set_lcd(true);
@@ -232,8 +231,10 @@ IRAM_ATTR  void addon_service_isr(void)
 		timein++;
 		if ((timestamp % (10*DTIDLE))==0){ itAskTime=true;} // synchronise with ntp every x*DTIDLE
 
-		if (((timein % DTIDLE)==0)&&(!state)  ) {
-			{itAskStime=true;timein = 0;} // start the time display when paused
+		if ((timein % DTIDLE) == 0 && !action_webstation_is_running()) {
+			itAskStime=true;
+			timein = 0;
+			 // start the time display when paused
         }
 		if (timerLcdOut == 1) itLcdOut = 1; // ask to go to sleep
 		if (!syncTime) itAskTime=true; // first synchro if not done
@@ -390,19 +391,13 @@ void drawScreen()
   }
 }
 
-void startStop()
-{
-	ESP_LOGD(TAG,"START/STOP State: %d",state);
-    state?action_webstation_stop():action_webstation_switch(0);
-}
-
 void stationOk()
 {
 	ESP_LOGD(TAG,"STATION OK");
 	if (strlen(irStr) > 0)
 		action_webstation_set(atoi(irStr));
 	else
-		startStop();
+		action_webstation_stop();
 	irStr[0] = 0;
 }
 // IR
@@ -454,7 +449,7 @@ void buttons_loop(void)
 		switch (event->button) {
 		case BTN_TYPE_PLAY:
 			if (event->state == BTN_STATE_CLICKED)
-				startStop();
+				action_webstation_is_running() ? action_webstation_stop() : action_webstation_switch(0);
 			else if (event->state == BTN_STATE_DBLCLICKED)
 				toggletime();
 			break;
@@ -908,7 +903,6 @@ void addon_parse(const char *fmt, ...)
  ////// STOPPED  ##CLI.STOPPED#
    if (((ici=strstr(line,"STOPPED")) != NULL)&&(strstr(line,"C_HDER") == NULL)&&(strstr(line,"C_PLIST") == NULL))
    {
-		state = false;
  		evt.lcmd = -1;
 		evt.lline = NULL;
 		action_webstation_stop();
@@ -924,7 +918,6 @@ void addon_parse(const char *fmt, ...)
  //////Playing    ##CLI.PLAYING#
    if ((ici=strstr(line,"YING#")) != NULL)
    {
-		state = true;
 		itAskStime = false;
  		evt.lcmd = lplay;
 		evt.lline = NULL;
