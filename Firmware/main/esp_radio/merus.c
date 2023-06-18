@@ -28,6 +28,7 @@
 #include <driver/i2s.h>
 
 #include "gpio.h"
+#include "i2s_redirector.h"
 
 static const char *TAG = "merus";
 
@@ -37,9 +38,10 @@ void merus_init(void)
     ext_gpio_set_merus_mute(true);
     ext_gpio_set_merus_en(true);
 
-    ESP_ERROR_CHECK(i2s_stop(I2S_OUT_NO));
+    bool is_running = i2s_redirector_is_running();
+    i2s_redirector_stop();
     init_ma120();
-    ESP_ERROR_CHECK(i2s_start(I2S_OUT_NO));
+    i2s_redirector_restore(is_running);
 
     ext_gpio_set_merus_mute(false);
     ext_gpio_set_merus_chip_select(false);
@@ -49,9 +51,10 @@ bool merus_check_present(void)
 {
     bool present = false;
     ext_gpio_set_merus_chip_select(true);
-    ESP_ERROR_CHECK(i2s_stop(I2S_OUT_NO));
+    bool is_running = i2s_redirector_is_running();
+    i2s_redirector_stop();
     present = ma_check_present();
-    ESP_ERROR_CHECK(i2s_start(I2S_OUT_NO));
+    i2s_redirector_restore(is_running);
     ext_gpio_set_merus_chip_select(false);
 
     return present;
@@ -60,9 +63,10 @@ bool merus_check_present(void)
 void merus_set_volume(uint8_t volume)
 {
     ext_gpio_set_merus_chip_select(true);
-    ESP_ERROR_CHECK(i2s_stop(I2S_OUT_NO));
+    bool is_running = i2s_redirector_is_running();
+    i2s_redirector_stop();
     set_MA_vol_db_master(255 - volume);
-    ESP_ERROR_CHECK(i2s_start(I2S_OUT_NO));
+    i2s_redirector_restore(is_running);
     ext_gpio_set_merus_chip_select(false);
 }
 
@@ -76,7 +80,8 @@ void merus_get_status(void)
     int audio_proc_mute = 0;
     int lim_mon = 0;
     int lim_clip = 0;
-    ESP_ERROR_CHECK(i2s_stop(I2S_OUT_NO));
+    bool is_running = i2s_redirector_is_running();
+    i2s_redirector_stop();
     ext_gpio_set_merus_chip_select(true);
     set_MA_eh_clear(0);             // clear errors
     set_MA_eh_clear(1);
@@ -91,7 +96,7 @@ void merus_get_status(void)
     lim_mon = get_MA_audio_proc_limiter_mon();
     lim_clip = get_MA_audio_proc_clip_mon();
     ext_gpio_set_merus_chip_select(false);
-    ESP_ERROR_CHECK(i2s_start(I2S_OUT_NO));
+    i2s_redirector_restore(is_running);
 
     ESP_LOGI(TAG, "sys_mute:0x%x, audio_proc_mute:0x%x, audio_proc_lim_mon:0x%x, audio_proc_clip:0x%x, mute0:0x%x, mute1:0x%x, error:0x%x, error_acc:0x%x",
         system_mute, audio_proc_mute, lim_mon, lim_clip, mute0, mute1, err, err_acc);

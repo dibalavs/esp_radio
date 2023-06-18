@@ -12,4 +12,12 @@
 
 #pragma once
 
+#include <stdbool.h>
+
 void i2s_redirector_init(void);
+
+bool i2s_redirector_is_running(void);
+
+void i2s_redirector_start(void);
+void i2s_redirector_stop(void);
+void i2s_redirector_restore(bool run);

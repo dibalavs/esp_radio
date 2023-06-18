@@ -27,12 +27,15 @@
 
 static const size_t buf_size = 512 * 4;
 static const char *TAG = "redirector";
+static bool is_running = false;
 
 static void redirector_task(void* p)
 {
     void *buf = kmalloc(buf_size);
     size_t read = buf_size;
     size_t written;
+
+    is_running = true;
 
     while (true) {
         ESP_ERROR_CHECK(i2s_read(I2S_IN_NO, buf, buf_size, &read, portMAX_DELAY));
@@ -47,4 +50,31 @@ void i2s_redirector_init(void)
 {
     static TaskHandle_t task_handle;
     FREERTOS_ERROR_CHECK(xTaskCreatePinnedToCore(redirector_task, "i2s_redirector", configMINIMAL_STACK_SIZE, NULL, configMAX_PRIORITIES - 3, &task_handle, 1));
+}
+
+bool i2s_redirector_is_running(void)
+{
+    return is_running;
+}
+
+void i2s_redirector_start(void)
+{
+    ESP_ERROR_CHECK(i2s_start(I2S_OUT_NO));
+    ESP_ERROR_CHECK(i2s_start(I2S_IN_NO));
+    is_running = true;
+}
+
+void i2s_redirector_stop(void)
+{
+    ESP_ERROR_CHECK(i2s_stop(I2S_OUT_NO));
+    ESP_ERROR_CHECK(i2s_stop(I2S_IN_NO));
+    is_running = false;
+}
+
+void i2s_redirector_restore(bool run)
+{
+    if (run)
+        i2s_redirector_start();
+    else
+        i2s_redirector_stop();
 }
