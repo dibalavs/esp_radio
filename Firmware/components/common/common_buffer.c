@@ -125,11 +125,12 @@ size_t fill_read_buffer(buffer_t *buf)
     buf_move_remaining_bytes_to_front(buf);
 	unsigned fsize = spiRamFifoFill();
 	unsigned fbsize = buf_free_capacity(buf);
+    size_t was_read;
     size_t bytes_to_read = min(fbsize, fsize);
 
     if (bytes_to_read > 0) {
-        spiRamFifoRead((char *) buf->fill_pos, bytes_to_read);
-        buf->fill_pos += bytes_to_read;
+        was_read = spiRamFifoRead((char *) buf->fill_pos, bytes_to_read);
+        buf->fill_pos += was_read;
 		//printf("r%d:%d\n",fbsize,fsize);
     }
 

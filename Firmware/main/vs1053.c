@@ -684,48 +684,27 @@ void VS1053_flush_cancel() {
 
 }
 
-void VS1053_task(void *pvParams) {
-#define VSTASKBUF	1024
-	portBASE_TYPE uxHighWaterMark;
+void VS1053_task(void *pvParams)
+{
+	#define VSTASKBUF 1024
 	uint8_t  b[VSTASKBUF];
-	uint16_t size ,s;
+	uint16_t size;
 
 	player_t *player = pvParams;
 
-	while(1) {
-		// stop requested, terminate immediately
-        if(player->decoder_command == CMD_STOP) {
+	while (player->decoder_command != CMD_STOP) {
+		size = spiRamFifoRead((char*)b, VSTASKBUF);
+        if(player->decoder_command == CMD_STOP)
             break;
-        }
 
-		unsigned fsize = spiRamFifoFill();
-		size = min(VSTASKBUF, fsize);
-/*		if (size > 	VSTASKBUF)
-		{
-			ESP_LOGE(TAG, "Decoder vs1053 size: %d, fsize: %d, VSTASKBUF: %d .\n",size,fsize,VSTASKBUF );
-			size = 	VSTASKBUF;
-		}
-*/
-		if (size > 0)
-		{
-			spiRamFifoRead((char*)b, size);
-			s = 0;
-			while(s < size)
-			{
-				s += VS1053_SendMusicBytes(b+s, size-s);
-			}
-		} else vTaskDelay(10);
-		vTaskDelay(2);
+		VS1053_SendMusicBytes(b, size);
 	}
 
     player->decoder_status = STOPPED;
     player->decoder_command = CMD_NONE;
 	spiRamFifoReset();
     ESP_LOGD(TAG, "Decoder vs1053 stopped.\n");
-	uxHighWaterMark = uxTaskGetStackHighWaterMark( NULL );
-	ESP_LOGI(TAG,"watermark: %x  %d",uxHighWaterMark,uxHighWaterMark);
 	vTaskDelete(NULL);
-
 }
 
 

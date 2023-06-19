@@ -34,7 +34,7 @@ extern player_t* player_config;
 #define min(a, b) (((a) < (b)) ? (a) : (b))
 //2000 1440 1460 1436
 //#define RECEIVE 1440 2144
-#define RECEIVE 1440
+#define RECEIVE 4094
 enum clientStatus cstatus;
 //static uint32_t metacount = 0;
 //static uint16_t metasize = 0;
@@ -1344,7 +1344,6 @@ void webclient_task(void *pvParams) {
 	struct sockaddr_in dest;
 	int ret;
 
-	vTaskDelay(200);
 	spiRamFifoInit();
 
 	if (strlen(g_device->ua) == 0) strcpy(g_device->ua,"Karadio32/2.0");
