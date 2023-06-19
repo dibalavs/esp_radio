@@ -58,7 +58,7 @@ static void print_real_time_stats(const TaskStatus_t *prev, UBaseType_t prev_num
 
     ESP_LOGE(TAG, "");
     ESP_LOGE(TAG, "Total free memory/ IRAM / PSRAM = %u / %u / %u", all, iram, psram);
-    ESP_LOGE(TAG, "| %-18s | Core |  Run Time  | Percentage | Stack usage\n", "Task");
+    ESP_LOGE(TAG, "| %-18s | Core |  Run Time  | Percentage | Stack usage", "Task");
     for (int c = 0; c < *curr_num; c++) {
         const TaskStatus_t *found = NULL;
 
@@ -71,9 +71,10 @@ static void print_real_time_stats(const TaskStatus_t *prev, UBaseType_t prev_num
 
         if (found) {
             uint32_t task_elapsed_time = curr[c].ulRunTimeCounter - found->ulRunTimeCounter;
-            uint32_t percentage_time = (task_elapsed_time * 100UL) / (total_elapsed_time * portNUM_PROCESSORS);
+            uint32_t percentage_time = (task_elapsed_time * 100UL) / total_elapsed_time;
             uint32_t stack = curr[c].usStackHighWaterMark;
-            ESP_LOGE(TAG, "| %-18s |    %d | %10u | %9u%% | %8u\n", curr[c].pcTaskName, (int)curr[c].xCoreID, task_elapsed_time, percentage_time, stack);
+            int core = curr[c].xCoreID == tskNO_AFFINITY ? -2 : curr[c].xCoreID;
+            ESP_LOGE(TAG, "| %-18s |   %3d | %10u | %9u%% | %8u", curr[c].pcTaskName, core, task_elapsed_time, percentage_time, stack);
         }
     }
 }
