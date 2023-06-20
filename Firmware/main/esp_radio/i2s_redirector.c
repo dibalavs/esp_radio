@@ -49,7 +49,7 @@ static void redirector_task(void* p)
 void i2s_redirector_init(void)
 {
     static TaskHandle_t task_handle;
-    FREERTOS_ERROR_CHECK(xTaskCreatePinnedToCore(redirector_task, "i2s_redirector", configMINIMAL_STACK_SIZE, NULL, configMAX_PRIORITIES - 3, &task_handle, 1));
+    FREERTOS_ERROR_CHECK(xTaskCreate(redirector_task, "i2s_redirector", configMINIMAL_STACK_SIZE, NULL, configMAX_PRIORITIES - 3, &task_handle));
 }
 
 bool i2s_redirector_is_running(void)

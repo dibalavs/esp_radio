@@ -17,8 +17,10 @@
 #include "vs1053.h"
 #include "gpio.h"
 #include "eeprom.h"
+#include <limits.h>
 #include <string.h>
 #include "driver/spi_master.h"
+#include "esp_err.h"
 #include "soc/gpio_struct.h"
 #include "driver/gpio.h"
 #include <math.h>
@@ -29,14 +31,15 @@
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "freertos/semphr.h"
 
 extern void  LoadUserCodes(void);
 
 #define TAG "vs1053"
 
 #define min(a, b) (((a) < (b)) ? (a) : (b))
-#define SET 0
-#define RESET 1
+#define GPIO_LOW 0
+#define GPIO_HIGH 1
 
 #define RXNE    0x01
 #define TXE     0x02
@@ -88,11 +91,21 @@ static spi_device_handle_t hvsspi;  // the device handle of the vs1053 spi high 
 SemaphoreHandle_t vsSPI = NULL;
 SemaphoreHandle_t hsSPI = NULL;
 
-static void VS1053_ControlReset(uint8_t State);
+static SemaphoreHandle_t dreq_notify_sem = NULL;
+
 static uint16_t VS1053_ReadRegister(uint8_t addressbyte);
-static void VS1053_ResetChip();
+static bool VS1053_ResetChip();
 static uint16_t VS1053_MaskAndShiftRight(uint16_t Source, uint16_t Mask, uint16_t Shift);
 static void VS1053_regtest();
+
+IRAM_ATTR static void dreq_isr_handler(void* arg)
+{
+    portBASE_TYPE woken = pdFALSE;
+    xSemaphoreGiveFromISR(dreq_notify_sem, &woken);
+    if (woken == pdTRUE) {
+        portYIELD_FROM_ISR();
+    }
+}
 
 uint8_t spi_take_semaphore(SemaphoreHandle_t isSPI) {
 	if(isSPI) if(xSemaphoreTake(isSPI, portMAX_DELAY)) return 1;
@@ -107,6 +120,10 @@ int getVsVersion() { return vsVersion;}
 
 bool VS1053_HW_init()
 {
+	assert(dreq_notify_sem == NULL);
+	dreq_notify_sem = xSemaphoreCreateBinary();
+	assert(dreq_notify_sem);
+
 	uint32_t freq =spi_get_actual_clock(APB_CLK_FREQ, 1400000, 128);
 	ESP_LOGI(TAG,"VS1053 LFreq: %d",freq);
 	spi_device_interface_config_t devcfg={
@@ -149,47 +166,43 @@ bool VS1053_HW_init()
 	gpio_conf.mode = GPIO_MODE_INPUT;
 	gpio_conf.pull_up_en =  GPIO_PULLUP_DISABLE;
 	gpio_conf.pull_down_en = GPIO_PULLDOWN_ENABLE;
-	gpio_conf.intr_type = GPIO_INTR_DISABLE;
+	gpio_conf.intr_type = GPIO_INTR_POSEDGE;
 	gpio_conf.pin_bit_mask = ((uint64_t)(((uint64_t)1)<<PIN_NUM_DREQ));
 	ESP_ERROR_CHECK(gpio_config(&gpio_conf));
+	ESP_ERROR_CHECK(gpio_isr_handler_add(PIN_NUM_DREQ, dreq_isr_handler, NULL));
 
-	//gpio_set_direction(dreq, GPIO_MODE_INPUT);
-	//gpio_set_pull_mode(dreq, GPIO_PULLDOWN_ENABLE); //usefull for no vs1053 test
 	return true;
 }
 
+esp_err_t WaitDREQ()
+{
+	BaseType_t res;
 
-static void VS1053_ControlReset(uint8_t State){
-	gpio_set_level(PIN_NUM_RST, State);
+	if (gpio_get_level(PIN_NUM_DREQ) == 1)
+		return ESP_OK;
+
+	res = xSemaphoreTake(dreq_notify_sem, pdMS_TO_TICKS(500));
+	if (res != pdTRUE)
+		ESP_LOGE(TAG, "Timeout during waiting DREQ signal.");
+
+	return res == pdTRUE ? ESP_OK : ESP_ERR_TIMEOUT;
 }
 
-uint8_t CheckDREQ() {
-	return gpio_get_level(PIN_NUM_DREQ);
-}
-#define TMAX 4096
-void  WaitDREQ() {
-	uint16_t  time_out = 0;
-	while(gpio_get_level(PIN_NUM_DREQ) == 0 && time_out++ < TMAX)
-	{
-		taskYIELD();
-	}
-}
-
-void VS1053_spi_write_char(const uint8_t *cbyte, uint16_t len)
+void VS1053_spi_write_chars(const uint8_t *cbyte, uint16_t len)
 {
 	esp_err_t ret;
     spi_transaction_t t;
 
     memset(&t, 0, sizeof(t));       //Zero out the transaction
 	t.tx_buffer = cbyte;
-    t.length= len*8;
-    //t.rxlength=0;
-	while(gpio_get_level(PIN_NUM_DREQ) == 0 )taskYIELD();
+    t.length= len * CHAR_BIT;
+	if (WaitDREQ() != ESP_OK)
+		return;
 	spi_take_semaphore(hsSPI);
     ret = spi_device_transmit(hvsspi, &t);  //Transmit!
-	if (ret != ESP_OK) ESP_LOGE(TAG,"err: %d, VS1053_spi_write_char(len: %d)",ret,len);
+	if (ret != ESP_OK)
+		ESP_LOGE(TAG, "err: %d, VS1053_spi_write_char(len: %d)", ret, len);
 	spi_give_semaphore(hsSPI);
-//	while(gpio_get_level(dreq) == 0 );
 }
 
 void VS1053_WriteRegister(uint8_t addressbyte, uint8_t highbyte, uint8_t lowbyte)
@@ -205,14 +218,14 @@ void VS1053_WriteRegister(uint8_t addressbyte, uint8_t highbyte, uint8_t lowbyte
 	t.addr = addressbyte;
 	t.tx_data[0] = highbyte;
 	t.tx_data[1] = lowbyte;
-    t.length= 16;
-	WaitDREQ();
+    t.length= 2 * CHAR_BIT;
+	if (WaitDREQ() != ESP_OK)
+		return;
 	spi_take_semaphore(vsSPI);
 //    ESP_ERROR_CHECK(spi_device_transmit(vsspi, &t));  //Transmit!
     ret = spi_device_transmit(vsspi, &t);  //Transmit!
 	if (ret != ESP_OK) ESP_LOGE(TAG,"err: %d, VS1053_WriteRegister(%d,%d,%d)",ret,addressbyte,highbyte,lowbyte);
 	spi_give_semaphore(vsSPI);
-	WaitDREQ();
 }
 
 void VS1053_WriteRegister16(uint8_t addressbyte, uint16_t value)
@@ -228,18 +241,18 @@ void VS1053_WriteRegister16(uint8_t addressbyte, uint16_t value)
 	t.addr = addressbyte;
 	t.tx_data[0] = (value>>8)&0xff;
 	t.tx_data[1] = value&0xff;
-    t.length= 16;
-	WaitDREQ();
+    t.length= 2 * CHAR_BIT;
+	if (WaitDREQ() != ESP_OK)
+		return;
 	spi_take_semaphore(vsSPI);
 //    ESP_ERROR_CHECK(spi_device_transmit(vsspi, &t));  //Transmit!
     ret = spi_device_transmit(vsspi, &t);  //Transmit!
 	if (ret != ESP_OK) ESP_LOGE(TAG,"err: %d, VS1053_WriteRegister16(%d,%d)",ret,addressbyte,value);
 	spi_give_semaphore(vsSPI);
-	WaitDREQ();
-
 }
 
-static uint16_t VS1053_ReadRegister(uint8_t addressbyte){
+static uint16_t VS1053_ReadRegister(uint8_t addressbyte)
+{
 	uint16_t result;
     spi_transaction_t t;
 	esp_err_t ret;
@@ -249,14 +262,14 @@ static uint16_t VS1053_ReadRegister(uint8_t addressbyte){
 	t.flags |= SPI_TRANS_USE_RXDATA	;
 	t.cmd = VS_READ_COMMAND;
 	t.addr = addressbyte;
-	WaitDREQ();
+	if (WaitDREQ() != ESP_OK)
+		return 0;
 	spi_take_semaphore(vsSPI);
 	ret = spi_device_transmit(vsspi, &t);  //Transmit!
 	if (ret != ESP_OK) ESP_LOGE(TAG,"err: %d, VS1053_ReadRegister(%d), read: %d",ret,addressbyte,(uint32_t)*t.rx_data);
 	result =  (((t.rx_data[0]&0xFF)<<8) | ((t.rx_data[1])&0xFF)) ;
 //	ESP_LOGI(TAG,"VS1053_ReadRegister data: %d %d %d %d",t.rx_data[0],t.rx_data[1],t.rx_data[2],t.rx_data[3]);
 	spi_give_semaphore(vsSPI);
-	WaitDREQ();
 	return result;
 }
 
@@ -266,16 +279,15 @@ void VS1053_WriteVS10xxRegister(unsigned short addr,unsigned short val)
 	VS1053_WriteRegister((uint8_t)addr&0xff, (uint8_t)((val&0xFF00)>>8), (uint8_t)(val&0xFF));
 }
 
-
-static void VS1053_ResetChip(){
-	VS1053_ControlReset(SET);
-	vTaskDelay(10);
-	VS1053_ControlReset(RESET);
-	vTaskDelay(10);
-	if (CheckDREQ() == 1) return;
-	vTaskDelay(100);
+static bool VS1053_ResetChip()
+{
+	esp_err_t res;
+	gpio_set_level(PIN_NUM_RST, GPIO_LOW);
+	vTaskDelay(1);
+	gpio_set_level(PIN_NUM_RST, GPIO_HIGH);
+	res = WaitDREQ();
+	return res == ESP_OK;
 }
-
 
 static uint16_t VS1053_MaskAndShiftRight(uint16_t Source, uint16_t Mask, uint16_t Shift){
 	return ( (Source & Mask) >> Shift );
@@ -318,7 +330,7 @@ void VS1053_I2SDisable(void)
 void VS1053_SineTest(void)
 {
 	static const uint8_t enable_sin[] = {0x45, 0x78, 0x69, 0x74, 0, 0, 0, 0};
-	VS1053_spi_write_char(enable_sin, sizeof(enable_sin));
+	VS1053_spi_write_chars(enable_sin, sizeof(enable_sin));
 }
 
 void VS1053_DisableAnalog(){
@@ -363,7 +375,8 @@ void VS1053_InitVS()
 
 	VS1053_WriteRegister(SPI_MODE, (SM_SDINEW|SM_LINE1)>>8,SM_RESET);
 	VS1053_WriteRegister(SPI_MODE, (SM_SDINEW|SM_LINE1)>>8, SM_LAYER12); //mode
-	WaitDREQ();
+	if (WaitDREQ() != ESP_OK)
+		return;
 
 	VS1053_regtest();
 
@@ -378,34 +391,18 @@ void VS1053_InitVS()
 
 bool VS1053_CheckPresent(void)
 {
-	VS1053_ControlReset(SET);
-	vTaskDelay(10);
-	VS1053_ControlReset(RESET);
-	vTaskDelay(50);
-	if (CheckDREQ() == 0) vTaskDelay(50);	// wait a bit more
-	//Check DREQ
-	if (CheckDREQ() == 0)
-	{
-		vsVersion = 0;
+	if (!VS1053_ResetChip()) {
 		ESP_LOGE(TAG,"NO VS1053 detected");
 		return false;
 	}
 
 	vsVersion = (VS1053_ReadRegister(SPI_STATUSVS) >> 4) & 0x000F;
-
 	return vsVersion == 4;
 }
 
-void VS1053_Start(){
-	VS1053_ControlReset(SET);
-	vTaskDelay(10);
-	VS1053_ControlReset(RESET);
-	vTaskDelay(50);
-	if (CheckDREQ() == 0) vTaskDelay(50);	// wait a bit more
-	//Check DREQ
-	if (CheckDREQ() == 0)
-	{
-		vsVersion = 0;
+void VS1053_Start()
+{
+	if (!VS1053_ResetChip()) {
 		ESP_LOGE(TAG,"NO VS1053 detected");
 		return;
 	}
@@ -422,11 +419,12 @@ void VS1053_Start(){
 	vsVersion = (VS1053_ReadRegister(SPI_STATUSVS) >> 4) & 0x000F; //Mask out only the four version bits
 //0 for VS1001, 1 for VS1011, 2 for VS1002, 3 for VS1003, 4 for VS1053 and VS8053,
 //5 for VS1033, 7 for VS1103, and 6 for VS1063
-	ESP_LOGI(TAG,"VS10xx detection. Version: %x",vsVersion);
+	ESP_LOGI(TAG,"VS10xx detection. Version: %x", vsVersion);
 
 	// plugin patch
-	if ((vsVersion == 4) && ((g_device->options&T_PATCH)==0))
+	if ((vsVersion == 4) && ((g_device->options & T_PATCH) == 0))
 	{
+		ESP_LOGW(TAG, "Loading patch.");
 		LoadUserCodes() ;	// vs1053b patch
 		ESP_LOGI(TAG,"SPI_AUDATA 2 = %x",VS1053_ReadRegister(SPI_AUDATA));
 		if (VS1053_ReadRegister(SPI_AUDATA) == 0xAC45) //midi mode?
@@ -458,18 +456,20 @@ void VS1053_Start(){
 	VS1053_SetSpatial(g_device->spacial);
 }
 
-int VS1053_SendMusicBytes(uint8_t* music, uint16_t quantity){
-	if(quantity ==0) return 0;
-	int oo = 0;
+int VS1053_SendMusicBytes(uint8_t* music, uint16_t quantity)
+{
+	if(quantity == 0)
+		return 0;
 
-	while(quantity)
-	{
-		int t = quantity;
-		if(t > CHUNK) t = CHUNK;
-		VS1053_spi_write_char(&music[oo], t);
+	uint16_t oo = 0;
+
+	while (quantity) {
+		uint16_t t = min(quantity, CHUNK);
+		VS1053_spi_write_chars(&music[oo], t);
 		oo += t;
 		quantity -= t;
 	}
+
 	return oo;
 }
 
@@ -699,6 +699,8 @@ void VS1053_task(void *pvParams)
 
 		VS1053_SendMusicBytes(b, size);
 	}
+
+	VS1053_flush_cancel();
 
     player->decoder_status = STOPPED;
     player->decoder_command = CMD_NONE;

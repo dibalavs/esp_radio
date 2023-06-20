@@ -165,16 +165,20 @@ void audio_player_start()
 
 void audio_player_stop()
 {
-		if (!player_instance)
-			return;
+	static const char fill[16] = {};
+
+	if (!player_instance)
+		return;
 
 //		spiRamFifoReset();
-		player_instance->decoder_command = CMD_STOP;
-		player_instance->command = CMD_STOP;
-		player_instance->media_stream->eof = true;
-		if (app_state_get_audio_output_mode() != VS1053)renderer_stop();
-		player_instance->command = CMD_NONE;
-		player_status = STOPPED;
+	player_instance->decoder_command = CMD_STOP;
+	player_instance->command = CMD_STOP;
+	player_instance->media_stream->eof = true;
+	if (app_state_get_audio_output_mode() != VS1053)renderer_stop();
+	player_instance->command = CMD_NONE;
+	player_status = STOPPED;
+	// Force wake reader if it sleep on emty buffer.
+	spiRamFifoWrite(fill, sizeof(fill));
 }
 
 component_status_t get_player_status()
