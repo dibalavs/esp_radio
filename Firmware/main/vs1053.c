@@ -422,24 +422,24 @@ void VS1053_Start()
 	ESP_LOGI(TAG,"VS10xx detection. Version: %x", vsVersion);
 
 	// plugin patch
-	if ((vsVersion == 4) && ((g_device->options & T_PATCH) == 0))
-	{
-		ESP_LOGW(TAG, "Loading patch.");
-		LoadUserCodes() ;	// vs1053b patch
-		ESP_LOGI(TAG,"SPI_AUDATA 2 = %x",VS1053_ReadRegister(SPI_AUDATA));
-		if (VS1053_ReadRegister(SPI_AUDATA) == 0xAC45) //midi mode?
-		{
-			VS1053_WriteRegister(SPI_AIADDR,0x00,0x50); // reset soft but let  patch loaded
-			VS1053_GPIO1();	// patch if GPIO1 is not wired to gnd
-			if (VS1053_ReadRegister(SPI_AUDATA) == 0xAC45) // in midi mode
-			{	//fed up
-				ESP_LOGI(TAG,"midi mode on\n");
-				g_device->options |= T_PATCH; // force no patch
-				eeprom_save_device_settings(g_device);
-				esp_restart();
-			}
-		}
-	}
+	// if ((vsVersion == 4) && ((g_device->options & T_PATCH) == 0))
+	// {
+	// 	ESP_LOGW(TAG, "Loading patch.");
+	// 	LoadUserCodes() ;	// vs1053b patch
+	// 	ESP_LOGI(TAG,"SPI_AUDATA 2 = %x",VS1053_ReadRegister(SPI_AUDATA));
+	// 	if (VS1053_ReadRegister(SPI_AUDATA) == 0xAC45) //midi mode?
+	// 	{
+	// 		VS1053_WriteRegister(SPI_AIADDR,0x00,0x50); // reset soft but let  patch loaded
+	// 		VS1053_GPIO1();	// patch if GPIO1 is not wired to gnd
+	// 		if (VS1053_ReadRegister(SPI_AUDATA) == 0xAC45) // in midi mode
+	// 		{	//fed up
+	// 			ESP_LOGI(TAG,"midi mode on\n");
+	// 			g_device->options |= T_PATCH; // force no patch
+	// 			eeprom_save_device_settings(g_device);
+	// 			esp_restart();
+	// 		}
+	// 	}
+	// }
 
 	VS1053_InitVS();
 	VS1053_I2SRate(g_device->i2sspeed);
