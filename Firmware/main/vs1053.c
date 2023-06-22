@@ -32,12 +32,22 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
+#include "freertos_err.h"
 
 extern void  LoadUserCodes(void);
 
 #define TAG "vs1053"
 
 #define min(a, b) (((a) < (b)) ? (a) : (b))
+
+#define SAFE_TRANSMIT(bus, transaction, retval) \
+({ \
+	FREERTOS_ERROR_CHECK(xSemaphoreTake(lock, portMAX_DELAY)); \
+    ret = spi_device_transmit(bus, &transaction); \
+	FREERTOS_ERROR_CHECK(xSemaphoreGive(lock)); \
+	ret; \
+})
+
 #define GPIO_LOW 0
 #define GPIO_HIGH 1
 
@@ -88,10 +98,8 @@ int vsVersion = -1; // the version of the chip
 static spi_device_handle_t vsspi;  // the evice handle of the vs1053 spi
 static spi_device_handle_t hvsspi;  // the device handle of the vs1053 spi high speed
 
-SemaphoreHandle_t vsSPI = NULL;
-SemaphoreHandle_t hsSPI = NULL;
-
 static SemaphoreHandle_t dreq_notify_sem = NULL;
+static SemaphoreHandle_t lock = NULL;
 
 static uint16_t VS1053_ReadRegister(uint8_t addressbyte);
 static bool VS1053_ResetChip();
@@ -107,15 +115,6 @@ IRAM_ATTR static void dreq_isr_handler(void* arg)
     }
 }
 
-uint8_t spi_take_semaphore(SemaphoreHandle_t isSPI) {
-	if(isSPI) if(xSemaphoreTake(isSPI, portMAX_DELAY)) return 1;
-	return 0;
-}
-
-void spi_give_semaphore(SemaphoreHandle_t isSPI) {
-	if(isSPI) xSemaphoreGive(isSPI);
-}
-
 int getVsVersion() { return vsVersion;}
 
 bool VS1053_HW_init()
@@ -123,6 +122,10 @@ bool VS1053_HW_init()
 	assert(dreq_notify_sem == NULL);
 	dreq_notify_sem = xSemaphoreCreateBinary();
 	assert(dreq_notify_sem);
+
+	assert(lock == NULL);
+	lock = xSemaphoreCreateMutex();
+	assert(lock);
 
 	uint32_t freq =spi_get_actual_clock(APB_CLK_FREQ, 1400000, 128);
 	ESP_LOGI(TAG,"VS1053 LFreq: %d",freq);
@@ -198,11 +201,10 @@ void VS1053_spi_write_chars(const uint8_t *cbyte, uint16_t len)
     t.length= len * CHAR_BIT;
 	if (WaitDREQ() != ESP_OK)
 		return;
-	spi_take_semaphore(hsSPI);
-    ret = spi_device_transmit(hvsspi, &t);  //Transmit!
+
+	ret = SAFE_TRANSMIT(hvsspi, t, );
 	if (ret != ESP_OK)
 		ESP_LOGE(TAG, "err: %d, VS1053_spi_write_char(len: %d)", ret, len);
-	spi_give_semaphore(hsSPI);
 }
 
 void VS1053_WriteRegister(uint8_t addressbyte, uint8_t highbyte, uint8_t lowbyte)
@@ -221,11 +223,10 @@ void VS1053_WriteRegister(uint8_t addressbyte, uint8_t highbyte, uint8_t lowbyte
     t.length= 2 * CHAR_BIT;
 	if (WaitDREQ() != ESP_OK)
 		return;
-	spi_take_semaphore(vsSPI);
-//    ESP_ERROR_CHECK(spi_device_transmit(vsspi, &t));  //Transmit!
-    ret = spi_device_transmit(vsspi, &t);  //Transmit!
-	if (ret != ESP_OK) ESP_LOGE(TAG,"err: %d, VS1053_WriteRegister(%d,%d,%d)",ret,addressbyte,highbyte,lowbyte);
-	spi_give_semaphore(vsSPI);
+
+	ret = SAFE_TRANSMIT(vsspi, t, );
+	if (ret != ESP_OK)
+		ESP_LOGE(TAG,"err: %d, VS1053_WriteRegister(%d,%d,%d)", ret, addressbyte, highbyte, lowbyte);
 }
 
 void VS1053_WriteRegister16(uint8_t addressbyte, uint16_t value)
@@ -244,11 +245,10 @@ void VS1053_WriteRegister16(uint8_t addressbyte, uint16_t value)
     t.length= 2 * CHAR_BIT;
 	if (WaitDREQ() != ESP_OK)
 		return;
-	spi_take_semaphore(vsSPI);
-//    ESP_ERROR_CHECK(spi_device_transmit(vsspi, &t));  //Transmit!
-    ret = spi_device_transmit(vsspi, &t);  //Transmit!
-	if (ret != ESP_OK) ESP_LOGE(TAG,"err: %d, VS1053_WriteRegister16(%d,%d)",ret,addressbyte,value);
-	spi_give_semaphore(vsSPI);
+
+	ret = SAFE_TRANSMIT(vsspi, t, );
+	if (ret != ESP_OK)
+		ESP_LOGE(TAG,"err: %d, VS1053_WriteRegister16(%d,%d)", ret, addressbyte, value);
 }
 
 static uint16_t VS1053_ReadRegister(uint8_t addressbyte)
@@ -264,12 +264,12 @@ static uint16_t VS1053_ReadRegister(uint8_t addressbyte)
 	t.addr = addressbyte;
 	if (WaitDREQ() != ESP_OK)
 		return 0;
-	spi_take_semaphore(vsSPI);
-	ret = spi_device_transmit(vsspi, &t);  //Transmit!
-	if (ret != ESP_OK) ESP_LOGE(TAG,"err: %d, VS1053_ReadRegister(%d), read: %d",ret,addressbyte,(uint32_t)*t.rx_data);
-	result =  (((t.rx_data[0]&0xFF)<<8) | ((t.rx_data[1])&0xFF)) ;
-//	ESP_LOGI(TAG,"VS1053_ReadRegister data: %d %d %d %d",t.rx_data[0],t.rx_data[1],t.rx_data[2],t.rx_data[3]);
-	spi_give_semaphore(vsSPI);
+
+	ret = SAFE_TRANSMIT(vsspi, t, 0);
+	if (ret != ESP_OK)
+		ESP_LOGE(TAG,"err: %d, VS1053_ReadRegister(%d), read: %d", ret, addressbyte, (uint32_t)*t.rx_data);
+
+	result =  (((t.rx_data[0]&0xFF)<<8) | ((t.rx_data[1])&0xFF));
 	return result;
 }
 
