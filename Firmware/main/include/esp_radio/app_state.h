@@ -23,6 +23,12 @@ typedef struct {
     int i2;                 /*!< TIMER_xxx timer number */
 } queue_event_t;
 
+struct device_settings;
+
+#define NO_STATION 0xFFFF
+
+void app_state_init(void);
+
 output_mode_t app_state_get_audio_output_mode(void);
 void app_state_set_audio_output_mode(output_mode_t mode);
 
@@ -36,3 +42,5 @@ unsigned app_state_get_curr_webstation(void);
 
 void app_state_set_curr_fmstation(unsigned sta_no);
 unsigned app_state_get_curr_fmstation(void);
+
+struct device_settings *app_state_get_settings(void); // TODO: remove it.

@@ -66,7 +66,7 @@ struct device_settings {
 	int8_t freqtreble;
 	uint8_t freqbass;
 	uint8_t spacial;
-	uint16_t currentstation;  //
+	uint16_t web_station;  //
 	uint8_t autostart; // 0: stopped, 1: playing
 	uint8_t i2sspeed; // 0 = 48kHz, 1 = 96kHz, 2 = 128kHz
 	uint32_t uartspeed; // serial baud
@@ -89,7 +89,8 @@ struct device_settings {
 	char hostname[HOSTLEN];
 	uint32_t tp_calx;
 	uint32_t tp_caly;
-
+	uint16_t fm_station;
+	uint8_t is_current_fm;
 };// Device_Settings;
 
 struct shoutcast_info {
@@ -106,17 +107,16 @@ void eeprom_partitions_init(void);
 void eeprom_copy_device_settings();
 void eeprom_restore_device_settings();
 bool eeprom_set_data(int address, void* buffer, int size);
-bool eeprom_set_data1(int address, void* buffer, int size);
 void eeprom_erase_settings(void);
 void eeprom_erase_all();
+
 void eeprom_save_station(struct shoutcast_info *station, uint16_t position);
 void eeprom_save_multi_station(struct shoutcast_info *station, uint16_t position, uint8_t number);
 void eeprom_erase_stations(void);
 struct shoutcast_info* eeprom_get_station(uint8_t position);
+
 void eeprom_save_device_settings(struct device_settings *settings);
-void eeprom_save_device_settings_volume(struct device_settings *settings);
 struct device_settings* eeprom_get_device_settings();
-struct device_settings* eeprom_get_device_settings_silent();
 
 // Protect: html page is password protected.
 void setProtect(bool);

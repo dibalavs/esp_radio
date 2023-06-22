@@ -212,28 +212,18 @@ void eeprom_restore_device_settings()
 	free (buffer);
 }
 
-void saveDeviceSettingsInt(struct device_settings *settings)
-{
-	ESP_ERROR_CHECK(esp_partition_erase_range(DEVICE,0,DEVICE->size));
-	vTaskDelay(1);
-	ESP_ERROR_CHECK(esp_partition_write(DEVICE,0,settings,DEVICE->size));
-	vTaskDelay(1);
-	xSemaphoreGive(muxDevice);
-}
 void eeprom_save_device_settings(struct device_settings *settings) {
 	if (settings == NULL) { ESP_LOGE(TAG,"saveDeviceSetting fails");return;}
 	ESP_LOGD(TAG,"saveDeviceSettings");
 	xSemaphoreTake(muxDevice, portMAX_DELAY);
-	saveDeviceSettingsInt(settings);
-}
-void eeprom_save_device_settings_volume(struct device_settings *settings) {
-	if (settings == NULL) { ESP_LOGE(TAG,"saveDeviceSetting fails");return;}
-	ESP_LOGD(TAG,"saveDeviceSettingsVolume");
-	if (xSemaphoreTake(muxDevice, 0) == pdFALSE) return; // not important. An other one in progress
-	saveDeviceSettingsInt(settings);
+	ESP_ERROR_CHECK(esp_partition_erase_range(DEVICE,0,DEVICE->size));
+	vTaskDelay(1);
+	ESP_ERROR_CHECK(esp_partition_write(DEVICE,0,settings,DEVICE->size));
+	xSemaphoreGive(muxDevice);
 }
 
-struct device_settings* eeprom_get_device_settings_silent() {
+struct device_settings* eeprom_get_device_settings()
+{
 	uint16_t size = sizeof(struct device_settings);
 	uint8_t* buffer = kmalloc(size);
 	if(buffer) {
@@ -241,13 +231,4 @@ struct device_settings* eeprom_get_device_settings_silent() {
 		return (struct device_settings*)buffer;
 	}
 	return NULL;
-}
-
-struct device_settings* eeprom_get_device_settings() {
-	struct device_settings* buffer ;
-	if ((buffer = eeprom_get_device_settings_silent())==NULL)
-		ESP_LOGE(TAG,"getDeviceSetting fails");
-//		printf(streGETDEVICE,0);
-	return buffer;
-
 }

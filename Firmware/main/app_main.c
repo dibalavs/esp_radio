@@ -426,12 +426,10 @@ void autoPlay(bool is_ap)
     }
 
     webclient_save_one_header(apmode,strlen(apmode),METANAME);
-    app_state_set_curr_webstation(g_device->currentstation);
 
-    if ((g_device->autostart ==1 )&&(g_device->currentstation != 0xFFFF)) {
-        kprintf("autostart: playing:%d, currentstation:%d\n", g_device->autostart, g_device->currentstation);
-        vTaskDelay(10); // wait a bit
-        action_webstation_set(g_device->currentstation);
+    if ((g_device->autostart ==1 )&&(app_state_get_curr_webstation() != NO_STATION)) {
+        kprintf("autostart: playing:%d, currentstation:%d\n", g_device->autostart, app_state_get_curr_webstation());
+        action_webstation_switch(0);
     } else
         webclient_save_one_header("Ready",5,METANAME);
 }
@@ -502,43 +500,8 @@ void app_main()
     }
     ESP_ERROR_CHECK( err );
 
-    //init hardware
-    eeprom_partitions_init();
-    ESP_LOGI(TAG, "Partition init done...");
-
-    if (g_device->cleared != 0xAABB)
-    {
-        ESP_LOGE(TAG,"Device config not ok. Try to restore");
-        free(g_device);
-        eeprom_restore_device_settings(); // try to restore the config from the saved one
-        g_device = eeprom_get_device_settings();
-        if (g_device->cleared != 0xAABB)
-        {
-            ESP_LOGE(TAG,"Device config not cleared. Clear it.");
-            free(g_device);
-            eeprom_erase_all();
-            g_device = eeprom_get_device_settings();
-            g_device->cleared = 0xAABB; //marker init done
-            g_device->uartspeed = 115200; // default
-			g_device->audio_output_mode = VS1053; // default
-            g_device->trace_level = ESP_LOG_INFO; //default
-            g_device->vol = 100; //default
-            g_device->led_gpio = GPIO_NONE;
-            eeprom_save_device_settings(g_device);
-        } else
-            ESP_LOGE(TAG,"Device config restored");
-    }
-
-    //set hostname and instance name
-    if ((strlen(g_device->hostname) == 0)||(strlen(g_device->hostname) > HOSTLEN))
-    {
-        strcpy(g_device->hostname, "esp_radio");
-    }
-
-    //eeprom_copy_device_settings(); // copy in the safe partion
-
-    // Configure Deep Sleep start and wakeup options
-    addon_deep_sleep_conf(); // also called in addon.c
+    app_state_init();
+    g_device = app_state_get_settings();
 
     // log on telnet
     if (g_device->options & T_LOGTEL)
@@ -562,7 +525,6 @@ void app_main()
 
     // output mode
     //I2S, I2S_MERUS, DAC_BUILT_IN, PDM, VS1053
-    app_state_set_audio_output_mode(g_device->audio_output_mode);
     ESP_LOGI(TAG, "audio_output_mode %d\nOne of I2S=0, I2S_MERUS, DAC_BUILT_IN, PDM, VS1053, SPDIF",app_state_get_audio_output_mode());
 
     //uart speed

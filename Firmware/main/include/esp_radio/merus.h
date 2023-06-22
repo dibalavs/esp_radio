@@ -20,6 +20,8 @@
 
 void merus_init(void);
 
+void merus_deinit(void);
+
 bool merus_check_present(void);
 
 void merus_set_volume(uint8_t volume);

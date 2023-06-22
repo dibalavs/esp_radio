@@ -12,7 +12,10 @@
 #define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
 
 #include "esp_radio/action_manager.h"
+
 #include "esp_radio/app_state.h"
+#include "esp_radio/ext_gpio.h"
+#include "esp_radio/i2s_redirector.h"
 #include "esp_radio/helpers.h"
 #include "esp_radio/merus.h"
 
@@ -58,11 +61,8 @@ void action_webstation_stop(void)
 	if (get_player_status() != STOPPED)
 		audio_player_stop();
 
-	if (g_device->vol != app_state_get_ivol())
-	{
-		g_device->vol = app_state_get_ivol();
-		eeprom_save_device_settings_volume(g_device);
-	}
+    i2s_redirector_stop();
+    merus_deinit();
 }
 
 void action_webstation_switch(int delta)
@@ -106,10 +106,9 @@ void action_webstation_set(unsigned station_no)
 	sprintf(answer,"{\"wsstation\":\"%u\"}",station_no);
 	websocket_broadcast(answer, strlen(answer));
 
-	if (g_device->currentstation != station_no) {
-		g_device->currentstation = station_no;
-		eeprom_save_device_settings(g_device);
-	}
+    merus_init();
+    i2s_redirector_start();
+    ext_gpio_set_i2s(I2S_SWITCH_VS1053);
 }
 
 bool action_fmstation_is_running(void)
@@ -120,16 +119,26 @@ bool action_fmstation_is_running(void)
 void action_fmstation_stop(void)
 {
     fmstation_is_running = false;
+
+    i2s_redirector_stop();
+    merus_deinit();
+
+    // TODO: Power down FM chip
 }
 
 void action_fmstation_switch(int delta)
 {
-
+    unsigned curr = app_state_get_curr_fmstation();
+    action_fmstation_set(curr + delta);
 }
 
 void action_fmstation_set(unsigned station_no)
 {
     fmstation_is_running = true;
+    merus_init();
+    i2s_redirector_start();
+    ext_gpio_set_i2s(I2S_SWITCH_FM);
+    // TODO setup FM chip
 }
 
 void action_set_volume(uint8_t value)

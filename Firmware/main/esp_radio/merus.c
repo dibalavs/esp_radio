@@ -47,6 +47,13 @@ void merus_init(void)
     ext_gpio_set_merus_chip_select(false);
 }
 
+void merus_deinit(void)
+{
+    ext_gpio_set_merus_chip_select(false);
+    ext_gpio_set_merus_mute(true);
+    ext_gpio_set_merus_en(false);
+}
+
 bool merus_check_present(void)
 {
     bool present = false;
