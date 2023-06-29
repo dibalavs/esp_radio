@@ -38,6 +38,7 @@ static const char *TAG = "action";
 
 static bool webstation_is_running;
 static bool fmstation_is_running;
+static bool is_sleeping = true;
 
 bool action_webstation_is_running(void)
 {
@@ -91,6 +92,7 @@ void action_webstation_set(unsigned station_no)
         return;
 
     webstation_is_running = true;
+    app_state_set_fm(false);
 
     ESP_LOGI(TAG,"Webstation set: %d, Name: %s", station_no, si->name);
     webclient_set_name(si->name, station_no);
@@ -109,6 +111,11 @@ void action_webstation_set(unsigned station_no)
     merus_init();
     i2s_redirector_start();
     ext_gpio_set_i2s(I2S_SWITCH_VS1053);
+}
+
+unsigned action_webstation_get(void)
+{
+    return app_state_get_curr_webstation();
 }
 
 bool action_fmstation_is_running(void)
@@ -135,10 +142,16 @@ void action_fmstation_switch(int delta)
 void action_fmstation_set(unsigned station_no)
 {
     fmstation_is_running = true;
+    app_state_set_fm(true);
     merus_init();
     i2s_redirector_start();
     ext_gpio_set_i2s(I2S_SWITCH_FM);
     // TODO setup FM chip
+}
+
+unsigned action_fmstation_get(void)
+{
+    return app_state_get_curr_fmstation();
 }
 
 void action_set_volume(uint8_t value)
@@ -173,7 +186,62 @@ void action_increase_volume(int delta)
     action_set_volume(CLIP_VOLUME(delta + app_state_get_ivol()));
 }
 
+void action_power_toggle(void)
+{
+    if (is_sleeping) {
+        // TODO: wifi wake?
+        addon_wake_lcd();
+        app_state_is_fm() ? action_fmstation_switch(0) : action_webstation_switch(0);
+    } else {
+        app_state_is_fm() ? action_fmstation_stop() : action_webstation_stop();
+        addon_sleep_lcd();
+        // TODO: wifi sleep?
+    }
+
+    is_sleeping = !is_sleeping;
+}
+
 void action_toogle_time(void)
 {
 
+}
+
+bool action_is_running(void)
+{
+    if (app_state_is_fm())
+        return action_fmstation_is_running();
+    else
+        return action_webstation_is_running();
+}
+
+void action_stop(void)
+{
+    if (app_state_is_fm())
+        action_fmstation_stop();
+    else
+        action_webstation_stop();
+}
+
+void action_switch(int delta)
+{
+    if (app_state_is_fm())
+        action_fmstation_switch(delta);
+    else
+        action_webstation_switch(delta);
+}
+
+void action_setstation(unsigned station_no)
+{
+    if (app_state_is_fm())
+        return action_fmstation_set(station_no);
+    else
+        return action_webstation_set(station_no);
+}
+
+unsigned action_getstation(void)
+{
+    if (app_state_is_fm())
+        return action_fmstation_get();
+    else
+        return action_webstation_get();
 }

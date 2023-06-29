@@ -90,7 +90,7 @@ struct device_settings {
 	uint32_t tp_calx;
 	uint32_t tp_caly;
 	uint16_t fm_station;
-	uint8_t is_current_fm;
+	uint8_t is_current_fm;  // Currently selected source: fm chip or web radio stream.
 };// Device_Settings;
 
 struct shoutcast_info {

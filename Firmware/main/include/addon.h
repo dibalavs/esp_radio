@@ -103,10 +103,9 @@ void addon_wake_lcd();
 uint16_t addon_get_width();
 uint16_t addon_get_height();
 
-void* addon_get_encoder(int num);
 struct tm* addon_get_dt();
 
-bool addon_deep_sleep_conf(void);
-void addon_deep_sleep_start(void);
+void addon_sleep_lcd(void);
+void addon_wake_lcd(void);
 
 #endif

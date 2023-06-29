@@ -140,9 +140,9 @@ uint16_t addon_get_height()
   return u8g2.height;
 }
 
-void addon_wake_lcd()
+void addon_wake_lcd(void)
 {
-	if ((iface_get_lcd_stop() != 0) && (!action_fmstation_is_running()))
+	if ((iface_get_lcd_stop() != 0) && (!action_is_running()))
 		timerLcdOut = iface_get_lcd_stop(); // rearm the tempo
 	else timerLcdOut = iface_get_lcd_out(); // rearm the tempo
 	if (itLcdOut==2)
@@ -155,7 +155,7 @@ void addon_wake_lcd()
 	ext_gpio_set_lcd(true);
 }
 
-void sleepLcd()
+void addon_sleep_lcd(void)
 {
 	itLcdOut = 2;  // in sleep
 	ext_gpio_set_lcd(false);
@@ -167,6 +167,8 @@ void addon_lcd_init(uint8_t Type)
 
 	if (lcd_type == LCD_NONE) return;
 
+	ext_gpio_set_lcd(true);
+
 	if (isColor) // Color one
 	{
 		addonucg_lcd_init(&lcd_type);
@@ -174,8 +176,6 @@ void addon_lcd_init(uint8_t Type)
 	{
 		addonu8g2_lcd_init(&lcd_type);
 	}
-	vTaskDelay(1);
-
 }
 
 void in_welcome(const char* ip,const char*state,int y,char* Version)
@@ -231,7 +231,7 @@ IRAM_ATTR  void addon_service_isr(void)
 		timein++;
 		if ((timestamp % (10*DTIDLE))==0){ itAskTime=true;} // synchronise with ntp every x*DTIDLE
 
-		if ((timein % DTIDLE) == 0 && !action_webstation_is_running()) {
+		if ((timein % DTIDLE) == 0 && !action_is_running()) {
 			itAskStime=true;
 			timein = 0;
 			 // start the time display when paused
@@ -395,9 +395,9 @@ void stationOk()
 {
 	ESP_LOGD(TAG,"STATION OK");
 	if (strlen(irStr) > 0)
-		action_webstation_set(atoi(irStr));
+		action_setstation(atoi(irStr));
 	else
-		action_webstation_stop();
+		action_stop();
 	irStr[0] = 0;
 }
 // IR
@@ -449,28 +449,33 @@ void buttons_loop(void)
 		switch (event->button) {
 		case BTN_TYPE_PLAY:
 			if (event->state == BTN_STATE_CLICKED)
-				action_webstation_is_running() ? action_webstation_stop() : action_webstation_switch(0);
+				action_is_running() ? action_stop() : action_switch(0);
 			else if (event->state == BTN_STATE_DBLCLICKED)
 				toggletime();
 			break;
 
 		case BTN_TYPE_PREV:
 			if (event->state == BTN_STATE_CLICKED)
-				action_webstation_switch(-1);
+				action_switch(-1);
 			break;
 
 		case BTN_TYPE_NEXT:
 			if (event->state == BTN_STATE_CLICKED)
-				action_webstation_switch(+1);
+				action_switch(+1);
 			break;
 
 		case BTN_TYPE_ENC_BTN:
-		/*  TODO: implement it
-			if (event->state == BTN_STATE_CLICKED)
-				switch_fm_radio();
-		*/
+			if (event->state == BTN_STATE_CLICKED) {
+				action_stop();
+				if (app_state_is_fm()) {
+					action_webstation_switch(0);
+				} else {
+					action_fmstation_switch(0);
+				}
+			}
+
 			if (event->state == BTN_STATE_HOLD)
-				addon_deep_sleep_start();
+				action_power_toggle();
 			break;
 
 		case BTN_TYPE_ENC_LESS:
@@ -501,11 +506,11 @@ bool irCustom(uint32_t evtir, bool repeat)
 	{
 		switch (i)
 		{
-			case KEY_UP: action_webstation_switch(+1);  break;
+			case KEY_UP: action_switch(+1);  break;
 			case KEY_LEFT: action_increase_volume(-5);  break;
 			case KEY_OK: if (!repeat ) stationOk();   break;
 			case KEY_RIGHT: action_increase_volume(+5);   break;
-			case KEY_DOWN: action_webstation_switch(-1);  break;
+			case KEY_DOWN: action_switch(-1);  break;
 			case KEY_0: if (!repeat ) nbStation('0');   break;
 			case KEY_1: if (!repeat ) nbStation('1');  break;
 			case KEY_2: if (!repeat ) nbStation('2');  break;
@@ -516,8 +521,8 @@ bool irCustom(uint32_t evtir, bool repeat)
 			case KEY_7: if (!repeat ) nbStation('7');  break;
 			case KEY_8: if (!repeat ) nbStation('8');  break;
 			case KEY_9: if (!repeat ) nbStation('9');  break;
-			case KEY_STAR: if (!repeat ) action_webstation_switch(0);  break;
-			case KEY_DIESE: if (!repeat ) action_webstation_stop();  break;
+			case KEY_STAR: if (!repeat ) action_switch(0);  break;
+			case KEY_DIESE: if (!repeat ) action_stop();  break;
 			case KEY_INFO: if (!repeat ) toggletime();  break;
 			default: ;
 		}
@@ -550,7 +555,7 @@ event_ir_t evt;
 		case 0xDF2047:
 		case 0xDF2002:
 		case 0xFF0046:
-		case 0xF70812:  /*(" UP");*/  action_webstation_switch(+1);
+		case 0xF70812:  /*(" UP");*/  action_switch(+1);
 		break;
 		case 0xDF2049:
 		case 0xDF2041:
@@ -571,7 +576,7 @@ event_ir_t evt;
 		case 0xDF204D:
 		case 0xDF2009:
 		case 0xFF0015:
-		case 0xF70813: /*(" DOWN");*/ action_webstation_switch(-1);
+		case 0xF70813: /*(" DOWN");*/ action_switch(-1);
 		break;
 		case 0xDF2000:
 		case 0xFF0016:
@@ -611,7 +616,7 @@ event_ir_t evt;
 		break;
 		case 0xDF2045:
 		case 0xFF0042:
-		case 0xF70817: /*(" *");*/   if (!evt.repeat_flag ) action_webstation_switch(0);
+		case 0xF70817: /*(" *");*/   if (!evt.repeat_flag ) action_switch(0);
 		break;
 		case 0xDF201B:
 		case 0xFF0052:
@@ -619,7 +624,7 @@ event_ir_t evt;
 		break;
 		case 0xDF205B:
 		case 0xFF004A:
-		case 0xF7081D: /*(" #");*/ if (!evt.repeat_flag )  action_webstation_stop();
+		case 0xF7081D: /*(" #");*/ if (!evt.repeat_flag )  action_stop();
 		break;
 		case 0xDF2007: /*(" Info")*/ if (!evt.repeat_flag ) toggletime();
 		break;
@@ -667,7 +672,7 @@ void addon_task_lcd(void *pvParams)
 	{
 		if (itLcdOut==1) // switch off the lcd
 		{
-			sleepLcd();
+			addon_sleep_lcd();
 		}
 
 		if (timerScroll >= 500) //500 ms
@@ -794,9 +799,6 @@ void addon_task(void *pvParams)
 		ESP_LOGI(TAG, "%s task: %x","task_lcd",(unsigned int)pxTaskLcd);
 	}
 
-	// Configure Deep Sleep start and wakeup options
-	addon_deep_sleep_conf(); // also called in app_main.c
-
 	while (1)
 	{
 		buttons_loop();
@@ -829,7 +831,7 @@ void addon_task(void *pvParams)
 					irStr[0] = 0;
 					if (playable && (sta_no != app_state_get_curr_webstation()))
 					{
-						action_webstation_set(sta_no);
+						action_setstation(sta_no);
 					}
 				}
 
@@ -905,7 +907,7 @@ void addon_parse(const char *fmt, ...)
    {
  		evt.lcmd = -1;
 		evt.lline = NULL;
-		action_webstation_stop();
+		action_stop();
    }
    else
  //////Nameset    ##CLI.NAMESET#:
@@ -939,27 +941,4 @@ void addon_parse(const char *fmt, ...)
    }
    if (evt.lcmd != -1 && lcd_type !=LCD_NONE && event_lcd) xQueueSend(event_lcd,&evt, 0);
    free (line);
-}
-
-/** Configure Deep Sleep: source and wakeup options. */
-bool addon_deep_sleep_conf(void)
-{
-	/** Configure Deep Sleep External wakeup (ext0). */
-	/** Wake up (EXT0) when GPIO deepSleep_io pin level is opposite to deepSleepLevel. */
-	esp_sleep_enable_ext0_wakeup(PIN_EXT_GPIO_INT, 1);
-	return true;
-}
-
-/** Enter ESP32 Deep Sleep with the configured wakeup options, and powerdown peripherals, */
-/** when P_SLEEP GPIO is set to P_LEVEL_SLEEP. */
-/** https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/sleep_modes.html */
-void addon_deep_sleep_start(void)
-{
-	/** 1. Enter peripherals sleep */
-	sleepLcd();	// LCD
-/** note that PCM5102 also enters powerdown because pins P_I2S_LRCK and P_I2S_BCLK are low. */
-
-	/** 2. Enter ESP32 deep sleep with the configured wakeup options. */
-/*	YMMV: rtc_gpio_isolate(deepSleep_io); // disconnect GPIO from internal circuits in deep sleep, to minimize leakage current. */
-	esp_deep_sleep_start();
 }

@@ -60,7 +60,7 @@ static int start_decoder_task(player_t *player)
 			{
 				ESP_LOGE(TAG, "aac not supported on WROOM cpu");
 				spiRamFifoReset();
-				action_webstation_stop();
+				action_stop();
 				return -1;
 			}
 
@@ -121,7 +121,7 @@ int audio_stream_consumer(const char *recv_buf, ssize_t bytes_read)
 			if (start_decoder_task(player_instance) != 0) {
 				ESP_LOGE(TAG, "Decoder task failed");
 				audio_player_stop();
-				action_webstation_stop();
+				action_stop();
 				return -1;
 			}
 		}

@@ -342,7 +342,7 @@ static void handlePOST(char* name, char* data, int data_size, int conn) {
 			char port[10];
 			tst &=getSParameterFromResponse(port,10,"port=", data, data_size);
 			if(tst) {
-				action_webstation_stop();
+				action_stop();
 				for (int i = 0;i<100;i++)
 				{
 					if(!webclient_is_connected())break;
@@ -564,7 +564,7 @@ static void handlePOST(char* name, char* data, int data_size, int conn) {
 		if(data_size > 4) {
 			char * id = data+3;
 			data[data_size-1] = 0;
-			action_webstation_set(atoi(id));
+			action_setstation(atoi(id));
 		}
 	} else if(strcmp(name, "/auto") == 0) {
 		if(data_size > 4) {
@@ -597,7 +597,7 @@ static void handlePOST(char* name, char* data, int data_size, int conn) {
 		return;
 
 	} else if(strcmp(name, "/stop") == 0) {
-		action_webstation_stop();
+		action_stop();
 	} else if(strcmp(name, "/upgrade") == 0) {
 #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 4, 0)
 		ota_update_firmware((char*)"KaRadio32_4");  // start the OTA
@@ -952,23 +952,23 @@ static bool httpServerHandleConnection(int conn, char* buf, uint16_t buflen) {
 				if (param != NULL) {action_increase_volume(-5);}
 // play command
 				param = getParameterFromResponse("play=", c, strlen(c)) ;
-				if (param != NULL) {action_webstation_set(atoi(param));infree(param);}
+				if (param != NULL) {action_setstation(atoi(param));infree(param);}
 // start command
 				param = strstr(c,"start") ;
-				if (param != NULL) {action_webstation_switch(0);}
+				if (param != NULL) {action_switch(0);}
 // stop command
 				param = strstr(c,"stop") ;
-				if (param != NULL) {action_webstation_stop();}
+				if (param != NULL) {action_stop();}
 // next command
 				param = strstr(c,"next") ;
-				if (param != NULL) {action_webstation_switch(+1);}
+				if (param != NULL) {action_switch(+1);}
 // prev command
 				param = strstr(c,"prev") ;
-				if (param != NULL) {action_webstation_switch(+1);}
+				if (param != NULL) {action_switch(+1);}
 // instantplay command
 				param = getParameterFromComment("instant=", c, strlen(c)) ;
 				if (param != NULL) {
-					action_webstation_stop();
+					action_stop();
 					pathParse(param);
 					webclient_parse_playlist(param);
 					infree(param);

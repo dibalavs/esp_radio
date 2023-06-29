@@ -147,7 +147,7 @@ static void ota_task(void *pvParameter)
 	struct sockaddr_in dest;
 	char* name = (char*)pvParameter; // name of the bin file to load
     unsigned int cnt =0;
-	action_webstation_stop();
+	action_stop();
 
 	//esp32: found a partition to flash
     esp_err_t err;

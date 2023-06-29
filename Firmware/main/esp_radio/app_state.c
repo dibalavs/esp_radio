@@ -84,6 +84,17 @@ unsigned app_state_get_curr_fmstation(void)
     return settings->fm_station;
 }
 
+void app_state_set_fm(bool is_fm)
+{
+    settings->is_current_fm = is_fm;
+    xTimerStart(update_timer, portMAX_DELAY);
+}
+
+bool app_state_is_fm(void)
+{
+    return settings->is_current_fm;
+}
+
 struct device_settings *app_state_get_settings(void)
 {
     return settings;
@@ -97,12 +108,14 @@ static void update_settings_cb(TimerHandle_t xTimer)
     if (old->web_station != settings->web_station
      || old->fm_station != settings->web_station
      || old->vol != settings->vol
-     || old->audio_output_mode != settings->audio_output_mode) {
+     || old->audio_output_mode != settings->audio_output_mode
+     || old->is_current_fm != settings->is_current_fm) {
 
         old->web_station = settings->web_station;
         old->fm_station = settings->fm_station;
         old->vol = settings->vol;
         old->audio_output_mode = settings->audio_output_mode;
+        old->is_current_fm = settings->is_current_fm;
         ESP_LOGI(TAG, "Found settings changes. Update device settings.");
         eeprom_save_device_settings(old);
     }

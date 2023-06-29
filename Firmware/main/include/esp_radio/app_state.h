@@ -11,6 +11,7 @@
 
 #pragma once
 
+#include <stdbool.h>
 #include <stdint.h>
 
 typedef enum {
@@ -42,5 +43,8 @@ unsigned app_state_get_curr_webstation(void);
 
 void app_state_set_curr_fmstation(unsigned sta_no);
 unsigned app_state_get_curr_fmstation(void);
+
+void app_state_set_fm(bool is_fm);
+bool app_state_is_fm(void);
 
 struct device_settings *app_state_get_settings(void); // TODO: remove it.

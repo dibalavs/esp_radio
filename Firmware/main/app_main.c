@@ -342,7 +342,7 @@ IRAM_ATTR void timer_task(void* p) {
                         addon_service_isr();
                     break;
                     case TIMER_SLEEP:
-                        action_webstation_stop(); // stop the player
+                        action_stop(); // stop the player
                     break;
                     case TIMER_WAKE:
                         webclient_connect(); // start the player
@@ -427,9 +427,9 @@ void autoPlay(bool is_ap)
 
     webclient_save_one_header(apmode,strlen(apmode),METANAME);
 
-    if ((g_device->autostart ==1 )&&(app_state_get_curr_webstation() != NO_STATION)) {
-        kprintf("autostart: playing:%d, currentstation:%d\n", g_device->autostart, app_state_get_curr_webstation());
-        action_webstation_switch(0);
+    if ((g_device->autostart ==1 )&&(action_getstation() != NO_STATION)) {
+        kprintf("autostart: playing:%d, currentstation:%d\n", g_device->autostart, action_getstation());
+        action_switch(0);
     } else
         webclient_save_one_header("Ready",5,METANAME);
 }

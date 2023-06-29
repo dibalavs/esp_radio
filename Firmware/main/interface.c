@@ -509,7 +509,7 @@ void clientPlay(char *s)
         uint8_t tmp;
         for(tmp=0; tmp<(t_end-t+1); tmp++) id[tmp] = 0;
         strncpy(id, t+2, (t_end-t));
-		action_webstation_set(atoi(id));
+		action_setstation(atoi(id));
         free(id);
     }
 }
@@ -1273,12 +1273,12 @@ void iface_check_command(int size, char* s)
 		if     (startsWith (  "url", tmp+4)) 	clientParseUrl(tmp);
 		else if(startsWith (  "path", tmp+4))	clientParsePath(tmp);
 		else if(startsWith (  "port", tmp+4)) 	clientParsePort(tmp);
-		else if(strcmp(tmp+4, "instant") == 0) {action_webstation_stop(); webclient_connect_once();}
-		else if(strcmp(tmp+4, "start") == 0) 	action_webstation_switch(0); // outside value to play the current station
-		else if(strcmp(tmp+4, "stop") == 0) 	action_webstation_stop();
+		else if(strcmp(tmp+4, "instant") == 0) {action_stop(); webclient_connect_once();}
+		else if(strcmp(tmp+4, "start") == 0) 	action_switch(0); // outside value to play the current station
+		else if(strcmp(tmp+4, "stop") == 0) 	action_stop();
 		else if(startsWith (  "list", tmp+4)) 	clientList(tmp);
-		else if(strcmp(tmp+4, "next") == 0) 	action_webstation_switch(+1);
-		else if(strncmp(tmp+4,"previous",4) == 0) action_webstation_switch(-1);
+		else if(strcmp(tmp+4, "next") == 0) 	action_switch(+1);
+		else if(strncmp(tmp+4,"previous",4) == 0) action_switch(-1);
 		else if(startsWith (  "play",tmp+4)) 	clientPlay(tmp);
 		else if(strcmp(tmp+4, "vol+") == 0) 	action_increase_volume(+10);
 		else if(strcmp(tmp+4, "vol-") == 0) 	action_increase_volume(-10);
