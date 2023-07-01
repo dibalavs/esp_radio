@@ -6,8 +6,10 @@
 
 #pragma once
 
+#include "esp_err.h"
 #include "esp_system.h"
 #include "audio_renderer.h"
+#include <math.h>
 
 //define for bit array options
 #define T_THEME 	1
@@ -60,13 +62,13 @@ struct device_settings {
 	char pass1[PASSLEN];
 	char pass2[PASSLEN];
 	uint8_t current_ap; // 0 = AP mode, else STA mode: 1 = ssid1, 2 = ssid2
-	uint8_t vol;
+	uint8_t __unused__vol;
 	int8_t treble;
 	uint8_t bass;
 	int8_t freqtreble;
 	uint8_t freqbass;
 	uint8_t spacial;
-	uint16_t web_station;  //
+	uint16_t ___unused___web_station;  //
 	uint8_t autostart; // 0: stopped, 1: playing
 	uint8_t i2sspeed; // 0 = 48kHz, 1 = 96kHz, 2 = 128kHz
 	uint32_t uartspeed; // serial baud
@@ -78,7 +80,7 @@ struct device_settings {
 	uint32_t sleepValue;
 	uint32_t wakeValue;
 // esp32
-	output_mode_t audio_output_mode; //
+	output_mode_t __unused__audio_output_mode; //
 	uint8_t trace_level;
 	uint8_t lcd_type; // the lcd in use
 	uint8_t led_gpio; // the gpio of the led
@@ -89,8 +91,6 @@ struct device_settings {
 	char hostname[HOSTLEN];
 	uint32_t tp_calx;
 	uint32_t tp_caly;
-	uint16_t fm_station;
-	uint8_t is_current_fm;  // Currently selected source: fm chip or web radio stream.
 };// Device_Settings;
 
 struct shoutcast_info {
@@ -99,6 +99,12 @@ struct shoutcast_info {
 	char name[64];
 	int8_t ovol; // offset volume
 	uint16_t port;	//port
+};
+
+struct fmstation_info {
+	char name[64];
+	float frequency_mhz;
+	int8_t ovol; // offset volume
 };
 
 extern struct device_settings* g_device;
@@ -110,10 +116,17 @@ bool eeprom_set_data(int address, void* buffer, int size);
 void eeprom_erase_settings(void);
 void eeprom_erase_all();
 
-void eeprom_save_station(struct shoutcast_info *station, uint16_t position);
-void eeprom_save_multi_station(struct shoutcast_info *station, uint16_t position, uint8_t number);
-void eeprom_erase_stations(void);
-struct shoutcast_info* eeprom_get_station(uint8_t position);
+// web radio station info
+void eeprom_save_webstation(struct shoutcast_info *station, uint16_t position);
+void eeprom_save_multi_webstation(struct shoutcast_info *station, uint16_t position, uint8_t number);
+void eeprom_erase_webstations(void);
+struct shoutcast_info* eeprom_get_webstation(uint8_t position);
+
+// fm station info
+void eeprom_save_fmstation(const struct fmstation_info *station, uint16_t position);
+void eeprom_save_multi_fmstation(const struct fmstation_info *station, uint16_t position, uint8_t number);
+void eeprom_erase_fmstations(void);
+esp_err_t eeprom_get_fmstation(uint8_t position, struct fmstation_info* station);
 
 void eeprom_save_device_settings(struct device_settings *settings);
 struct device_settings* eeprom_get_device_settings();
@@ -121,3 +134,10 @@ struct device_settings* eeprom_get_device_settings();
 // Protect: html page is password protected.
 void setProtect(bool);
 bool getProtect();
+
+// new api for NVS
+void eeprom_settings_set_int8(const char *name, int8_t val);
+void eeprom_settings_set_int16(const char *name, int16_t val);
+void eeprom_settings_get_int8(const char *name, int8_t *val, int8_t deflt);
+void eeprom_settings_get_int16(const char *name, int16_t *val, int16_t deflt);
+void eeprom_settings_commit(void);

@@ -4,6 +4,8 @@
  * il ne faut pas decoder KaRadio
  *
 *******************************************************************************/
+#include "esp_err.h"
+#include "nvs.h"
 #define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -13,7 +15,7 @@
 #include "freertos/FreeRTOS.h"
 #include "esp_log.h"
 //#include "driver/uart.h"
-
+#include <nvs_flash.h>
 #include "eeprom.h"
 #include "stdio.h"
 #include "stdlib.h"
@@ -35,6 +37,9 @@ const esp_partition_t * STATIONS;
 
 struct device_settings* g_device;
 
+nvs_handle_t fmstations;
+nvs_handle_t settings;
+
 void eeprom_partitions_init(void)
 {
 	DEVICE = esp_partition_find_first(64,0,NULL);
@@ -45,12 +50,16 @@ void eeprom_partitions_init(void)
 	if (STATIONS == NULL) ESP_LOGE(TAG, "STATIONS Partition not found");
 	muxDevice=xSemaphoreCreateMutex();
 	g_device = eeprom_get_device_settings();  // allocate one time for all
+
+	ESP_ERROR_CHECK(nvs_open_from_partition("fmstations", "fmstations", NVS_READWRITE, &fmstations));
+	ESP_ERROR_CHECK(nvs_open_from_partition("settings", "settings", NVS_READWRITE, &settings));
 }
 
 bool eeprom_set_data(int address, void* buffer, int size) { // address, size in BYTES !!!!
 uint8_t* inbuf = buffer;
 uint32_t* eebuf= kmalloc(PARTITIONLEN);
 uint16_t i = 0;
+ESP_LOGE(TAG, "Save full eeeprom data");
 if (eebuf != NULL)
 {
 	while(1) {
@@ -124,7 +133,7 @@ void eeprom_erase_settings(void){
 	free(buffer);
 }
 
-void eeprom_erase_stations() {
+void eeprom_erase_webstations() {
 	uint8_t* buffer = kmalloc(PARTITIONLEN);
 	int i=0;
 	while (buffer == NULL)
@@ -147,7 +156,7 @@ void eeprom_erase_stations() {
 	} else ESP_LOGE(TAG,"Warning %s kmalloc low memory","eeEraseStations");
 }
 
-void eeprom_save_station(struct shoutcast_info *station, uint16_t position) {
+void eeprom_save_webstation(struct shoutcast_info *station, uint16_t position) {
 	uint32_t i = 0;
 	if (position > NBSTATIONS-1) {ESP_LOGE(TAG,"saveStation fails pos=%d",position);return;}
 	while (!eeprom_set_data((position)*256, station, 256))
@@ -158,7 +167,7 @@ void eeprom_save_station(struct shoutcast_info *station, uint16_t position) {
 		if (i == 10) return;
 	}
 }
-void eeprom_save_multi_station(struct shoutcast_info *station, uint16_t position, uint8_t number) {
+void eeprom_save_multi_webstation(struct shoutcast_info *station, uint16_t position, uint8_t number) {
 	uint32_t i = 0;
 	while ((position +number-1) > NBSTATIONS-1) {ESP_LOGE(TAG,"saveStation fails pos=%d",position+number-1); number--; }
 	if (number <= 0) return;
@@ -172,18 +181,12 @@ void eeprom_save_multi_station(struct shoutcast_info *station, uint16_t position
 }
 
 
-struct shoutcast_info* eeprom_get_station(uint8_t position) {
+struct shoutcast_info* eeprom_get_webstation(uint8_t position) {
 	if (position > NBSTATIONS-1) {kprintf("eeprom_getStation fails pos=%d\n",position); return NULL;}
 	uint8_t* buffer = kmalloc(256);
-	uint8_t i = 0;
+	if (!buffer)
+		return NULL;
 
-	while (buffer == NULL)
-	{
-//		ESP_LOGE(TAG,"eeprom_getStation fails pos=%d",256);
-		if (++i > 2) break;
-		vTaskDelay(400);
-		buffer= kmalloc(256); // last chance
-	}
 	ESP_ERROR_CHECK(esp_partition_read(STATIONS, (position)*256, buffer, 256));
 	//eeGetData((position+1)*256, buffer, 256);
 
@@ -231,4 +234,66 @@ struct device_settings* eeprom_get_device_settings()
 		return (struct device_settings*)buffer;
 	}
 	return NULL;
+}
+
+void eeprom_save_fmstation(const struct fmstation_info *station, uint16_t position)
+{
+	char buff[8];
+	ESP_ERROR_CHECK(nvs_set_blob(fmstations, itoa(position, buff, 10), station, sizeof(*station)));
+	ESP_ERROR_CHECK(nvs_commit(fmstations));
+}
+
+void eeprom_save_multi_fmstation(const struct fmstation_info *station, uint16_t position, uint8_t number)
+{
+	char buff[8];
+	for (uint8_t i = 0; i < number; i++) {
+		ESP_ERROR_CHECK(nvs_set_blob(fmstations, itoa(position + i, buff, 10), &station[i], sizeof(*station)));
+	}
+
+	ESP_ERROR_CHECK(nvs_commit(fmstations));
+}
+
+void eeprom_erase_fmstations(void)
+{
+	ESP_ERROR_CHECK(nvs_erase_all(fmstations));
+}
+
+esp_err_t eeprom_get_fmstation(uint8_t position, struct fmstation_info* info)
+{
+	char buff[8];
+	size_t len = sizeof(*info);
+	return nvs_get_blob(fmstations, itoa(position, buff, 10), info, &len);
+}
+
+void eeprom_settings_set_int8(const char *name, int8_t val)
+{
+	ESP_ERROR_CHECK(nvs_set_i8(settings, name, val));
+}
+
+void eeprom_settings_set_int16(const char *name, int16_t val)
+{
+	ESP_ERROR_CHECK(nvs_set_i16(settings, name, val));
+}
+
+void eeprom_settings_get_int8(const char *name, int8_t *val, int8_t deflt)
+{
+	esp_err_t err = nvs_get_i8(settings, name, val);
+	if (err == ESP_ERR_NVS_NOT_FOUND)
+		*val = deflt;
+	else
+	 	ESP_ERROR_CHECK(err);
+}
+
+void eeprom_settings_get_int16(const char *name, int16_t *val, int16_t deflt)
+{
+	esp_err_t err = nvs_get_i16(settings, name, val);
+	if (err == ESP_ERR_NVS_NOT_FOUND)
+		*val = deflt;
+	else
+	 	ESP_ERROR_CHECK(err);
+}
+
+void eeprom_settings_commit(void)
+{
+	ESP_ERROR_CHECK(nvs_commit(settings));
 }

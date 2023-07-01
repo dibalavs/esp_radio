@@ -317,7 +317,7 @@ void drawStation()
 
   do {
 	int sta_no = app_state_get_curr_webstation();
-	si = eeprom_get_station(sta_no);
+	si = eeprom_get_webstation(sta_no);
 	if (!si)
 		break;
 	sprintf(sNum,"%d", sta_no);

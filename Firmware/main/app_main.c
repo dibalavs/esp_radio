@@ -310,7 +310,7 @@ static void init_hardware()
     merus_init();
     merus_set_volume(0x60);
 
-    //rda5807_init(I2C_NO, I2C_ADDR_RDA5807FP, PIN_FM_INT);
+    rda5807_init(I2C_NO, I2C_ADDR_RDA5807FP, PIN_FM_INT);
 
     i2s_redirector_init();
 
@@ -555,9 +555,7 @@ void app_main()
     addon_lcd_welcome("","");
     addon_lcd_welcome("","STARTING");
 
-    // volume
-    app_state_set_ivol( g_device->vol);
-    ESP_LOGI(TAG, "Volume set to %d",g_device->vol);
+    ESP_LOGI(TAG, "Volume set to %d",app_state_get_ivol());
 
     xTaskCreatePinnedToCore(timer_task, "timerTask",2100, NULL, PRIO_TIMER, &pxCreatedTask,CPU_TIMER);
     ESP_LOGI(TAG, "%s task: %x","t0",(unsigned int)pxCreatedTask);
@@ -609,7 +607,6 @@ void app_main()
     ESP_LOGI(TAG, "%s task: %x","task_addon",(unsigned int)pxCreatedTask);
     ESP_LOGI(TAG," Init Done");
 
-    app_state_set_ivol( g_device->vol);
     kprintf("READY. Type help for a list of commands\n");
     // error log on telnet
     esp_log_set_vprintf( (vprintf_like_t)lkprintf);

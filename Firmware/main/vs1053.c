@@ -446,7 +446,6 @@ void VS1053_Start()
 	// disable analog output
 	VS1053_WriteRegister16(SPI_VOL,0xFFFF);
 	VS1053_DisableAnalog();
-	ESP_LOGI(TAG,"volume: %d",g_device->vol);
 	//VS1053_SetVolume( g_device->vol);
 	VS1053_SetTreble(g_device->treble);
 	VS1053_SetBass(g_device->bass);

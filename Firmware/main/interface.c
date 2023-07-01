@@ -545,7 +545,7 @@ void clientList(char *s)
 		for ( ;i <j;i++)
 		{
 			vTaskDelay(1);
-			si = eeprom_get_station(i);
+			si = eeprom_get_webstation(i);
 
 			if ((si == NULL) || (si->port ==0))
 			{
@@ -656,7 +656,7 @@ char url[200];
 kprintf(" id: %d, name: %s, url: %s, port: %d, path: %s\n",id,si->name,si->domain,si->port,si->file);
 	if (id < 0xff) {
 		if (si->domain[0]==0) {si->port = 0;si->file[0] = 0;}
-		eeprom_save_station(si, id);
+		eeprom_save_webstation(si, id);
 		kprintf("##CLI.EDIT#: OK (%d)\n",id);
 	}
 	else
@@ -668,7 +668,7 @@ void clientInfo()
 	struct shoutcast_info* si;
 	kprintf("##CLI.INFO#\n");
 	unsigned sta_no = app_state_get_curr_webstation();
-	si = eeprom_get_station(sta_no);
+	si = eeprom_get_webstation(sta_no);
 	if (si != NULL)
 	{
 		ntp_print_time();
@@ -684,7 +684,7 @@ char* iface_web_info()
 {
 	struct shoutcast_info* si;
 	unsigned sta_no = app_state_get_curr_webstation();
-	si = eeprom_get_station(sta_no);
+	si = eeprom_get_webstation(sta_no);
 	char* resp = kmalloc(1024);
 	if (si != NULL)
 	{
@@ -700,7 +700,7 @@ char* iface_web_info()
 char* iface_web_list(int id)
 {
 	struct shoutcast_info* si;
-	si = eeprom_get_station(id);
+	si = eeprom_get_webstation(id);
 	char* resp = kmalloc(1024);
 	if (si != NULL)
 	{

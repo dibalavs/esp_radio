@@ -19,11 +19,14 @@
 #include "esp_radio/helpers.h"
 #include "esp_radio/merus.h"
 
-#include "audio_player.h"
 #include "addon.h"
+#include "audio_player.h"
 #include "eeprom.h"
+#include "gpio.h"
 #include "webclient.h"
 #include "websocket.h"
+
+#include <rda5807.h>
 
 #include <esp_debug_helpers.h>
 
@@ -87,11 +90,12 @@ void action_webstation_set(unsigned station_no)
 
     webclient_silent_disconnect();
 
-	si = eeprom_get_station(station_no);
+	si = eeprom_get_webstation(station_no);
     if (si == NULL)
         return;
 
     webstation_is_running = true;
+    fmstation_is_running = false;
     app_state_set_fm(false);
 
     ESP_LOGI(TAG,"Webstation set: %d, Name: %s", station_no, si->name);
@@ -127,6 +131,11 @@ void action_fmstation_stop(void)
 {
     fmstation_is_running = false;
 
+    ext_gpio_set_fm_chip_select(true);
+    rda5807_i2s_on(false);
+    rda5807_mute(true);
+    ext_gpio_set_fm_chip_select(true);
+
     i2s_redirector_stop();
     merus_deinit();
 
@@ -142,6 +151,14 @@ void action_fmstation_switch(int delta)
 void action_fmstation_set(unsigned station_no)
 {
     fmstation_is_running = true;
+    webstation_is_running = false;
+
+    ext_gpio_set_fm_chip_select(true);
+    rda5807_i2s_on(true);
+    rda5807_mute(false);
+    rda5807_set_frequency(96.8);
+    ext_gpio_set_fm_chip_select(true);
+
     app_state_set_fm(true);
     merus_init();
     i2s_redirector_start();
@@ -190,11 +207,14 @@ void action_power_toggle(void)
 {
     if (is_sleeping) {
         // TODO: wifi wake?
+        rda5807_power_on(true);
+        rda5807_init(I2C_NO, I2C_ADDR_RDA5807FP, PIN_FM_INT);
         addon_wake_lcd();
-        app_state_is_fm() ? action_fmstation_switch(0) : action_webstation_switch(0);
+        action_switch(0);
     } else {
-        app_state_is_fm() ? action_fmstation_stop() : action_webstation_stop();
+        action_stop();
         addon_sleep_lcd();
+        rda5807_power_on(false);
         // TODO: wifi sleep?
     }
 

@@ -460,7 +460,7 @@ static void handlePOST(char* name, char* data, int data_size, int conn) {
 					char *buf;
 					for(int i = 0; i<sizeof(ibuf); i++) ibuf[i] = 0;
 					struct shoutcast_info* si;
-					si = eeprom_get_station(atoi(id));
+					si = eeprom_get_webstation(atoi(id));
 					if (strlen(si->domain) > sizeof(si->domain)) si->domain[sizeof(si->domain)-1] = 0; //truncate if any (rom crash)
 					if (strlen(si->file) > sizeof(si->file)) si->file[sizeof(si->file)-1] = 0; //truncate if any (rom crash)
 					if (strlen(si->name) > sizeof(si->name)) si->name[sizeof(si->name)-1] = 0; //truncate if any (rom crash)
@@ -554,7 +554,7 @@ static void handlePOST(char* name, char* data, int data_size, int conn) {
 				ESP_LOGV(TAG,"si:%x, nsi:%x, addr:%x",(int)si,(int)nsi,(int)data);
 			}
 			ESP_LOGV(TAG,"save station: %d, unb:%d, addr:%x",uid,unb,(int)si);
-			eeprom_save_multi_station(si, uid,unb);
+			eeprom_save_multi_webstation(si, uid,unb);
 			ESP_LOGV(TAG,"save station return: %d, unb:%d, addr:%x",uid,unb,(int)si);
 			infree (si);
 			if (pState != webclient_get_state())
@@ -680,9 +680,8 @@ static void handlePOST(char* name, char* data, int data_size, int conn) {
 			cout = atoi(coutput);
 			if (val)
 			{
-				g_device->audio_output_mode = cout;
+				app_state_set_audio_output_mode(cout);
 				changed = true;
-				eeprom_save_device_settings(g_device);
 			}
 			int json_length ;
 			json_length =15;
@@ -690,12 +689,12 @@ static void handlePOST(char* name, char* data, int data_size, int conn) {
 			char buf[110];
 			sprintf(buf, "HTTP/1.1 200 OK\r\nContent-Type:application/json\r\nContent-Length:%d\r\n\r\n{\"coutput\":\"%d\"}",
 			json_length,
-			g_device->audio_output_mode);
+			cout);
 			ESP_LOGV(TAG,"hardware Buf len:%d\n%s",strlen(buf),buf);
 			write(conn, buf, strlen(buf));
 			if (val){
 				// set current_ap to the first filled ssid
-				ESP_LOGD(TAG,"audio_output_mode: %d",g_device->audio_output_mode);
+				ESP_LOGD(TAG,"audio_output_mode: %d",cout);
 //				copyDeviceSettings();
 				vTaskDelay(20);
 				esp_restart();
@@ -901,7 +900,7 @@ static void handlePOST(char* name, char* data, int data_size, int conn) {
 		}
 	} else if(strcmp(name, "/clear") == 0)
 	{
-		eeprom_erase_stations();	//clear all stations
+		eeprom_erase_webstations();	//clear all stations
 	}
 	respOk(conn,NULL);
 }

@@ -10,6 +10,7 @@
 #include "driver/spi_master.h"
 #include "app_main.h"
 #include <hal/gpio_types.h>
+#include <hal/i2c_types.h>
 
 #define GPIO_NONE 255
 
