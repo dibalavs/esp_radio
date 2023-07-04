@@ -41,5 +41,7 @@ void action_set_volume(uint8_t value);
 
 // Power control
 void action_power_toggle(void);
+void action_power_on(void);
+void action_power_off(void);
 
 void action_toogle_time(void);

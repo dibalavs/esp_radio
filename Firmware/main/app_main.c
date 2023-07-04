@@ -300,18 +300,6 @@ static void init_hardware()
     ext_gpio_init();
     buttons_init();
 
-    VS1053_HW_init();
-
-    VS1053_Start();
-    VS1053_I2SRate(0);
-
-    ext_gpio_set_i2s(I2S_SWITCH_VS1053);
-
-    merus_init();
-    merus_set_volume(0x60);
-
-    rda5807_init(I2C_NO, I2C_ADDR_RDA5807FP, PIN_FM_INT);
-
     i2s_redirector_init();
 
     ESP_LOGI(TAG, "hardware initialized");
@@ -427,7 +415,7 @@ void autoPlay(bool is_ap)
 
     webclient_save_one_header(apmode,strlen(apmode),METANAME);
 
-    if ((g_device->autostart ==1 )&&(action_getstation() != NO_STATION)) {
+    if (g_device->autostart && action_getstation() != NO_STATION) {
         kprintf("autostart: playing:%d, currentstation:%d\n", g_device->autostart, action_getstation());
         action_switch(0);
     } else
@@ -595,6 +583,9 @@ void app_main()
         strcpy((char *)ssid.password, g_device->pass1);
         network_init(&ssid, NULL, false);
     }
+
+    if (g_device->autostart && action_getstation() != NO_STATION)
+        action_power_on();
 
 //-----------------------------------------------------
 //init softwares

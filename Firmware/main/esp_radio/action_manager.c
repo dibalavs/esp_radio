@@ -9,6 +9,7 @@
  *
  */
 
+#include "network.h"
 #define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
 
 #include "esp_radio/action_manager.h"
@@ -25,6 +26,7 @@
 #include "gpio.h"
 #include "webclient.h"
 #include "websocket.h"
+#include <vs1053.h>
 
 #include <rda5807.h>
 
@@ -79,6 +81,9 @@ void action_webstation_set(unsigned station_no)
 {
 	struct shoutcast_info* si;
 	char answer[32];
+
+    if (!network_is_connected())
+        return;
 
     event_lcd_t evt;
 	evt.lcmd = estation;
@@ -203,20 +208,47 @@ void action_increase_volume(int delta)
     action_set_volume(CLIP_VOLUME(delta + app_state_get_ivol()));
 }
 
+void action_power_on(void)
+{
+    // TODO: wifi wake?
+    VS1053_HW_init();
+    VS1053_Start();
+    VS1053_I2SRate(0);
+
+    rda5807_power_on(true);
+    rda5807_init(I2C_NO, I2C_ADDR_RDA5807FP, PIN_FM_INT);
+
+    static const rda5807_i2s_config_t cfg = {
+        .is_master = false,
+        .is_ws_left = true,
+        .is_data_signed = false,
+        .is_sclk_inverted = false,
+        .is_ws_inverted = false,
+        .master_speed = RDA5807_I2S_WS_STEP_48,
+        .is_left_ch_delay = true,
+        .is_right_ch_delay = true
+    };
+    rda5807_i2s_configure(&cfg);
+    addon_wake_lcd();
+    action_switch(0);
+}
+
+void action_power_off(void)
+{
+    action_stop();
+    addon_sleep_lcd();
+    rda5807_power_on(false);
+
+    VS1053_LowPower();
+    // TODO: wifi sleep?
+}
+
 void action_power_toggle(void)
 {
-    if (is_sleeping) {
-        // TODO: wifi wake?
-        rda5807_power_on(true);
-        rda5807_init(I2C_NO, I2C_ADDR_RDA5807FP, PIN_FM_INT);
-        addon_wake_lcd();
-        action_switch(0);
-    } else {
-        action_stop();
-        addon_sleep_lcd();
-        rda5807_power_on(false);
-        // TODO: wifi sleep?
-    }
+    if (is_sleeping)
+        action_power_on();
+    else
+        action_power_off();
 
     is_sleeping = !is_sleeping;
 }
