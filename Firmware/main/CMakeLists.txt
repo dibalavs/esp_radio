@@ -30,6 +30,7 @@ set(COMPONENT_SRCS
 	"esp_radio/kmalloc.c"
 	"esp_radio/merus.c"
 	"esp_radio/network.c"
+	"esp_radio/webserver.c"
 )
 
 set(COMPONENT_ADD_INCLUDEDIRS
@@ -40,7 +41,29 @@ set(COMPONENT_ADD_INCLUDEDIRS
 
 idf_component_register(SRCS ${COMPONENT_SRCS}
                        INCLUDE_DIRS ${COMPONENT_ADD_INCLUDEDIRS}
-					   REQUIRES i2c_bus mcp23017 RDA5807 esp_adc mdns u8g2 ucglib spi_flash fifo driver esp_wifi nvs_flash audio_renderer audio_player mp3_decoder fdk-aac_decoder MerusAudio common app_update
+					   REQUIRES
+							app_update
+							audio_player
+							audio_renderer
+							common
+							driver
+							esp_adc
+							esp_http_server
+							esp_wifi
+							fdk-aac_decoder
+							fifo
+							i2c_bus
+							json
+							mcp23017
+							mdns
+							MerusAudio
+							mp3_decoder
+							nvs_flash
+							RDA5807
+							spi_flash
+							spiffs
+							u8g2
+							ucglib
 					   PRIV_REQUIRES wolfssl)
 
 idf_build_set_property(COMPILE_OPTIONS "-Wno-format" APPEND)
@@ -48,3 +71,5 @@ idf_build_set_property(COMPILE_OPTIONS "-DWOLFSSL_USER_SETTINGS" APPEND)
 idf_build_set_property(COMPILE_OPTIONS "-DWOLFSSL_STATIC_RSA" APPEND)
 idf_build_set_property(COMPILE_OPTIONS "-Wno-error=format-overflow" APPEND)
 idf_build_set_property(COMPILE_OPTIONS "-Wno-implicit-fallthrough" APPEND)
+
+spiffs_create_partition_image(files ../spiffs_image FLASH_IN_PROJECT)

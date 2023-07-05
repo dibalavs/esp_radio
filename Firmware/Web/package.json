@@ -1,0 +1,46 @@
+{
+  "name": "espzb",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "serve": "vue-cli-service serve",
+    "build_sh": "vue-cli-service build && ./do_copy.sh",
+    "build_win": "vue-cli-service build & robocopy dist ..\\spiffs_image /s /xf *.ico *.html *.map* *.js *.css mockServiceWorker.*",
+    "lint": "vue-cli-service lint"
+  },
+  "dependencies": {
+    "core-js": "^3.31.0",
+    "vue": "^3.3.4",
+    "vue-loader": "^17.2.2",
+    "webpack": "^5.88.1"
+  },
+  "devDependencies": {
+    "@vue/cli-plugin-babel": "~5.0.8",
+    "@vue/cli-service": "~5.0.8",
+    "@vue/compiler-sfc": "^3.3.4",
+    "compression-webpack-plugin": "^10.0.0",
+    "msw": "^1.2.2"
+  },
+  "eslintConfig": {
+    "root": true,
+    "env": {
+      "node": true
+    },
+    "extends": [
+      "plugin:vue/vue3-essential",
+      "eslint:recommended"
+    ],
+    "parserOptions": {
+      "parser": "babel-eslint"
+    },
+    "rules": {}
+  },
+  "browserslist": [
+    "> 10%",
+    "last 2 versions",
+    "not dead"
+  ],
+  "msw": {
+    "workerDirectory": "public"
+  }
+}
