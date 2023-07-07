@@ -26,17 +26,17 @@ typedef struct rest_server_context {
 static esp_err_t set_content_type_from_file(httpd_req_t *req, const char *filepath)
 {
     const char *type = "text/plain";
-    if (CHECK_FILE_EXTENSION(filepath, ".html")) {
+    if (CHECK_FILE_EXTENSION(filepath, ".html.gz")) {
         type = "text/html";
-    } else if (CHECK_FILE_EXTENSION(filepath, ".js")) {
+    } else if (CHECK_FILE_EXTENSION(filepath, ".js.gz")) {
         type = "application/javascript";
-    } else if (CHECK_FILE_EXTENSION(filepath, ".css")) {
+    } else if (CHECK_FILE_EXTENSION(filepath, ".css.gz")) {
         type = "text/css";
-    } else if (CHECK_FILE_EXTENSION(filepath, ".png")) {
+    } else if (CHECK_FILE_EXTENSION(filepath, ".png.gz")) {
         type = "image/png";
-    } else if (CHECK_FILE_EXTENSION(filepath, ".ico")) {
+    } else if (CHECK_FILE_EXTENSION(filepath, ".ico.gz")) {
         type = "image/x-icon";
-    } else if (CHECK_FILE_EXTENSION(filepath, ".svg")) {
+    } else if (CHECK_FILE_EXTENSION(filepath, ".svg.gz")) {
         type = "text/xml";
     }
     return httpd_resp_set_type(req, type);

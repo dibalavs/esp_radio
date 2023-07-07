@@ -18,8 +18,6 @@ Copyright (C) 2017  KaraWin
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "action_manager.h"
-#include "app_state.h"
 #include "freertos/portmacro.h"
 #define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
 
@@ -43,9 +41,6 @@ Copyright (C) 2017  KaraWin
 #include "driver/uart.h"
 
 #include "mdns.h"
-#include <merus.h>
-#include <rda5807.h>
-
 #include "app_main.h"
 
 //#include "spiram_fifo.h"
@@ -58,7 +53,6 @@ Copyright (C) 2017  KaraWin
 #include "u8g2_esp32_hal.h"
 #include "addon.h"
 #include "addonu8g2.h"
-#include "buttons.h"
 #include "eeprom.h"
 
 /////////////////////////////////////////////////////
@@ -73,16 +67,21 @@ Copyright (C) 2017  KaraWin
 #include "webserver.h"
 #include "interface.h"
 #include "vs1053.h"
+#include <rda5807.h>
 #include "addon.h"
 #include "esp_idf_version.h"
 #include "driver/gptimer.h"
-#include "ext_gpio.h"
-#include "network.h"
-#include "i2s_redirector.h"
 
-#include "debug_task_stats.h"
-
-#include <bus.h>
+#include <esp_radio/action_manager.h>
+#include <esp_radio/app_state.h>
+#include <esp_radio/bus.h>
+#include <esp_radio/buttons.h>
+#include <esp_radio/debug_task_stats.h>
+#include <esp_radio/ext_gpio.h>
+#include <esp_radio/i2s_redirector.h>
+#include <esp_radio/merus.h>
+#include <esp_radio/network.h>
+#include <esp_radio/webserver.h>
 
 #define TAG "main"
 
@@ -424,6 +423,7 @@ void autoPlay(bool is_ap)
 }
 
 static bool is_mdns_init = false;
+static bool is_webwervice_init = false;
 static void on_wifi_connected(bool is_ap)
 {
     static TaskHandle_t task_webclient;
@@ -447,6 +447,11 @@ static void on_wifi_connected(bool is_ap)
     if (!task_webserver) {
         xTaskCreatePinnedToCore(servers_task, "serversTask", 3100, NULL, PRIO_SERVER, &task_webserver,CPU_SERVER);
         ESP_LOGI(TAG, "%s task: %p","serversTask",(void *)task_webserver);
+    }
+
+    if (!is_webwervice_init) {
+        webserver_initialize();
+        is_webwervice_init = true;
     }
 
     webclient_save_one_header("Wifi Connected.",18,METANAME);
