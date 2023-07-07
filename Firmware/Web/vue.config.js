@@ -8,7 +8,8 @@ module.exports = {
   },
   configureWebpack: (config) => {
     config.devtool = 'source-map'
-    config.output.filename = 'js/[name].[hash:2].js';
-    config.output.chunkFilename = 'js/[name].[hash:2].js';
+    config.mode = 'production'
+    config.output.filename = 'js/[name].[hash:4].js';
+    config.output.chunkFilename = 'js/[name].[hash:4].js';
   }
  }

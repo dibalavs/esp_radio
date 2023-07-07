@@ -11,10 +11,21 @@
       <device v-if="curr_page==='device'" src_url="/devices/info"/>
       <settings v-if="curr_page==='settings'" src_url="/settings"/>
     </div>
-     <alerts :items="alert_items"/>
+    <alerts :items="alert_items"/>
   </div>
+  <footer class="footer">
+      <player/>
+  </footer>
 </template>
-
+<style>
+.footer {
+  position: absolute;
+  bottom: 0;
+  width: 96%;
+  height: 60px; /* Set the fixed height of the footer here */
+  line-height: 50px; /* Vertically center the text there */
+}
+</style>
 <script>
 import navbar from './components/navbar.vue'
 import sysinfo from './components/sysinfo.vue'
@@ -22,6 +33,7 @@ import devices from './components/devices.vue'
 import device from './components/device.vue'
 import settings from './components/settings.vue'
 import alerts from './components/alerts.vue'
+import player from './components/player.vue'
 
 export default {
   name: 'ESP ZigBee',
@@ -32,6 +44,7 @@ export default {
     devices,
     settings,
     alerts,
+    player,
   },
   data() {
     return {

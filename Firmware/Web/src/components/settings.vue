@@ -180,6 +180,8 @@
 </template>
 
 <script>
+import { Modal } from 'bootstrap/dist/js/bootstrap';
+
 export default {
   name: "settings",
   props: ["src_url"],
@@ -224,7 +226,7 @@ export default {
         .then((json) => {
           if (json.status == 0) {
             /*global bootstrap*/
-            var myModal = new bootstrap.Modal(document.getElementById('rebootRequest'))
+            var myModal = new Modal(document.getElementById('rebootRequest'))
             myModal.show()
             //this.$root.curr_page = "home";
           } else {

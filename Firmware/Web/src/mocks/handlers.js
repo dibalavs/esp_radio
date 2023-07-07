@@ -1,98 +1,128 @@
 import { rest } from 'msw'
 
-export default [
-  rest.get('/sysinfo', (req, res, ctx) => {
-    return res(
-//      ctx.status(403),
-      ctx.json([
-        {
-          name: 'System',
-          values: [{ name: "version", value: "1234" },
-          { name: "Uptime", value: "12:22" },
-          { name: "Heap", value: "12345" },
-          { name: "PSRAM total", value: "4445567" },
-          { name: "PSRAM free", value: "12345" }]
-        },
-        {
-          name: 'WiFi',
-          values: [{ name: "Mode", value: "Access Point" },
-          { name: "SSID", value: "asdfasf" },
-          { name: "IP", value: "1.2.3.4" },
-          { name: "MAC address", value: "12:24:45:45:56:67" },
-          { name: "Singal", value: "-45 Dbm" },
-          { name: "Hostname", value: "esp_zigbee" }]
-        },
-        {
-          name: 'Zigbee',
-          values: [{ name: "IEEE addr", value: "0x123456789" },
-          { name: "Revision", value: "1.2.3.4" },
-          { name: "PAN id ", value: "0x1234" },
-          { name: "Channel", value: "13" },
-          { name: "Status", value: "0x09" }]
-        },
-        {
-          name: 'MQTT',
-          values: [{ name: "Status", value: "not connected" },
-          { name: "Prefix", value: "none" }]
-        },
-        {
-          name: 'Time',
-          values: [{ name: "Uptime", value: "12:12" },
-          { name: "NTP server", value: "pool.ntp.ru" },
-          { name: "Current time", value: "12:12:12" }]
-        },
-      ])
-    )
-  }),
-  rest.get('/devices/list', (req, res, ctx) => {
-    return res(
-      //ctx.status(403),
-      ctx.json([
-        {
-          name: 'friendly name1',
-          code: "product code",
-          model: "product model1",
-          manuf: "manuf name 1",
-          addr: "short addr",
-          ieee: "ieee addr1",
-          buildid: "build id1",
-          power: "power1"
-        },
+const api_prefix = "/api/v1/"
+var is_fm = false
+var is_playing = false
+var station_no = 6
+var volume = 42
 
-        {
-          name: 'friendly name2',
-          code: "product code2",
-          model: "product model2",
-          manuf: "manuf name 2",
-          addr: "short addr",
-          ieee: "ieee addr2",
-          buildid: "build id2",
-          power: "power2"
-        },
+////////////////////////////////////////////////////////////////////////////
+// Manage player
 
-        {
-          name: 'friendly name3',
-          code: "product code3",
-          model: "product model3",
-          manuf: "manuf name 3",
-          addr: "short addr3",
-          ieee: "ieee addr3",
-          buildid: "build id3",
-          power: "power3"
-        },
+var player_info = rest.get(api_prefix + "player_info", (req, res, ctx) => {
+  return res(
+    //ctx.status(403),
+    ctx.json(
+      {
+        is_fm: is_fm,
+        is_playing: is_playing,
+        volume: volume,
+        station_type: is_fm ? "FM": "Ip",
+        station_no: station_no,
+        station_name: is_fm ? "Детское радио" : "Радио на 7 холмах",
+        track_name: is_playing ? "Музыка для сна." : ""
+      }))
+})
 
-        {
-          name: 'friendly name4',
-          code: "product code4",
-          model: "product model4",
-          manuf: "manuf name 4",
-          addr: "short addr4",
-          ieee: "ieee addr4",
-          buildid: "build id4",
-          power: "power4"
-        },
-      ]))
-  }),
+var player_pause = rest.get(api_prefix + "player_pause", (req, res, ctx) => {
+  if (is_playing) {
+    console.log("Stop playing.")
+    is_playing = false
+  } else {
+    console.log("Start playing")
+    is_playing = true
+  }
+
+  return res(
+    ctx.status(200)
+  )
+})
+
+var player_volume = rest.post(api_prefix + "player_volume", async (req, res, ctx) => {
+  const { value } = await req.json()
+  console.log("Set new volume:" + value)
+  volume = value
+  return res(
+    ctx.status(200)
+  )
+})
+
+var player_prev = rest.get(api_prefix + "player_prev", (req, res, ctx) => {
+  station_no--
+  console.log("Switch station:" + station_no)
+  return res(
+    ctx.status(200)
+  )
+})
+
+var player_next = rest.get(api_prefix + "player_next", (req, res, ctx) => {
+  station_no++
+  console.log("Switch station:" + station_no)
+  return res(
+    ctx.status(200)
+  )
+})
+
+var player_fmradio = rest.get(api_prefix + "player_fmradio", (req, res, ctx) => {
+  console.log("Switch to FM radio" )
+  is_fm = true;
+  return res(
+    ctx.status(200)
+  )
+})
+
+var player_ipradio = rest.get(api_prefix + "player_ipradio", (req, res, ctx) => {
+  console.log("Switch to IP radio" )
+  is_fm = false;
+  return res(
+    ctx.status(200)
+  )
+})
+
+var system_info = rest.get("sysinfo", (req, res, ctx) => {
+  return res(
+    ctx.json([
+      {
+        name: 'System',
+        values: [{ name: "version", value: "1234" },
+        { name: "Uptime", value: "12:22" },
+        { name: "Heap", value: "12345" },
+        { name: "PSRAM total", value: "4445567" },
+        { name: "PSRAM free", value: "12345" }]
+      },
+      {
+        name: 'WiFi',
+        values: [{ name: "Mode", value: "Access Point" },
+        { name: "SSID", value: "asdfasf" },
+        { name: "IP", value: "1.2.3.4" },
+        { name: "MAC address", value: "12:24:45:45:56:67" },
+        { name: "Singal", value: "-45 Dbm" },
+        { name: "Hostname", value: "esp_zigbee" }]
+      },
+      {
+        name: 'Zigbee',
+        values: [{ name: "IEEE addr", value: "0x123456789" },
+        { name: "Revision", value: "1.2.3.4" },
+        { name: "PAN id ", value: "0x1234" },
+        { name: "Channel", value: "13" },
+        { name: "Status", value: "0x09" }]
+      },
+      {
+        name: 'MQTT',
+        values: [{ name: "Status", value: "not connected" },
+        { name: "Prefix", value: "none" }]
+      },
+      {
+        name: 'Time',
+        values: [{ name: "Uptime", value: "12:12" },
+        { name: "NTP server", value: "pool.ntp.ru" },
+        { name: "Current time", value: "12:12:12" }]
+      },
+    ])
+  )
+})
+
+export default [player_info, player_pause, player_volume, player_prev, player_next, player_fmradio, player_ipradio, system_info,
   rest.get('/settings', (req, res, ctx) => {
     return res(
      // ctx.status(403),
