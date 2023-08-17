@@ -22,79 +22,8 @@
     <div class="row row-cols-2 row-cols-md-2 row-cols-lg-2 g-1 justify-content-md-center" v-if="item">
       <div class="col h-100">
         <div class="card" style="min-width: 18rem">
-          <div class="card-header">ZigBee</div>
+          <div class="card-header">Audio</div>
           <div class="card-body">
-            <div class="input-group mb-3">
-              <span class="input-group-text" id="zigbee-txpin" style="width: 10rem">ZigBee TX pin</span>
-              <input
-                type="number"
-                v-model="this.item.zigbee_tx"
-                class="form-control"
-                placeholder="TX pin number"
-                aria-label="TX pin number"
-                aria-describedby="zigbee-txpin"
-              />
-            </div>
-
-            <div class="input-group mb-3">
-              <span class="input-group-text" id="zigbee-rxpin" style="width: 10rem">ZigBee RX pin</span>
-              <input
-                type="number"
-                v-model="this.item.zigbee_rx"
-                class="form-control"
-                placeholder="RX pin number"
-                aria-label="RX pin number"
-                aria-describedby="zigbee-rxpin"
-              />
-            </div>
-
-            <div class="input-group mb-3">
-              <span class="input-group-text" id="zigbee-power" style="width: 7rem">Power:</span>
-              <span class="input-group-text" id="zigbee-power-lbl" style="width: 3rem" name="zigbee-power-lbl">{{
-                item.zigbee_power
-              }}</span>
-              <input
-                type="range"
-                v-model="this.item.zigbee_power"
-                style="margin-left: 1rem"
-                class="form-control-range"
-                min="1"
-                max="20"
-                step="1"
-                aria-describedby="zigbee-power-lbl"
-              />
-            </div>
-
-            <div class="input-group mb-3">
-              <span class="input-group-text" id="zigbee-channel" style="width: 7rem">Channel:</span>
-              <span class="input-group-text" id="zigbee-channel-lbl" style="width: 3rem" name="zigbee-channel-lbl">{{
-                item.zigbee_channel
-              }}</span>
-              <input
-                type="range"
-                v-model="this.item.zigbee_channel"
-                style="margin-left: 1rem"
-                class="form-control-range"
-                min="11"
-                max="26"
-                step="1"
-                aria-describedby="zigbee-channel-lbl"
-              />
-            </div>
-
-            <div class="input-group mb-3">
-              <span class="input-group-text" id="zigbee-panid" style="width: 10rem">PAN id 0x</span>
-              <input
-                type="text"
-                v-model="this.item.zigbee_panid"
-                pattern="[A-Fa-f0-9]+"
-                maxlength="4"
-                class="form-control"
-                placeholder="PAN id in hex format"
-                aria-label="PAN id in hex format"
-                aria-describedby="zigbee-panid"
-              />
-            </div>
           </div>
         </div>
       </div>

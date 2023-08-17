@@ -73,7 +73,7 @@
 <script>
 export default {
   name: "player",
-  props: ["src_url"],
+  props: [],
   created() {
     this.getInfo();
     this.timer = setInterval(this.getInfo, 2000);

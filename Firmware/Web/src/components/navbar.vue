@@ -1,7 +1,7 @@
 <template>
   <nav class="navbar navbar-expand-md navbar-dark bg-primary mb-4">
     <div class="container-fluid">
-      <a class="navbar-brand" href="#">ESP ZigBee</a>
+      <a class="navbar-brand" href="#">ESP Radio</a>
       <button
         class="navbar-toggler"
         type="button"
@@ -42,7 +42,8 @@ export default {
     return {
       menu_items: [
         { id: "home", title: "Home" },
-        { id: "devices", title: "Devices" },
+        { id: "ipradio_list", title: "IP radio" },
+        { id: "fmradio_list", title: "FM radio" },
         { id: "settings", title: "Settings" },
         { id: "help", title: "Help" },
       ],

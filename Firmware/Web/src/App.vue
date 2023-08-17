@@ -6,9 +6,11 @@
         <sysinfo v-if="curr_page==='home'" src_url="/sysinfo"/>
       </keep-alive>
       <keep-alive>
-        <devices v-if="curr_page==='devices'" src_url="/devices/list"/>
+        <ipradio_list v-if="curr_page==='ipradio_list'"/>
       </keep-alive>
-      <device v-if="curr_page==='device'" src_url="/devices/info"/>
+      <keep-alive>
+        <fmradio_list v-if="curr_page==='fmradio_list'"/>
+      </keep-alive>
       <settings v-if="curr_page==='settings'" src_url="/settings"/>
     </div>
     <alerts :items="alert_items"/>
@@ -29,22 +31,22 @@
 <script>
 import navbar from './components/navbar.vue'
 import sysinfo from './components/sysinfo.vue'
-import devices from './components/devices.vue'
-import device from './components/device.vue'
 import settings from './components/settings.vue'
 import alerts from './components/alerts.vue'
 import player from './components/player.vue'
+import ipradio_list from './components/ipradio_list.vue'
+import fmradio_list from './components/fmradio_list.vue'
 
 export default {
   name: 'ESP ZigBee',
   components: {
     navbar,
     sysinfo,
-    device,
-    devices,
     settings,
     alerts,
     player,
+    ipradio_list,
+    fmradio_list
   },
   data() {
     return {
