@@ -104,6 +104,14 @@ var ipradio_list = rest.get(api_prefix + "ipradio_list", (req, res, ctx) => {
     ctx.json(all_ip_stations))
 })
 
+var ipradio_import = rest.post(api_prefix + "ipradio_import", async (req, res, ctx) => {
+  const js = await req.json()
+  all_ip_stations = js
+  return res(
+    //ctx.status(403),
+    ctx.status(200))
+})
+
 var ipradio_set = rest.post(api_prefix + "ipradio_set", async (req, res, ctx) => {
   const { station_no:no } = await req.json()
   console.log("Set new station:" + no)
@@ -124,14 +132,6 @@ var ipradio_move = rest.post(api_prefix + "ipradio_move", async (req, res, ctx) 
   return res(
     ctx.status(200)
   )
-})
-
-var ipradio_import = rest.post(api_prefix + "ipradio_import", async (req, res, ctx) => {
-  const js = await req.json()
-  all_ip_stations = js
-  return res(
-    //ctx.status(403),
-    ctx.status(200))
 })
 
 var ipradio_export = rest.get(api_prefix + "ipradio_export", (req, res, ctx) => {
@@ -186,7 +186,7 @@ var fmradio_export = rest.get(api_prefix + "fmradio_export", (req, res, ctx) => 
 })
 
 ///////////////////////////////////////////////////////////////////////////////////////////
-var system_info = rest.get("sysinfo", (req, res, ctx) => {
+var system_info = rest.get(api_prefix + "sysinfo", (req, res, ctx) => {
   return res(
     ctx.json([
       {

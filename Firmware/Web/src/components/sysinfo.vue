@@ -43,7 +43,7 @@ export default {
       this.timer = null
     },
     getItems() {
-      fetch(this.src_url)
+      fetch(this.api_prefix + "sysinfo")
         .then((response) => {
           if (!response.ok) {
             throw new Error("HTTP status " + response.status);

@@ -74,7 +74,8 @@ void action_webstation_stop(void)
 void action_webstation_switch(int delta)
 {
     unsigned curr = app_state_get_curr_webstation();
-    action_webstation_set(curr + delta);
+    if ((int)curr + delta >= 0)
+        action_webstation_set(curr + delta);
 }
 
 void action_webstation_set(unsigned station_no)
@@ -84,11 +85,6 @@ void action_webstation_set(unsigned station_no)
 
     if (!network_is_connected())
         return;
-
-    event_lcd_t evt;
-	evt.lcmd = estation;
-	evt.lline = (char*)((uintptr_t)station_no);
-	xQueueSend(event_lcd, &evt, 0);
 
     app_state_set_curr_webstation(station_no);
     station_no = app_state_get_curr_webstation(); // can be truncated.
@@ -102,6 +98,11 @@ void action_webstation_set(unsigned station_no)
     webstation_is_running = true;
     fmstation_is_running = false;
     app_state_set_fm(false);
+
+    event_lcd_t evt;
+	evt.lcmd = estation;
+	evt.lline = (char*)((uintptr_t)station_no);
+	xQueueSend(event_lcd, &evt, 0);
 
     ESP_LOGI(TAG,"Webstation set: %d, Name: %s", station_no, si->name);
     webclient_set_name(si->name, station_no);
@@ -150,7 +151,8 @@ void action_fmstation_stop(void)
 void action_fmstation_switch(int delta)
 {
     unsigned curr = app_state_get_curr_fmstation();
-    action_fmstation_set(curr + delta);
+    if ((int)curr + delta >= 0)
+        action_fmstation_set(curr + delta);
 }
 
 void action_fmstation_set(unsigned station_no)

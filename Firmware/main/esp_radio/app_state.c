@@ -25,11 +25,14 @@
 #include <string.h>
 
 static const char *TAG = "appstate";
+
 static const char *master_volume_name = "volume";          // u8
 static const char *audio_output_mode_name = "output_mode"; // u8
 static const char *web_station_no_name = "web_station_no"; // u16
 static const char *fm_station_no_name = "fm_station_no";   // u16
 static const char *is_current_fm_name = "is_current_fm";   // u8
+static const char *fm_station_total_name = "fm_station_total";    // u16
+static const char *web_station_total_name = "web_station_total";  // u16
 
 static TimerHandle_t update_timer;
 
@@ -78,6 +81,15 @@ void app_state_set_audio_output_mode(output_mode_t mode)
 
 void app_state_set_curr_webstation(unsigned sta_no)
 {
+    uint16_t total = app_state_get_webradio_total();
+    if (total != NO_STATION) {
+        web_station_no = NO_STATION;
+        return;
+    }
+
+    if (sta_no > total)
+        sta_no = total;
+
     web_station_no = sta_no;
     eeprom_settings_set_int16(web_station_no_name, (int16_t)sta_no);
     xTimerStart(update_timer, portMAX_DELAY);
@@ -90,6 +102,15 @@ unsigned app_state_get_curr_webstation(void)
 
 void app_state_set_curr_fmstation(unsigned sta_no)
 {
+    uint16_t total = app_state_get_fmradio_total();
+    if (total != NO_STATION) {
+        fm_station_no = NO_STATION;
+        return;
+    }
+
+    if (sta_no > total)
+        sta_no = total;
+
     fm_station_no = sta_no;
     eeprom_settings_set_int16(fm_station_no_name, (int16_t)sta_no);
     xTimerStart(update_timer, portMAX_DELAY);
@@ -166,4 +187,30 @@ void app_state_init(void)
     eeprom_settings_get_int16(web_station_no_name, (int16_t *)&web_station_no, NO_STATION);
     eeprom_settings_get_int16(fm_station_no_name, (int16_t *)&fm_station_no, NO_STATION);
     eeprom_settings_get_int8(is_current_fm_name, (int8_t *)&is_current_fm, false);
+}
+
+uint16_t app_state_get_webradio_total(void)
+{
+    int16_t tmp;
+    eeprom_settings_get_int16(web_station_total_name, &tmp, NO_STATION);
+    return (uint16_t)tmp;
+}
+
+void app_state_set_webradio_total(uint16_t total)
+{
+    eeprom_settings_set_int16(web_station_total_name, (int16_t)total);
+    eeprom_settings_commit();
+}
+
+uint16_t app_state_get_fmradio_total(void)
+{
+    int16_t tmp;
+    eeprom_settings_get_int16(fm_station_total_name, &tmp, NO_STATION);
+    return (uint16_t)tmp;
+}
+
+void app_state_set_fmradio_total(uint16_t total)
+{
+    eeprom_settings_set_int16(fm_station_total_name, (int16_t)total);
+    eeprom_settings_commit();
 }

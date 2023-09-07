@@ -47,4 +47,10 @@ unsigned app_state_get_curr_fmstation(void);
 void app_state_set_fm(bool is_fm);
 bool app_state_is_fm(void);
 
+uint16_t app_state_get_webradio_total(void);
+void app_state_set_webradio_total(uint16_t total);
+
+uint16_t app_state_get_fmradio_total(void);
+void app_state_set_fmradio_total(uint16_t total);
+
 struct device_settings *app_state_get_settings(void); // TODO: remove it.
