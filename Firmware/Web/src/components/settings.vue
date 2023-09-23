@@ -24,6 +24,74 @@
         <div class="card" style="min-width: 18rem">
           <div class="card-header">Audio</div>
           <div class="card-body">
+            <div class="input-group mb-3">
+              <label class="input-group-text" style="width: 9rem">Audio decoder</label>
+              <select class="form-select" v-model="item.audio_mode">
+                <option value="SW">Software</option>
+                <option value="VS1053">VS1053</option>
+              </select>
+            </div>
+
+            <div class="input-group mb-3" v-show="item.audio_mode === 'VS1053'">
+              <span class="input-group-text" id="treble" style="width: 7rem">Treble:</span>
+              <span class="input-group-text" id="treble-lbl" style="width: 3rem" name="treble-lbl">{{item.treble}}</span>
+              <input
+                type="range"
+                v-model="item.treble"
+                style="margin-left: 1rem"
+                class="form-control-range"
+                min="-8"
+                max="7"
+                step="1"
+                aria-describedby="treble-lbl"
+              />
+            </div>
+
+            <div class="input-group mb-3" v-show="item.audio_mode === 'VS1053'">
+              <span class="input-group-text" id="treble-freq" style="width: 7rem">Treble Freq(Khz):</span>
+              <span class="input-group-text" id="treble-freq-lbl" style="width: 3rem" name="treble-freq-lbl">{{item.treble_freq}}</span>
+              <input
+                type="range"
+                v-model="item.treble_freq"
+                style="margin-left: 1rem"
+                class="form-control-range"
+                min="0"
+                max="15"
+                step="1"
+                aria-describedby="treble-freq-lbl"
+              />
+            </div>
+
+            <div class="input-group mb-3" v-show="item.audio_mode === 'VS1053'">
+              <span class="input-group-text" id="bass" style="width: 7rem">Bass:</span>
+              <span class="input-group-text" id="bass-lbl" style="width: 3rem" name="bass-lbl">{{item.bass}}</span>
+              <input
+                type="range"
+                v-model="item.bass"
+                style="margin-left: 1rem"
+                class="form-control-range"
+                min="0"
+                max="15"
+                step="1"
+                aria-describedby="bass-lbl"
+              />
+            </div>
+
+            <div class="input-group mb-3" v-show="item.audio_mode === 'VS1053'">
+              <span class="input-group-text" id="bass-freq" style="width: 7rem">Bass Freq(Khz):</span>
+              <span class="input-group-text" id="bass-freq-lbl" style="width: 3rem" name="bass-freq-lbl">{{item.bass_freq}}</span>
+              <input
+                type="range"
+                v-model="item.bass_freq"
+                style="margin-left: 1rem"
+                class="form-control-range"
+                min="2"
+                max="15"
+                step="1"
+                aria-describedby="bass_freq-lbl"
+              />
+            </div>
+
           </div>
         </div>
       </div>

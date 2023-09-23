@@ -224,13 +224,20 @@ export default [player_info, player_pause, player_volume, player_prev, player_ne
     return res(
      // ctx.status(403),
       ctx.json({
-        wifi_hostname: "zb_host",
+        audio_mode: "VS1053",
+        treble: "2",
+        treble_freq: "10",
+        bass: "5",
+        bass_freq: "10",
+
+        wifi_hostname: "esp_host",
         wifi_mode: "AP",
         wifi_ap_ssid: "ssid_ap",
         wifi_ap_password: "ssid_password",
         wifi_ssid: "ssid",
         wifi_password: "password",
         ntp_pool: "europe.pool.ntp.org"
+
       }))
   }),
   rest.post('/settings', (req, res, ctx) => {
