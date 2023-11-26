@@ -388,6 +388,7 @@ void uartInterfaceTask(void *pvParameters) {
                 tmp[t] = (char)c;
                 t++;
                 if(t == sizeof(tmp)-1) t = 0;
+                uart_write_bytes(UART_NUM_0, &c, 1);
             }
             //else printf("uart d: %d, T= %d\n",d,t);
             //switchCommand() ;  // hardware panel of command
@@ -467,6 +468,22 @@ static void on_wifi_disconnected(bool is_ap)
     webclient_save_one_header("Wifi Disconnected.",18,METANAME);
 }
 
+#include <stdio.h>
+#include <dirent.h>
+int enum_dirs(const char *root)
+{
+    DIR *dir;
+    struct dirent *dp;
+    char * file_name;
+    dir = opendir(root);
+    while (dir && (dp=readdir(dir)) != NULL) {
+        file_name = dp->d_name; // use it
+        printf("file_name: \"%s\"\n",file_name);
+    }
+    closedir(dir);
+    return 0;
+}
+
 /**
  * Main entry point
  */
@@ -519,6 +536,8 @@ void app_main()
         return;
     }
 
+    enum_dirs("/w");
+
     size_t total = 0, used = 0;
     ret = esp_spiffs_info(NULL, &total, &used);
     if (ret != ESP_OK) {
@@ -551,6 +570,7 @@ void app_main()
     //iface_set_log_level(g_device->trace_level);
 
     // output mode
+    app_state_set_audio_output_mode(I2S_MERUS);
     //I2S, I2S_MERUS, DAC_BUILT_IN, PDM, VS1053
     ESP_LOGI(TAG, "audio_output_mode %d\nOne of I2S=0, I2S_MERUS, DAC_BUILT_IN, PDM, VS1053, SPDIF",app_state_get_audio_output_mode());
 
@@ -587,7 +607,7 @@ void app_main()
     xTaskCreatePinnedToCore(timer_task, "timerTask",2100, NULL, PRIO_TIMER, &pxCreatedTask,CPU_TIMER);
     ESP_LOGI(TAG, "%s task: %x","t0",(unsigned int)pxCreatedTask);
 
-    //xTaskCreatePinnedToCore(uartInterfaceTask, "uartInterfaceTask", 2500, NULL, PRIO_UART, &pxCreatedTask,CPU_UART);
+    xTaskCreatePinnedToCore(uartInterfaceTask, "uartInterfaceTask", 2500, NULL, PRIO_UART, &pxCreatedTask,CPU_UART);
     //ESP_LOGI(TAG, "%s task: %x","uartInterfaceTask",(unsigned int)pxCreatedTask);
 
     webclient_init();

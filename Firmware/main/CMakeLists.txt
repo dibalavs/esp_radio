@@ -65,6 +65,7 @@ idf_component_register(SRCS ${COMPONENT_SRCS}
 							spiffs
 							u8g2
 							ucglib
+							vfs
 					   PRIV_REQUIRES wolfssl)
 
 idf_build_set_property(COMPILE_OPTIONS "-Wno-format" APPEND)
