@@ -120,13 +120,13 @@ void eeprom_erase_all();
 void eeprom_save_webstation(struct shoutcast_info *station, uint16_t position);
 void eeprom_save_multi_webstation(struct shoutcast_info *station, uint16_t position, uint8_t number);
 void eeprom_erase_webstations(void);
-struct shoutcast_info* eeprom_get_webstation(uint8_t position);
+struct shoutcast_info* eeprom_get_webstation(uint16_t position);
 
 // fm station info
 void eeprom_save_fmstation(const struct fmstation_info *station, uint16_t position);
 void eeprom_save_multi_fmstation(const struct fmstation_info *station, uint16_t position, uint8_t number);
 void eeprom_erase_fmstations(void);
-esp_err_t eeprom_get_fmstation(uint8_t position, struct fmstation_info* station);
+esp_err_t eeprom_get_fmstation(uint16_t position, struct fmstation_info* station);
 
 void eeprom_save_device_settings(struct device_settings *settings);
 struct device_settings* eeprom_get_device_settings();

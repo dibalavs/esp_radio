@@ -1228,6 +1228,21 @@ void dbgSSL(char* s)
 	eeprom_save_device_settings(g_device);
 }
 
+enum i2s_param {
+	I2S_SAMPLERATE,
+};
+
+extern i2s_config_t i2s_out_config;
+void i2s_set(enum i2s_param type, const char *val)
+{
+	uint32_t value = atoi(val + 1);
+	switch (type) {
+		case I2S_SAMPLERATE:
+			ESP_ERROR_CHECK(i2s_set_sample_rates(I2S_OUT_NO, value));
+			break;
+	}
+	ESP_LOGE(TAG, "I2s set config type:%d, val:%d", (int)type, value);
+}
 
 void iface_check_command(int size, char* s)
 {
@@ -1327,7 +1342,10 @@ void iface_check_command(int size, char* s)
 		else if(startsWith (  "host",tmp+4)) 	hostname(tmp);
 		else if(startsWith (  "rotat",tmp+4)) 	sysrotat(tmp);
 		else printInfo(tmp);
-	} else
+	} else if(startsWith ("i2s.", tmp)) {
+		if (startsWith ("sample_rate",tmp+4))			i2s_set(I2S_SAMPLERATE, tmp + 4 + 11);
+	}
+	else
 	{
 		if(strcmp(tmp, "help") == 0)
 		{
