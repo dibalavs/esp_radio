@@ -1,3 +1,5 @@
+#define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
+
 #include "esp_radio/webserver.h"
 
 #include "esp_mac.h"
@@ -56,11 +58,14 @@ static esp_err_t set_content_type_from_file(httpd_req_t *req, const char *filepa
     } else if (CHECK_FILE_EXTENSION(filepath, ".svg.gz")) {
         type = "text/xml";
     }
+
+    httpd_resp_set_hdr(req, "Content-Encoding", "gzip");
     return httpd_resp_set_type(req, type);
 }
 
 static esp_err_t sysinfo_get_handler(httpd_req_t *req)
 {
+    ESP_LOGI(TAG, "sysinfo handler");
     uint32_t all = heap_caps_get_free_size(MALLOC_CAP_DEFAULT);
     uint32_t iram = heap_caps_get_free_size(MALLOC_CAP_INTERNAL);
     uint32_t psram = heap_caps_get_free_size(MALLOC_CAP_SPIRAM);
@@ -70,20 +75,40 @@ static esp_err_t sysinfo_get_handler(httpd_req_t *req)
 
     /// system info
     cJSON *system_root = cJSON_CreateObject();
-    cJSON *system = cJSON_CreateObject();
-    cJSON_AddStringToObject(system, "Version", esp_app_get_description()->version);
-    cJSON_AddNumberToObject(system, "Uptime (min)", (double)(xTaskGetTickCount() * portTICK_PERIOD_MS / 1000 / 60));
-    cJSON_AddNumberToObject(system, "Total free RAM (Kb)", all / 1024);
-    cJSON_AddNumberToObject(system, "Free IRAM (Kb)", iram / 1024);
-    cJSON_AddNumberToObject(system, "Free PSRAM (Kb)", psram / 1024);
+    cJSON *values = cJSON_CreateArray();
+
+    cJSON *object = cJSON_CreateObject();
+    cJSON_AddStringToObject(object, "name", "Version");
+    cJSON_AddStringToObject(object, "value", esp_app_get_description()->version);
+    cJSON_AddItemToArray(values, object);
+
+    object = cJSON_CreateObject();
+    cJSON_AddStringToObject(object, "name", "Uptime (min)");
+    cJSON_AddNumberToObject(object, "value", (double)(xTaskGetTickCount() * portTICK_PERIOD_MS / 1000 / 60));
+    cJSON_AddItemToArray(values, object);
+
+    object = cJSON_CreateObject();
+    cJSON_AddStringToObject(object, "name", "Total free RAM(kb)");
+    cJSON_AddNumberToObject(object, "value", all / 1024);
+    cJSON_AddItemToArray(values, object);
+
+    object = cJSON_CreateObject();
+    cJSON_AddStringToObject(object, "name", "Free IRAM (Kb)");
+    cJSON_AddNumberToObject(object, "value", iram / 1024);
+    cJSON_AddItemToArray(values, object);
+
+    object = cJSON_CreateObject();
+    cJSON_AddStringToObject(object, "name", "Free PSRAM (Kb)");
+    cJSON_AddNumberToObject(object, "value", psram / 1024);
+    cJSON_AddItemToArray(values, object);
 
     cJSON_AddStringToObject(system_root, "name", "System");
-    cJSON_AddItemToObject(system_root, "value", system);
+    cJSON_AddItemToObject(system_root, "values", values);
     cJSON_AddItemToArray(root, system_root);
 
     // WiFi info
     cJSON *wifi_root = cJSON_CreateObject();
-    cJSON *wifi = cJSON_CreateObject();
+    cJSON *wifi = cJSON_CreateArray();
     wifi_mode_t mode;
     wifi_config_t conf;
     uint8_t mac[6];
@@ -93,15 +118,39 @@ static esp_err_t sysinfo_get_handler(httpd_req_t *req)
     ESP_ERROR_CHECK(esp_wifi_get_mode(&mode));
     ESP_ERROR_CHECK(esp_read_mac(mac, mode == WIFI_MODE_STA ? ESP_MAC_WIFI_STA : ESP_MAC_WIFI_SOFTAP));
     snprintf(mac_str, sizeof(mac_str), MACSTR, MAC2STR(mac));
-    cJSON_AddStringToObject(wifi, "Mode", mode == WIFI_MODE_AP ? "Access point" : "Station");
-    cJSON_AddStringToObject(wifi, "SSID", (char *)(mode == WIFI_MODE_STA ? conf.sta.ssid : conf.ap.ssid));
-    cJSON_AddStringToObject(wifi, "Ip:", app_get_ip());
-    cJSON_AddStringToObject(wifi, "MAC:", mac_str);
-    cJSON_AddNumberToObject(wifi, "Signal", ap.rssi);
-    cJSON_AddStringToObject(wifi, "Hostname", g_device->hostname);
 
-    cJSON_AddStringToObject(wifi_root, "name", "System");
-    cJSON_AddItemToObject(wifi_root, "value", wifi);
+    object = cJSON_CreateObject();
+    cJSON_AddStringToObject(object, "name", "Mode");
+    cJSON_AddStringToObject(object, "value", mode == WIFI_MODE_AP ? "Access point" : "Station");
+    cJSON_AddItemToArray(wifi, object);
+
+    object = cJSON_CreateObject();
+    cJSON_AddStringToObject(object, "name", "SSID");
+    cJSON_AddStringToObject(object, "value", (char *)(mode == WIFI_MODE_STA ? conf.sta.ssid : conf.ap.ssid));
+    cJSON_AddItemToArray(wifi, object);
+
+    object = cJSON_CreateObject();
+    cJSON_AddStringToObject(object, "name", "Ip");
+    cJSON_AddStringToObject(object, "value", app_get_ip());
+    cJSON_AddItemToArray(wifi, object);
+
+    object = cJSON_CreateObject();
+    cJSON_AddStringToObject(object, "name", "MAC");
+    cJSON_AddStringToObject(object, "value", mac_str);
+    cJSON_AddItemToArray(wifi, object);
+
+    object = cJSON_CreateObject();
+    cJSON_AddStringToObject(object, "name", "Signal");
+    cJSON_AddNumberToObject(object, "value", ap.rssi);
+    cJSON_AddItemToArray(wifi, object);
+
+    object = cJSON_CreateObject();
+    cJSON_AddStringToObject(object, "name", "Hostname");
+    cJSON_AddStringToObject(object, "value", g_device->hostname);
+    cJSON_AddItemToArray(wifi, object);
+
+    cJSON_AddStringToObject(wifi_root, "name", "Wifi");
+    cJSON_AddItemToObject(wifi_root, "values", wifi);
     cJSON_AddItemToArray(root, wifi_root);
 
     const char *sys_info = cJSON_Print(root);
@@ -243,6 +292,7 @@ static esp_err_t file_get_handler(httpd_req_t *req)
     ssize_t read_bytes;
     do {
         read_bytes = read(fd, chunk, SCRATCH_BUFSIZE);
+        ESP_LOGI(TAG, "Read file: %s, size:%zd", filepath, read_bytes);
         if (read_bytes == -1) {
             ESP_LOGE(TAG, "Failed to read file : %s", filepath);
         } else if (read_bytes > 0) {
@@ -287,7 +337,7 @@ static esp_err_t ipradio_list_get_handler(httpd_req_t *req)
         cJSON_AddStringToObject(item, "name", info->name);
 
         char buff[255];
-        snprintf(buff, 255, "%s:%d%s", info->domain, info->port, info->file);
+        snprintf(buff, 255, "%s:%d/%s", info->domain, info->port, info->file);
         cJSON_AddStringToObject(item, "url", buff);
         cJSON_AddNumberToObject(item, "ovol", info->ovol);
         cJSON_AddItemToArray(root, item);
@@ -319,7 +369,13 @@ static esp_err_t ipradio_import_post_handler(httpd_req_t *req)
         return ESP_FAIL;
 
     cJSON *root = cJSON_Parse(buf);
+    if (!root) {
+        ESP_LOGE(TAG, "Unable to parse buffer. err:%s\n data:%s", cJSON_GetErrorPtr(), buf);
+        return ESP_FAIL;
+    }
+
     int n = cJSON_GetArraySize(root);
+    ESP_LOGI(TAG, "Import IP radio num stations:%d", n);
     for (int i = 0; i < n; i++) {
         cJSON *elem = cJSON_GetArrayItem(root, i);
         if (!elem) {
@@ -336,6 +392,7 @@ static esp_err_t ipradio_import_post_handler(httpd_req_t *req)
             return ESP_FAIL;
 
         strcpy(info.domain, url.domain);
+        ESP_LOGI(TAG, "Import IP station:%s %s", info.name, info.domain);
 
         val = cJSON_GetObjectItem(elem, "File");
         if (val)
@@ -428,7 +485,7 @@ static esp_err_t ipradio_export_get_handler(httpd_req_t *req)
         cJSON_AddStringToObject(item, "name", info->name);
 
         char buff[255];
-        snprintf(buff, 255, "%s:%d%s", info->domain, info->port, info->file);
+        snprintf(buff, 255, "%s:%d/%s", info->domain, info->port, info->file);
         cJSON_AddStringToObject(item, "url", buff);
         cJSON_AddNumberToObject(item, "ovol", info->ovol);
         cJSON_AddItemToArray(root, item);
@@ -488,7 +545,13 @@ static esp_err_t fmradio_import_post_handler(httpd_req_t *req)
         return ESP_FAIL;
 
     cJSON *root = cJSON_Parse(buf);
+    if (!root) {
+        ESP_LOGE(TAG, "Unable to parse buffer. err:%s\n data:%s", cJSON_GetErrorPtr(), buf);
+        return ESP_FAIL;
+    }
+
     int n = cJSON_GetArraySize(root);
+    ESP_LOGI(TAG, "Import FM radio num stations:%d", n);
     for (int i = 0; i < n; i++) {
         cJSON *elem = cJSON_GetArrayItem(root, i);
         if (!elem) {
@@ -500,6 +563,7 @@ static esp_err_t fmradio_import_post_handler(httpd_req_t *req)
         int no = JS_TRY_GET(elem, "no")->valueint;
         info.ovol = JS_TRY_GET(elem, "ovol")->valueint;
         info.frequency_mhz = JS_TRY_GET(elem, "frequency")->valuedouble;
+        ESP_LOGI(TAG, "Import FM station: %f Mhz %s", info.frequency_mhz, info.name);
 
         if (no < n)
             eeprom_save_fmstation(&info, no);
@@ -617,8 +681,9 @@ void webserver_initialize(void)
 
     httpd_handle_t server = NULL;
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
-    config.server_port = 8080;
 
+    config.max_uri_handlers = 50;
+    config.server_port = 8080;
     config.uri_match_fn = httpd_uri_match_wildcard;
 
     ESP_LOGI(TAG, "Starting HTTP Server");
@@ -796,6 +861,16 @@ void webserver_initialize(void)
         httpd_register_uri_handler(server, &fmradio_export_get_uri);
     }
 
+    {
+        const httpd_uri_t sysinfo_get_uri = {
+            .uri = API_METHOD(sysinfo),
+            .method = HTTP_GET,
+            .handler = sysinfo_get_handler,
+            .user_ctx = rest_context
+        };
+        httpd_register_uri_handler(server, &sysinfo_get_uri);
+    }
+
     ///////////////////////////////////////////////////////////////////////////////////
 
     /* URI handler for getting web server files */
@@ -807,15 +882,5 @@ void webserver_initialize(void)
             .user_ctx = rest_context
         };
         httpd_register_uri_handler(server, &file_get_uri);
-    }
-
-    {
-        const httpd_uri_t sysinfo_get_uri = {
-            .uri = API_METHOD(sysinfo),
-            .method = HTTP_GET,
-            .handler = sysinfo_get_handler,
-            .user_ctx = rest_context
-        };
-        httpd_register_uri_handler(server, &sysinfo_get_uri);
     }
 }

@@ -48,7 +48,10 @@ esp_err_t url_parse(const char *url, struct url_parsed *parsed)
 
     curr = strstr(url + domain_offset, "/");
     if (curr) {
-        domain_end = curr - url - domain_offset;
+        if (!domain_end) {
+            domain_end = curr - url - domain_offset;
+        }
+
         strcpy(parsed->file, curr+1);
     }
 
