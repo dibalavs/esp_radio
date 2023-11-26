@@ -1,3 +1,5 @@
+#define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
+
 /**
  * @file i2s_redirector.c
  * @author Vasily Dybala
@@ -15,6 +17,7 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <freertos/semphr.h>
+#include <string.h>
 #include <sys/time.h>
 #include <esp_err.h>
 
@@ -25,22 +28,36 @@
 #include "freertos_err.h"
 #include "kmalloc.h" //kmalloc
 
-static const size_t buf_size = 512 * 4;
+static const size_t buf_samples = 512;
+static const size_t src_buf_size = buf_samples * sizeof(uint16_t);
+static const size_t dst_buf_size = buf_samples * sizeof(uint32_t);
+
 static const char *TAG = "redirector";
 static bool is_running = false;
 
 static void redirector_task(void* p)
 {
-    void *buf = kmalloc(buf_size);
-    size_t read = buf_size;
+    uint16_t *src_buf = kmalloc(src_buf_size);
+    uint32_t *dst_buf = kmalloc(dst_buf_size);
+    size_t read;
     size_t written;
 
     is_running = true;
 
     while (true) {
-        ESP_ERROR_CHECK(i2s_read(I2S_IN_NO, buf, buf_size, &read, portMAX_DELAY));
-        ESP_ERROR_CHECK(i2s_write_expand(I2S_OUT_NO, buf, read, I2S_BITS_PER_SAMPLE_16BIT, I2S_BITS_PER_SAMPLE_32BIT, &written, portMAX_DELAY));
-        if (written != buf_size) {
+        read = buf_samples * sizeof(uint16_t);
+        ESP_ERROR_CHECK(i2s_read(I2S_IN_NO, src_buf, src_buf_size, &read, portMAX_DELAY));
+
+        output_mode_t mode = app_state_get_audio_output_mode();
+        if (mode == I2S || mode == I2S_MERUS)
+            continue;
+
+        for (int i = 0; i < buf_samples; i++) {
+            dst_buf[i] = src_buf[i] << 16;
+        }
+
+        ESP_ERROR_CHECK(i2s_write(I2S_OUT_NO, dst_buf, dst_buf_size, &written, portMAX_DELAY));
+        if (written / sizeof(uint32_t) != read / sizeof(uint16_t)) {
             ESP_LOGE(TAG, "Not all data was written: %u", written);
         }
     }
