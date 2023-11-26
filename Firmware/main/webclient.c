@@ -1433,14 +1433,14 @@ void webclient_task(void *pvParams) {
 				{
 				  cstatus = C_PLAYLIST;
 
-				  sprintf((char*)bufrec, "GET %s HTTP/1.1\r\nHOST: %s\r\nUser-Agent: %s\r\n\r\n", clientPath,cleanURL(),g_device->ua); //ask for the playlist
+				  sprintf((char*)bufrec, "GET /%s HTTP/1.1\r\nHOST: %s\r\nUser-Agent: %s\r\n\r\n", clientPath,cleanURL(),g_device->ua); //ask for the playlist
 			    }
 				else
 				{
 					if (strcmp(cleanURL(),"stream.pcradio.biz") ==0)
 						strcpy(userAgent,"pcradio");
 
-					sprintf((char*)bufrec, "GET %s HTTP/1.1\r\nHost: %s\r\nicy-metadata: 1\r\nUser-Agent: %s\r\n\r\n", clientPath,cleanURL(),userAgent);
+					sprintf((char*)bufrec, "GET /%s HTTP/1.1\r\nHost: %s\r\nicy-metadata: 1\r\nUser-Agent: %s\r\n\r\n", clientPath,cleanURL(),userAgent);
 				}
 //printf("st:%d, url: %s\nClient Sent:\n%s\n",cstatus,cleanURL(),bufrec);
 				xSemaphoreTake(sConnected, 0);
@@ -1454,7 +1454,7 @@ void webclient_task(void *pvParams) {
 				else
 					send(sockfd, (char*)bufrec, strlen((char*)bufrec), 0);
 
-				ESP_LOGD(TAG,"\nSent: %s\n",bufrec);
+				ESP_LOGI(TAG,"\nSent: %s\n",bufrec);
 				if (setsockopt (sockfd, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof(timeout)) < 0)
 					ESP_LOGE(TAG,"Socket: %d  setsockopt: %d  errno:%d ",sockfd, SO_RCVTIMEO,errno);
 
