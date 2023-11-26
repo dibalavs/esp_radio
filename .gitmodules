@@ -5,3 +5,6 @@
 	path = Firmware/esp-idf
 	url = https://github.com/espressif/esp-idf.git
 	branch = release/v5.1
+[submodule "Tools/PCM2Wav-py"]
+	path = Tools/PCM2Wav-py
+	url = git@github.com:dibalavs/PCM2Wav-py.git
