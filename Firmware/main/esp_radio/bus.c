@@ -105,24 +105,24 @@ void bus_init_i2c(void)
 //     ESP_ERROR_CHECK(i2s_channel_disable(i2s_tx_chan));
 // }
 
+i2s_config_t i2s_out_config = {
+    .mode = I2S_MODE_MASTER | I2S_MODE_TX,          // Only TX
+    .sample_rate = 44100,
+    .bits_per_sample = I2S_BITS_PER_SAMPLE_32BIT,
+    .bits_per_chan = I2S_BITS_PER_CHAN_16BIT,
+    .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,   // 2-channels
+    .communication_format = I2S_COMM_FORMAT_STAND_MSB, // I2S_COMM_FORMAT_STAND_MSB,
+    .mclk_multiple = I2S_MCLK_MULTIPLE_256,
+    .dma_desc_num = 12,                            // number of buffers, 128 max.  16
+    .dma_frame_num = 512,                          // size of each buffer 128
+    .intr_alloc_flags = 0 ,        // default
+    .tx_desc_auto_clear = true,
+    .use_apll = true,
+    .fixed_mclk = 0,	// avoiding I2S bug
+};
+
 void  bus_init_i2s(/*renderer_config_t *config*/)
 {
-    const i2s_config_t i2s_out_config = {
-        .mode = I2S_MODE_MASTER | I2S_MODE_TX,          // Only TX
-        .sample_rate = 48000,
-        .bits_per_sample = I2S_BITS_PER_SAMPLE_32BIT,
-        .bits_per_chan = I2S_BITS_PER_CHAN_32BIT,
-        .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,   // 2-channels
-        .communication_format = I2S_COMM_FORMAT_STAND_I2S, // I2S_COMM_FORMAT_STAND_MSB,
-        .mclk_multiple = I2S_MCLK_MULTIPLE_256,
-        .dma_desc_num = 12,                            // number of buffers, 128 max.  16
-        .dma_frame_num = 512,                          // size of each buffer 128
-        .intr_alloc_flags = 0 ,        // default
-        .tx_desc_auto_clear = true,
-        .use_apll = 0,
-        .fixed_mclk = 0,	// avoiding I2S bug
-    };
-
 	const i2s_pin_config_t pin_out_config = {
         .bck_io_num = PIN_I2S_OUT_BCLK,
         .ws_io_num = PIN_I2S_OUT_LRCK,
@@ -134,9 +134,18 @@ void  bus_init_i2s(/*renderer_config_t *config*/)
     ESP_ERROR_CHECK(i2s_driver_install(I2S_OUT_NO, &i2s_out_config, 0, NULL));
     ESP_ERROR_CHECK(i2s_set_pin(I2S_OUT_NO, &pin_out_config));
 
+    /* VS1053 output parameters:
+    * - MSB - first
+    * - Failing edge
+    * - 16 bit/word
+    * - Frame signal - on each word
+    * - Right aligned
+    * - bit shift - right shifted by one
+    * - Signed
+    */
     const i2s_config_t i2s_in_config = {
         .mode = I2S_MODE_SLAVE | I2S_MODE_RX,          // Only TX
-        .sample_rate = 48000,
+        .sample_rate = 96000,
         .bits_per_sample = I2S_BITS_PER_SAMPLE_16BIT,
         .bits_per_chan = I2S_BITS_PER_CHAN_16BIT,
         .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,   // 2-channels

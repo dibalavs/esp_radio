@@ -38,10 +38,9 @@ void merus_init(void)
     ext_gpio_set_merus_mute(true);
     ext_gpio_set_merus_en(true);
 
-    bool is_running = i2s_redirector_is_running();
-    i2s_redirector_stop();
+    i2s_stop(I2S_OUT_NO);
     init_ma120();
-    i2s_redirector_restore(is_running);
+    i2s_start(I2S_OUT_NO);
 
     ext_gpio_set_merus_mute(false);
     ext_gpio_set_merus_chip_select(false);
@@ -58,10 +57,9 @@ bool merus_check_present(void)
 {
     bool present = false;
     ext_gpio_set_merus_chip_select(true);
-    bool is_running = i2s_redirector_is_running();
-    i2s_redirector_stop();
+    i2s_stop(I2S_OUT_NO);
     present = ma_check_present();
-    i2s_redirector_restore(is_running);
+    i2s_start(I2S_OUT_NO);
     ext_gpio_set_merus_chip_select(false);
 
     return present;
@@ -70,10 +68,9 @@ bool merus_check_present(void)
 void merus_set_volume(uint8_t volume)
 {
     ext_gpio_set_merus_chip_select(true);
-    bool is_running = i2s_redirector_is_running();
-    i2s_redirector_stop();
+    i2s_stop(I2S_OUT_NO);
     set_MA_vol_db_master(255 - volume);
-    i2s_redirector_restore(is_running);
+    i2s_start(I2S_OUT_NO);
     ext_gpio_set_merus_chip_select(false);
 }
 
@@ -87,9 +84,8 @@ void merus_get_status(void)
     int audio_proc_mute = 0;
     int lim_mon = 0;
     int lim_clip = 0;
-    bool is_running = i2s_redirector_is_running();
-    i2s_redirector_stop();
     ext_gpio_set_merus_chip_select(true);
+    i2s_stop(I2S_OUT_NO);
     set_MA_eh_clear(0);             // clear errors
     set_MA_eh_clear(1);
     set_MA_eh_clear(0);
@@ -103,7 +99,7 @@ void merus_get_status(void)
     lim_mon = get_MA_audio_proc_limiter_mon();
     lim_clip = get_MA_audio_proc_clip_mon();
     ext_gpio_set_merus_chip_select(false);
-    i2s_redirector_restore(is_running);
+    i2s_start(I2S_OUT_NO);
 
     ESP_LOGI(TAG, "sys_mute:0x%x, audio_proc_mute:0x%x, audio_proc_lim_mon:0x%x, audio_proc_clip:0x%x, mute0:0x%x, mute1:0x%x, error:0x%x, error_acc:0x%x",
         system_mute, audio_proc_mute, lim_mon, lim_clip, mute0, mute1, err, err_acc);
