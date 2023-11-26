@@ -101,7 +101,7 @@ static enum mad_flow input(struct mad_stream *stream, buffer_t *buf, player_t *p
 
 //Routine to print out an error
 static enum mad_flow error(void *data, struct mad_stream *stream, struct mad_frame *frame) {
-    ESP_LOGD(TAG,"dec err 0x%04x (%s)", stream->error, mad_stream_errorstr(stream));
+    ESP_LOGE(TAG,"dec err 0x%04x (%s)", stream->error, mad_stream_errorstr(stream));
     return MAD_FLOW_CONTINUE;
 }
 
@@ -134,7 +134,7 @@ void mp3_decoder_task(void *pvParameters)
 
     buf_underrun_cnt = 0;
 
-    ESP_LOGD(TAG, "Decoder start.");
+    ESP_LOGI(TAG, "MP3 Decoder start.");
 
 
 	//ESP_LOGD(TAG, "init I2S mode %d, port %d, %d bit, %d Hz", renderer_instance->output_mode, renderer_instance->i2s_num, renderer_instance->bit_depth, renderer_instance->sample_rate);

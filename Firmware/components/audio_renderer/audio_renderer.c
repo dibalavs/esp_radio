@@ -184,7 +184,7 @@ static void IRAM_ATTR render_i2s_samples(char *buf, uint32_t buf_len, pcm_format
 
     // support only 16 bit buffers for now
     if(buf_desc->bit_depth != I2S_BITS_PER_SAMPLE_16BIT) {
-        ESP_LOGD(TAG, "unsupported decoder bit depth: %d", buf_desc->bit_depth);
+        ESP_LOGE(TAG, "unsupported decoder bit depth: %d", buf_desc->bit_depth);
 		renderer_stop();
 		audio_player_stop();
 		return;
@@ -469,7 +469,6 @@ void renderer_init(renderer_config_t *config)
 	renderer_instance->frame_num = 0;
 
     renderer_status = INITIALIZED;
-
 }
 
 

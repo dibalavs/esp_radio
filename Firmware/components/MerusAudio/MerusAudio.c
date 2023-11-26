@@ -155,9 +155,12 @@ esp_err_t init_ma120(void)
     set_MA_audio_proc_limiterEnable(1);
     set_MA_audio_proc_mute(0);      // (0) - disable mute
     set_MA_system_mute(0);
-    set_MA_i2s_format(0b001);       // 16bit (0b001) left justified; 0b000 - i2s standard
+    set_MA_i2s_format(0b001);       // 0b000 - i2s standard;
+                                    // 0b001 - 16bit left justified;
+                                    // 0b100 - 16bit right justified
     set_MA_i2s_rightfirst(0);       // left first (0)
     set_MA_i2s_framesize(0b00);     // 64 SCK period per WS period (0b00)
+                                    // 32 SCK period per WS period (0b10)
 
     set_MA_i2s_order(0);            // 0 - MSB (0)
     set_MA_i2s_ws_pol(0);           // 0 - First word PCM send on LOW WS (1)
