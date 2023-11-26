@@ -42,6 +42,7 @@ nvs_handle_t settings;
 
 void eeprom_partitions_init(void)
 {
+	esp_err_t err;
 	DEVICE = esp_partition_find_first(64,0,NULL);
 	if (DEVICE == NULL) ESP_LOGE(TAG, "DEVICE Partition not found");
 	DEVICE1 = esp_partition_find_first(66,0,NULL);
@@ -51,8 +52,23 @@ void eeprom_partitions_init(void)
 	muxDevice=xSemaphoreCreateMutex();
 	g_device = eeprom_get_device_settings();  // allocate one time for all
 
-	ESP_ERROR_CHECK(nvs_open_from_partition("fmstations", "fmstations", NVS_READWRITE, &fmstations));
-	ESP_ERROR_CHECK(nvs_open_from_partition("settings", "settings", NVS_READWRITE, &settings));
+	err = nvs_open_from_partition("fmstations", "fmstations", NVS_READWRITE, &fmstations);
+	if (err == ESP_ERR_NVS_NOT_INITIALIZED || err == ESP_ERR_NVS_PART_NOT_FOUND)
+	{
+		ESP_ERROR_CHECK(nvs_flash_init_partition("fmstations"));
+		ESP_ERROR_CHECK(nvs_open_from_partition("fmstations", "fmstations", NVS_READWRITE, &fmstations));
+	} else {
+		ESP_ERROR_CHECK(err);
+	}
+
+	err = nvs_open_from_partition("settings", "settings", NVS_READWRITE, &settings);
+	if (err == ESP_ERR_NVS_NOT_INITIALIZED || err == ESP_ERR_NVS_PART_NOT_FOUND)
+	{
+		ESP_ERROR_CHECK(nvs_flash_init_partition("settings"));
+		ESP_ERROR_CHECK(nvs_open_from_partition("settings", "settings", NVS_READWRITE, &settings));
+	} else {
+		ESP_ERROR_CHECK(err);
+	}
 }
 
 bool eeprom_set_data(int address, void* buffer, int size) { // address, size in BYTES !!!!
@@ -181,8 +197,8 @@ void eeprom_save_multi_webstation(struct shoutcast_info *station, uint16_t posit
 }
 
 
-struct shoutcast_info* eeprom_get_webstation(uint8_t position) {
-	if (position > NBSTATIONS-1) {kprintf("eeprom_getStation fails pos=%d\n",position); return NULL;}
+struct shoutcast_info* eeprom_get_webstation(uint16_t position) {
+	if (position > NBSTATIONS-1) {return NULL;}
 	uint8_t* buffer = kmalloc(256);
 	if (!buffer)
 		return NULL;
@@ -258,8 +274,13 @@ void eeprom_erase_fmstations(void)
 	ESP_ERROR_CHECK(nvs_erase_all(fmstations));
 }
 
-esp_err_t eeprom_get_fmstation(uint8_t position, struct fmstation_info* info)
+esp_err_t eeprom_get_fmstation(uint16_t position, struct fmstation_info* info)
 {
+	if (position == NO_STATION) {
+		memset(info, 0, sizeof(*info));
+		return ESP_OK;
+	}
+
 	char buff[8];
 	size_t len = sizeof(*info);
 	return nvs_get_blob(fmstations, itoa(position, buff, 10), info, &len);

@@ -140,7 +140,7 @@ void action_fmstation_stop(void)
     ext_gpio_set_fm_chip_select(true);
     rda5807_i2s_on(false);
     rda5807_mute(true);
-    ext_gpio_set_fm_chip_select(true);
+    ext_gpio_set_fm_chip_select(false);
 
     i2s_redirector_stop();
     merus_deinit();
@@ -164,7 +164,7 @@ void action_fmstation_set(unsigned station_no)
     rda5807_i2s_on(true);
     rda5807_mute(false);
     rda5807_set_frequency(96.8);
-    ext_gpio_set_fm_chip_select(true);
+    ext_gpio_set_fm_chip_select(false);
 
     app_state_set_fm(true);
     merus_init();
@@ -199,7 +199,7 @@ void action_set_volume(uint8_t value)
     }
 
     const uint8_t vol = CLIP_VOLUME(value + app_state_get_ivol_addent());
-	//renderer_volume(vol);   // Need only for SW decoder
+	renderer_volume(255);   // Need only for SW decoder
     //VS1053_SetVolume(vol);  // Need only for analog output on VS1053
     merus_set_volume(vol);
 	webclient_ws_vol(vol);
@@ -217,8 +217,9 @@ void action_power_on(void)
     VS1053_Start();
     VS1053_I2SRate(0);
 
-    rda5807_power_on(true);
+    ext_gpio_set_fm_chip_select(true);
     rda5807_init(I2C_NO, I2C_ADDR_RDA5807FP, PIN_FM_INT);
+    rda5807_power_on(true);
 
     static const rda5807_i2s_config_t cfg = {
         .is_master = false,
@@ -231,6 +232,7 @@ void action_power_on(void)
         .is_right_ch_delay = true
     };
     rda5807_i2s_configure(&cfg);
+    ext_gpio_set_fm_chip_select(false);
     addon_wake_lcd();
     action_switch(0);
 }

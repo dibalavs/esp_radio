@@ -31,8 +31,8 @@ static const char *audio_output_mode_name = "output_mode"; // u8
 static const char *web_station_no_name = "web_station_no"; // u16
 static const char *fm_station_no_name = "fm_station_no";   // u16
 static const char *is_current_fm_name = "is_current_fm";   // u8
-static const char *fm_station_total_name = "fm_station_total";    // u16
-static const char *web_station_total_name = "web_station_total";  // u16
+static const char *fm_station_total_name = "fm_stat_tot";    // u16
+static const char *web_station_total_name = "web_stat_tot";  // u16
 
 static TimerHandle_t update_timer;
 
@@ -82,7 +82,7 @@ void app_state_set_audio_output_mode(output_mode_t mode)
 void app_state_set_curr_webstation(unsigned sta_no)
 {
     uint16_t total = app_state_get_webradio_total();
-    if (total != NO_STATION) {
+    if (total == NO_STATION) {
         web_station_no = NO_STATION;
         return;
     }
