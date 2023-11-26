@@ -220,7 +220,7 @@ export default [player_info, player_pause, player_volume, player_prev, player_ne
                 ipradio_list, ipradio_set, ipradio_move, ipradio_import, ipradio_export,
                 fmradio_list, fmradio_set, fmradio_move, fmradio_import, fmradio_export,
   system_info,
-  rest.get('/settings', (req, res, ctx) => {
+  rest.get(api_prefix + 'settings', (req, res, ctx) => {
     return res(
      // ctx.status(403),
       ctx.json({
@@ -240,7 +240,7 @@ export default [player_info, player_pause, player_volume, player_prev, player_ne
 
       }))
   }),
-  rest.post('/settings', (req, res, ctx) => {
+  rest.post(api_prefix + 'settings', (req, res, ctx) => {
     console.log("reqbody:" + req.body)
     return res(
       // ctx.status(403),

@@ -192,7 +192,7 @@ export default {
   },
   methods: {
     getItem() {
-      fetch(this.src_url)
+      fetch(this.api_prefix + this.src_url)
         .then((response) => {
           if (!response.ok) {
             throw new Error("HTTP status " + response.status);
@@ -208,7 +208,7 @@ export default {
         });
     },
     doSubmit() {
-      fetch(this.src_url, {
+      fetch(this.api_prefix + this.src_url, {
         method: "POST",
         headers: new Headers({
           'Content-Type': 'application/json'
