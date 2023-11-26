@@ -1,5 +1,46 @@
 # Changelog
 
+## [1.2.2](https://github.com/espressif/esp-protocols/commits/mdns-v1.2.2)
+
+### Bug Fixes
+
+- add terminator for the getting host name ([b6a4d94](https://github.com/espressif/esp-protocols/commit/b6a4d94))
+- Enable ESP_WIFI_CONFIG when ESP-IDF <= 5.1 ([0b783c0](https://github.com/espressif/esp-protocols/commit/0b783c0))
+- set host list NULL on destroy ([ea54eef](https://github.com/espressif/esp-protocols/commit/ea54eef))
+- removed Wno-format flag and fixed formatting warnings ([c48e442](https://github.com/espressif/esp-protocols/commit/c48e442))
+- remove the the range of MDNS_MAX_SERVICES and fix issues of string functions ([3dadce2](https://github.com/espressif/esp-protocols/commit/3dadce2))
+
+## [1.2.1](https://github.com/espressif/esp-protocols/commits/mdns-v1.2.1)
+
+### Features
+
+- Allow setting length of mDNS action queue in menuconfig ([28cd898](https://github.com/espressif/esp-protocols/commit/28cd898))
+
+### Bug Fixes
+
+- fix build issue if CONFIG_ESP_WIFI_ENABLED disabled ([24f7031](https://github.com/espressif/esp-protocols/commit/24f7031))
+- added idf_component.yml for examples ([d273e10](https://github.com/espressif/esp-protocols/commit/d273e10))
+- added guard check for null pointer ([71bb461](https://github.com/espressif/esp-protocols/commit/71bb461))
+
+## [1.2.0](https://github.com/espressif/esp-protocols/commits/mdns-v1.2.0)
+
+### Features
+
+- add an API for setting address to a delegated host ([ddc3eb6](https://github.com/espressif/esp-protocols/commit/ddc3eb6))
+- Add support for lwip build under linux ([588465d](https://github.com/espressif/esp-protocols/commit/588465d))
+- Allow for adding a delegated host with no address ([c562461](https://github.com/espressif/esp-protocols/commit/c562461))
+- Add APIs for looking up self hosted services and getting the self hostname ([f0df12d](https://github.com/espressif/esp-protocols/commit/f0df12d))
+
+### Bug Fixes
+
+- Refactor freertos linux compat layers ([79a0e57](https://github.com/espressif/esp-protocols/commit/79a0e57))
+- Fix delegated service PTR response ([cab0e1d](https://github.com/espressif/esp-protocols/commit/cab0e1d))
+- Added unit tests to CI + minor fix to pass it ([c974c14](https://github.com/espressif/esp-protocols/commit/c974c14))
+
+### Updated
+
+- docs: update documentation links ([4de5298](https://github.com/espressif/esp-protocols/commit/4de5298))
+
 ## [1.1.0](https://github.com/espressif/esp-protocols/commits/mdns-v1.1.0)
 
 ### Features

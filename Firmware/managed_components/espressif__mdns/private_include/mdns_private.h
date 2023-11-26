@@ -93,7 +93,7 @@
 #define MDNS_SERVICE_ADD_TIMEOUT_MS CONFIG_MDNS_SERVICE_ADD_TIMEOUT_MS
 
 #define MDNS_PACKET_QUEUE_LEN       16                      // Maximum packets that can be queued for parsing
-#define MDNS_ACTION_QUEUE_LEN       16                      // Maximum actions pending to the server
+#define MDNS_ACTION_QUEUE_LEN       CONFIG_MDNS_ACTION_QUEUE_LEN  // Maximum actions pending to the server
 #define MDNS_TXT_MAX_LEN            1024                    // Maximum string length of text data in TXT record
 #if defined(CONFIG_LWIP_IPV6) && defined(CONFIG_MDNS_RESPOND_REVERSE_QUERIES)
 #define MDNS_NAME_MAX_LEN           (64+4)                  // Need to account for IPv6 reverse queries (64 char address  + ".ip6" )
@@ -159,7 +159,7 @@
 #define PCB_STATE_IS_RUNNING(s) (s->state == PCB_RUNNING)
 
 #ifndef HOOK_MALLOC_FAILED
-#define HOOK_MALLOC_FAILED  ESP_LOGE(TAG, "Cannot allocate memory (line: %d, free heap: %d bytes)", __LINE__, esp_get_free_heap_size());
+#define HOOK_MALLOC_FAILED  ESP_LOGE(TAG, "Cannot allocate memory (line: %d, free heap: %" PRIu32 " bytes)", __LINE__, esp_get_free_heap_size());
 #endif
 
 typedef size_t mdns_if_t;
@@ -196,6 +196,7 @@ typedef enum {
     ACTION_TASK_STOP,
     ACTION_DELEGATE_HOSTNAME_ADD,
     ACTION_DELEGATE_HOSTNAME_REMOVE,
+    ACTION_DELEGATE_HOSTNAME_SET_ADDR,
     ACTION_MAX
 } mdns_action_type_t;
 
