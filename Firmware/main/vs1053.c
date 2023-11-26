@@ -447,6 +447,7 @@ void VS1053_Start()
 	VS1053_WriteRegister16(SPI_VOL,0xFFFF);
 	VS1053_DisableAnalog();
 	//VS1053_SetVolume( g_device->vol);
+	VS1053_SetVolume(100);
 	VS1053_SetTreble(g_device->treble);
 	VS1053_SetBass(g_device->bass);
 	VS1053_SetTrebleFreq(g_device->freqtreble);
