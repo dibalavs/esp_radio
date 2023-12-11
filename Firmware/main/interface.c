@@ -1232,14 +1232,15 @@ enum i2s_param {
 	I2S_SAMPLERATE,
 };
 
-extern i2s_config_t i2s_out_config;
 void i2s_set(enum i2s_param type, const char *val)
 {
 	uint32_t value = atoi(val + 1);
 	switch (type) {
-		case I2S_SAMPLERATE:
-			ESP_ERROR_CHECK(i2s_set_sample_rates(I2S_OUT_NO, value));
+		case I2S_SAMPLERATE: {
+			const i2s_std_clk_config_t clock_cfg = I2S_STD_CLK_DEFAULT_CONFIG(value);
+			ESP_ERROR_CHECK(i2s_channel_reconfig_std_clock(i2s_tx_chan, &clock_cfg));
 			break;
+		}
 	}
 	ESP_LOGE(TAG, "I2s set config type:%d, val:%d", (int)type, value);
 }

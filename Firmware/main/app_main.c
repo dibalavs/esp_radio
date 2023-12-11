@@ -37,7 +37,6 @@ Copyright (C) 2017  KaraWin
 #include "esp_spiffs.h"
 //#include "esp_heap_trace.h"
 #include "nvs_flash.h"
-#include "driver/i2s.h"
 #include "driver/uart.h"
 
 #include "mdns.h"
@@ -256,11 +255,11 @@ static renderer_config_t *create_renderer_config()
     renderer_config_t *renderer_config = kcalloc(1, sizeof(renderer_config_t));
 
     if(renderer_config->output_mode == I2S_MERUS) {
-        renderer_config->bit_depth = I2S_BITS_PER_SAMPLE_32BIT;
+        renderer_config->bit_depth = I2S_DATA_BIT_WIDTH_32BIT;
     }
 
     if(renderer_config->output_mode == DAC_BUILT_IN) {
-        renderer_config->bit_depth = I2S_BITS_PER_SAMPLE_16BIT;
+        renderer_config->bit_depth = I2S_DATA_BIT_WIDTH_16BIT;
     }
 
     return renderer_config;
@@ -570,7 +569,6 @@ void app_main()
     //iface_set_log_level(g_device->trace_level);
 
     // output mode
-    app_state_set_audio_output_mode(I2S_MERUS);
     //I2S, I2S_MERUS, DAC_BUILT_IN, PDM, VS1053
     ESP_LOGI(TAG, "audio_output_mode %d\nOne of I2S=0, I2S_MERUS, DAC_BUILT_IN, PDM, VS1053, SPDIF",app_state_get_audio_output_mode());
 
@@ -587,7 +585,7 @@ void app_main()
     ESP_LOGI(TAG, "Release %s, Revision %s",RELEASE,REVISION);
 //	ESP_LOGI(TAG, "Date: %s,  Time: %s",esp_app_get_description()->date,esp_app_get_description()->time);
     ESP_LOGI(TAG, "SDK %s",esp_get_idf_version());
-    ESP_LOGI(TAG, " Date %s, Time: %s\n", __DATE__,__TIME__ );
+    ESP_LOGI(TAG, "Date %s, Time: %s", __DATE__,__TIME__ );
     ESP_LOGI(TAG, "Heap size: %d",xPortGetFreeHeapSize());
 
     // lcd init
@@ -620,7 +618,6 @@ void app_main()
     player_config->media_stream = kcalloc(1, sizeof(media_stream_t));
     audio_player_init(player_config);
     renderer_init(create_renderer_config());
-
 //-----------------------------
 // start the network
 //-----------------------------

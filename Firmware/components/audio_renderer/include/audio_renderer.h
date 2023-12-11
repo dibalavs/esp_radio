@@ -10,10 +10,7 @@
 
 #include "freertos/FreeRTOS.h"
 
-// TODO: Remove it with porting to new i2s api.
-#define CONFIG_ADC_SUPPRESS_DEPRECATE_WARN 1
-#define CONFIG_I2S_SUPPRESS_DEPRECATE_WARN 1
-#include "driver/i2s.h"
+#include <driver/i2s_std.h>
 #include "common_component.h"
 #include "app_main.h"
 
@@ -24,8 +21,7 @@ typedef struct
     output_mode_t output_mode;
     int sample_rate;
     float sample_rate_modifier;
-    i2s_bits_per_sample_t bit_depth;
-    i2s_port_t i2s_num;
+    i2s_data_bit_width_t bit_depth;
 	uint32_t volume;
 	uint8_t frame_num;
 } renderer_config_t;
@@ -38,7 +34,7 @@ typedef enum
 typedef struct
 {
     uint32_t sample_rate;
-    i2s_bits_per_sample_t bit_depth;
+    i2s_data_bit_width_t bit_depth;
     uint8_t num_channels;
     pcm_buffer_layout_t buffer_format;
 } pcm_format_t;

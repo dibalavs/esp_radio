@@ -10,7 +10,9 @@
 
 #include <stdbool.h>
 #include <math.h>
+#include "driver/i2s_std.h"
 #include "freertos/FreeRTOS.h"
+#include "hal/i2s_types.h"
 #define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
 #include "esp_log.h"
 #include <esp_chip_info.h>
@@ -97,7 +99,7 @@ static void IRAM_ATTR write_i2s(const void *buffer, size_t bytes_cnt)
 //	ESP_LOGE(TAG, "wi2s len: %d  %x %x", bytes_cnt,*(uint32_t*)buffer,*(uint32_t*)(buffer+1));
 	while((bytes_left > 0) && (renderer_status != STOPPED))
 	{
-		if ( i2s_write(renderer_instance->i2s_num, buf, bytes_cnt, &bytes_written, 4) != ESP_OK)
+		if ( i2s_channel_write(i2s_tx_chan, buf, bytes_cnt, &bytes_written, 400) != ESP_OK)
 		{
 			ESP_LOGE(TAG, "i2s_write error");
 		}
@@ -122,8 +124,7 @@ static void IRAM_ATTR render_i2s_samples(char *buf, uint32_t buf_len, pcm_format
 	uint32_t* outBuf32;
 	uint64_t* outBuf64;
 
-	renderer_instance->bit_depth = I2S_BITS_PER_SAMPLE_32BIT;
-	renderer_instance->i2s_num = I2S_NUM_0;
+	renderer_instance->bit_depth = I2S_DATA_BIT_WIDTH_32BIT;
 	renderer_instance->sample_rate_modifier = 1.0;
 	renderer_instance->output_mode = I2S;
 	// handle changed sample rate
@@ -131,8 +132,8 @@ static void IRAM_ATTR render_i2s_samples(char *buf, uint32_t buf_len, pcm_format
     {
         ESP_LOGI(TAG, "changing sample rate from %d to %d", renderer_instance->sample_rate, buf_desc->sample_rate);
         uint32_t rate = buf_desc->sample_rate * renderer_instance->sample_rate_modifier;
-        res =  i2s_set_sample_rates(renderer_instance->i2s_num, rate);
-
+		const i2s_std_clk_config_t clock_cfg = I2S_STD_CLK_DEFAULT_CONFIG(rate);
+		res =  i2s_channel_reconfig_std_clock(i2s_tx_chan, &clock_cfg);
 	    if (res != ESP_OK) {
 			ESP_LOGE(TAG, "i2s_set_clk error %d",res);
 		}
@@ -183,7 +184,7 @@ static void IRAM_ATTR render_i2s_samples(char *buf, uint32_t buf_len, pcm_format
     }
 
     // support only 16 bit buffers for now
-    if(buf_desc->bit_depth != I2S_BITS_PER_SAMPLE_16BIT) {
+    if(buf_desc->bit_depth != I2S_DATA_BIT_WIDTH_16BIT) {
         ESP_LOGE(TAG, "unsupported decoder bit depth: %d", buf_desc->bit_depth);
 		renderer_stop();
 		audio_player_stop();
@@ -210,7 +211,7 @@ static void IRAM_ATTR render_i2s_samples(char *buf, uint32_t buf_len, pcm_format
 
 // har-in-air correction
 	uint32_t outBufBytes = buf_len*(2/buf_desc->num_channels);
-	if (renderer_instance->bit_depth == I2S_BITS_PER_SAMPLE_32BIT) outBufBytes <<= 1;
+	if (renderer_instance->bit_depth == I2S_DATA_BIT_WIDTH_32BIT) outBufBytes <<= 1;
 
 	outBuf8 = malloc(outBufBytes);
 
@@ -249,14 +250,14 @@ static void IRAM_ATTR render_i2s_samples(char *buf, uint32_t buf_len, pcm_format
 
             switch (renderer_instance->bit_depth)
             {
-                case I2S_BITS_PER_SAMPLE_16BIT:
+                case I2S_DATA_BIT_WIDTH_16BIT:
                     ; // workaround
                     /* low - high / low - high */
                     const char samp32[4] = {ptr_l[0], ptr_l[1], ptr_r[0], ptr_r[1]};
 					outBuf32[i] = (uint32_t)(*((uint32_t*)samp32));
                     break;
 
-                case I2S_BITS_PER_SAMPLE_32BIT:
+                case I2S_DATA_BIT_WIDTH_32BIT:
                     ; // workaround
 
                     const char samp64[8] = {0, 0, ptr_l[0], ptr_l[1], 0, 0, ptr_r[0], ptr_r[1]};
@@ -287,7 +288,8 @@ static bool set_sample_rate(int hz)
   ESP_LOGD(TAG, "Changing S/PDIF from %d to %d", renderer_instance->sample_rate, hz);
 
   renderer_instance->sample_rate = hz;
-  if (i2s_set_sample_rates(renderer_instance->i2s_num, 2 * hz) != ESP_OK) {
+  const i2s_std_clk_config_t clock_cfg = I2S_STD_CLK_DEFAULT_CONFIG(2 * hz);
+  if (i2s_channel_reconfig_std_clock(i2s_tx_chan, &clock_cfg) != ESP_OK) {
     ESP_LOGE(TAG, "ERROR changing S/PDIF sample rate");
 	return false;
   }
@@ -395,7 +397,7 @@ static void  render_spdif_samples(const void *buf, uint32_t buf_len, pcm_format_
 	int16_t *pcm_buffer = (int16_t*)buf;
 
 	// support only 16 bit buffers for now
-	if(buf_desc->bit_depth != I2S_BITS_PER_SAMPLE_16BIT) {
+	if(buf_desc->bit_depth != I2S_DATA_BIT_WIDTH_16BIT) {
 		ESP_LOGE(TAG, "unsupported decoder bit depth: %d", buf_desc->bit_depth);
 		renderer_stop();
 		audio_player_stop();
@@ -451,7 +453,7 @@ void IRAM_ATTR render_samples(char *buf, uint32_t buf_len, pcm_format_t *buf_des
 
 void  renderer_zero_dma_buffer()
 {
-    i2s_zero_dma_buffer(renderer_instance->i2s_num);
+    //i2s_zero_dma_buffer(renderer_instance->i2s_num);
 }
 
 

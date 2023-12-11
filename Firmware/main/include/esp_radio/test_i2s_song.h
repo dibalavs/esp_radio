@@ -1,0 +1,1 @@
+void test_twinkle_twinkle_little_star(void);

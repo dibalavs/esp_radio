@@ -7,12 +7,12 @@
 #include "esp_err.h"
 #include "nvs.h"
 #define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+#include <freertos/semphr.h>
 #include "esp_spi_flash.h"
 #include "esp_partition.h"
 #include "esp_task_wdt.h"
-#include "freertos/FreeRTOS.h"
 #include "esp_log.h"
 //#include "driver/uart.h"
 #include <nvs_flash.h>

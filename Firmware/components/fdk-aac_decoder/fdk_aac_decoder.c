@@ -21,7 +21,6 @@
 #include "audio_player.h"
 #include "app_main.h"
 #include "esp_idf_version.h"
-#include "driver/i2s.h"
 #define TAG "Fdkaac_decoder"
 
 
@@ -44,7 +43,7 @@ void fdkaac_decoder_task(void *pvParameters)
 
 	//ESP_LOGD(TAG, "init I2S mode %d, port %d, %d bit, %d Hz", renderer_instance->output_mode, renderer_instance->i2s_num, renderer_instance->bit_depth, renderer_instance->sample_rate);
     // buffer might contain noise
-    i2s_zero_dma_buffer(renderer_instance->i2s_num);
+    //i2s_zero_dma_buffer(renderer_instance->i2s_num);
     //i2s_start(renderer_instance->i2s_num);
 
     /* allocate sample buffer */
@@ -164,7 +163,7 @@ void fdkaac_decoder_task(void *pvParameters)
 				ESP_LOGI(TAG, "pcm_size %d, channels: %d, sample rate: %d, object type: %d, bitrate: %d", pcm_size, mStreamInfo->numChannels,
                     mStreamInfo->sampleRate, mStreamInfo->aot, mStreamInfo->bitRate);
 
-				pcm_format.bit_depth = I2S_BITS_PER_SAMPLE_16BIT;
+				pcm_format.bit_depth = 16;
 				pcm_format.num_channels = mStreamInfo->numChannels;
 				pcm_format.sample_rate = mStreamInfo->sampleRate;
 			}
@@ -185,8 +184,8 @@ void fdkaac_decoder_task(void *pvParameters)
     buf_destroy(in_buf);
     buf_destroy(pcm_buf);
 	renderer_zero_dma_buffer();
-	i2s_stop(renderer_instance->i2s_num);
-    i2s_driver_uninstall(renderer_instance->i2s_num);
+	//i2s_stop(renderer_instance->i2s_num);
+    //i2s_driver_uninstall(renderer_instance->i2s_num);
     player->decoder_status = STOPPED;
     player->decoder_command = CMD_NONE;
 

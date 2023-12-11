@@ -16,6 +16,7 @@ set(COMPONENT_SRCS
 	"esp_radio/kmalloc.c"
 	"esp_radio/merus.c"
 	"esp_radio/network.c"
+	"esp_radio/test_i2s_song.c"
 	"esp_radio/url_parser.c"
 	"esp_radio/webserver.c"
 	"gpio.c"

@@ -28,7 +28,6 @@
 #include "bt_app_core.h"
 
 #include "freertos/FreeRTOS.h"
-#include "driver/i2s.h"
 
 #include "audio_renderer.h"
 

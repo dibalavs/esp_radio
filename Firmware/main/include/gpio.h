@@ -11,6 +11,8 @@
 #include "app_main.h"
 #include <hal/gpio_types.h>
 #include <hal/i2c_types.h>
+#include <driver/i2s_common.h>
+#include <driver/i2s_types.h>
 
 #define GPIO_NONE 255
 
@@ -40,7 +42,9 @@
 
 // I2S DAC or PDM output
 //-----------------------
-#define I2S_OUT_NO I2S_NUM_0
+extern i2s_chan_handle_t i2s_tx_chan;
+extern i2s_chan_handle_t i2s_rx_chan;
+
 #define PIN_I2S_OUT_LRCK GPIO_NUM_12 	// or Channel1
 #define PIN_I2S_OUT_BCLK GPIO_NUM_13	// or channel2
 #define PIN_I2S_OUT_DATA GPIO_NUM_14	//
